@@ -1,4 +1,14 @@
-export const MOCK_CURRENT_USER = {
+import {
+  User,
+  EmergencyRequest,
+  Donor,
+  BloodBank,
+  DonationCamp,
+  LeaderboardItem,
+  NotificationItem
+} from '../types';
+
+export const MOCK_CURRENT_USER: User = {
   id: "usr_donor_001",
   name: "Dr. Ananya Sharma",
   role: "donor",
@@ -36,7 +46,7 @@ export const MOCK_CURRENT_USER = {
   ]
 };
 
-export const MOCK_EMERGENCY_REQUESTS = [
+export const MOCK_EMERGENCY_REQUESTS: EmergencyRequest[] = [
   {
     id: "req_101",
     patientName: "Rohan Deshmukh",
@@ -127,7 +137,7 @@ export const MOCK_EMERGENCY_REQUESTS = [
   }
 ];
 
-export const MOCK_DONORS = [
+export const MOCK_DONORS: Donor[] = [
   {
     id: "donor_201",
     name: "Dr. Ananya Sharma",
@@ -220,7 +230,7 @@ export const MOCK_DONORS = [
   }
 ];
 
-export const MOCK_BLOOD_BANKS = [
+export const MOCK_BLOOD_BANKS: BloodBank[] = [
   {
     id: "bb_1",
     name: "KIMS Teaching Hospital Blood Center",
@@ -298,7 +308,7 @@ export const MOCK_BLOOD_BANKS = [
   }
 ];
 
-export const MOCK_CAMPS = [
+export const MOCK_CAMPS: DonationCamp[] = [
   {
     id: "camp_1",
     title: "Mega Independence Day Blood Drive",
@@ -329,7 +339,7 @@ export const MOCK_CAMPS = [
   }
 ];
 
-export const MOCK_LEADERBOARD = {
+export const MOCK_LEADERBOARD: { monthly: LeaderboardItem[]; allTime: LeaderboardItem[] } = {
   monthly: [
     { rank: 1, name: "Siddharth Rao", city: "Bengaluru", college: "RVCE", donations: 4, points: 1600, badge: "🏆 Monthly Legend" },
     { rank: 2, name: "Dr. Ananya Sharma", city: "Hubballi", college: "KIMS", donations: 3, points: 1250, badge: "🥇 Gold Donor" },
@@ -344,7 +354,7 @@ export const MOCK_LEADERBOARD = {
   ]
 };
 
-export const MOCK_NOTIFICATIONS = [
+export const MOCK_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "n1",
     title: "🚨 Urgent Blood Alert",
