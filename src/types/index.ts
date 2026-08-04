@@ -1,4 +1,4 @@
-export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-';
+export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | 'Bombay Phenotype (O-h)';
 
 export type UrgencyLevel = 'CRITICAL' | 'HIGH' | 'MODERATE';
 
@@ -14,7 +14,10 @@ export type PageTab =
   | 'blood-banks' 
   | 'camps' 
   | 'leaderboard' 
-  | 'profile';
+  | 'profile'
+  | 'rare-registry'
+  | 'group-circles'
+  | 'blood-bridge';
 
 export interface Badge {
   id: string;
@@ -42,6 +45,7 @@ export interface User {
   city: string;
   state: string;
   address: string;
+  gender?: 'male' | 'female' | 'other';
   lat: number;
   lng: number;
   lastDonationDate: string;
@@ -59,6 +63,7 @@ export interface User {
     medications: string;
     chronicIllness: boolean;
   };
+  hbTrendHistory?: { date: string; hb: number }[];
 }
 
 export interface EmergencyRequest {
@@ -78,8 +83,12 @@ export interface EmergencyRequest {
   reason: string;
   status: 'ACTIVE' | 'FULFILLED' | 'EXPIRED';
   aiUrgencyScore: number;
+  decayScore?: number;
+  trendingReason?: string;
   sharesCount: number;
   matchedDonorsCount: number;
+  requiresHospitalCoSign?: boolean;
+  isCoSignedByHospital?: boolean;
   lat: number;
   lng: number;
 }
@@ -99,7 +108,9 @@ export interface Donor {
   isAvailable: boolean;
   distanceKm: number;
   matchPercentage?: number;
+  responseLikelihoodScore?: number;
   matchReasons?: string[];
+  escalationTier?: 1 | 2;
 }
 
 export interface BloodStockItem {
@@ -159,4 +170,28 @@ export interface NotificationItem {
   time: string;
   read: boolean;
   requestId?: string;
+}
+
+export interface GroupCircle {
+  id: string;
+  name: string;
+  category: 'Family' | 'Corporate' | 'College';
+  city: string;
+  membersCount: number;
+  activeRequests: number;
+  isVerified: boolean;
+  joined: boolean;
+}
+
+export interface InterCityTransfer {
+  id: string;
+  fromCity: string;
+  toCity: string;
+  fromHospital: string;
+  toHospital: string;
+  bloodGroup: BloodGroup;
+  units: number;
+  estimatedTimeMins: number;
+  urgencyReason: string;
+  status: 'RECOMMENDED' | 'IN_TRANSIT' | 'COMPLETED';
 }

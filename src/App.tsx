@@ -19,11 +19,16 @@ import { BloodBanksPage } from './pages/BloodBanksPage';
 import { DonationCampsPage } from './pages/DonationCampsPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { RareRegistryPage } from './pages/RareRegistryPage';
+import { GroupCirclesPage } from './pages/GroupCirclesPage';
+import { BloodBridgePage } from './pages/BloodBridgePage';
 
 import { EmergencyPostModal } from './components/modals/EmergencyPostModal';
 import { SmartMatchModal } from './components/modals/SmartMatchModal';
 import { CertificateModal } from './components/modals/CertificateModal';
 import { PrivacyChatModal } from './components/modals/PrivacyChatModal';
+import { HealthPassportModal } from './components/modals/HealthPassportModal';
+import { CorporateImpactModal } from './components/modals/CorporateImpactModal';
 
 const MainLayout: React.FC = () => {
   const { activePage } = useApp();
@@ -32,10 +37,8 @@ const MainLayout: React.FC = () => {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-red-600 selection:text-white">
       
       <div className="flex flex-1">
-        {/* Desktop Sidebar */}
         <Sidebar />
 
-        {/* Main Content Area */}
         <div className="flex-1 flex flex-col min-w-0">
           <Header />
           <Toast />
@@ -47,6 +50,9 @@ const MainLayout: React.FC = () => {
             {activePage === 'dashboard' && <DashboardPage />}
             {activePage === 'donor-search' && <DonorSearchPage />}
             {activePage === 'emergency-requests' && <EmergencyRequestsPage />}
+            {activePage === 'rare-registry' && <RareRegistryPage />}
+            {activePage === 'group-circles' && <GroupCirclesPage />}
+            {activePage === 'blood-bridge' && <BloodBridgePage />}
             {activePage === 'blood-banks' && <BloodBanksPage />}
             {activePage === 'camps' && <DonationCampsPage />}
             {activePage === 'leaderboard' && <LeaderboardPage />}
@@ -57,7 +63,6 @@ const MainLayout: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation */}
       <MobileNav />
 
       {/* Interactive Modals */}
@@ -65,6 +70,8 @@ const MainLayout: React.FC = () => {
       <SmartMatchModal />
       <CertificateModal />
       <PrivacyChatModal />
+      <HealthPassportModal />
+      <CorporateImpactModal />
 
     </div>
   );

@@ -6,7 +6,9 @@ import {
   BloodBank,
   DonationCamp,
   LeaderboardItem,
-  NotificationItem
+  NotificationItem,
+  GroupCircle,
+  InterCityTransfer
 } from '../types';
 import {
   MOCK_EMERGENCY_REQUESTS,
@@ -14,7 +16,9 @@ import {
   MOCK_BLOOD_BANKS,
   MOCK_CAMPS,
   MOCK_LEADERBOARD,
-  MOCK_NOTIFICATIONS
+  MOCK_NOTIFICATIONS,
+  MOCK_GROUP_CIRCLES,
+  MOCK_INTERCITY_TRANSFERS
 } from '../data/mockData';
 
 interface AppContextType {
@@ -28,6 +32,9 @@ interface AppContextType {
   updateInventoryStock: (bankId: string, group: string, change: number) => void;
   camps: DonationCamp[];
   toggleCampRSVP: (campId: string) => void;
+  groupCircles: GroupCircle[];
+  toggleCircleJoin: (circleId: string) => void;
+  interCityTransfers: InterCityTransfer[];
   leaderboard: { monthly: LeaderboardItem[]; allTime: LeaderboardItem[] };
   notifications: NotificationItem[];
   toastMessage: string | null;
@@ -42,6 +49,10 @@ interface AppContextType {
   setActiveCertificateModal: (cert: any | null) => void;
   activeChatModal: { request: EmergencyRequest; donor: Donor } | null;
   setActiveChatModal: (chat: { request: EmergencyRequest; donor: Donor } | null) => void;
+  activeHealthPassportModal: boolean;
+  setActiveHealthPassportModal: (open: boolean) => void;
+  activeCorporateImpactModal: boolean;
+  setActiveCorporateImpactModal: (open: boolean) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -51,9 +62,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const [requests, setRequests] = useState<EmergencyRequest[]>(MOCK_EMERGENCY_REQUESTS);
-  const [donors, setDonors] = useState<Donor[]>(MOCK_DONORS);
+  const [donors] = useState<Donor[]>(MOCK_DONORS);
   const [bloodBanks, setBloodBanks] = useState<BloodBank[]>(MOCK_BLOOD_BANKS);
   const [camps, setCamps] = useState<DonationCamp[]>(MOCK_CAMPS);
+  const [groupCircles, setGroupCircles] = useState<GroupCircle[]>(MOCK_GROUP_CIRCLES);
+  const [interCityTransfers] = useState<InterCityTransfer[]>(MOCK_INTERCITY_TRANSFERS);
   const [leaderboard] = useState(MOCK_LEADERBOARD);
   const [notifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
 
@@ -64,6 +77,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeEmergencyPostModal, setActiveEmergencyPostModal] = useState<boolean>(false);
   const [activeCertificateModal, setActiveCertificateModal] = useState<any | null>(null);
   const [activeChatModal, setActiveChatModal] = useState<{ request: EmergencyRequest; donor: Donor } | null>(null);
+  const [activeHealthPassportModal, setActiveHealthPassportModal] = useState<boolean>(false);
+  const [activeCorporateImpactModal, setActiveCorporateImpactModal] = useState<boolean>(false);
 
   const navigateTo = (tab: PageTab) => {
     setIsLoading(true);
@@ -82,11 +97,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createEmergencyRequest = (newReq: Partial<EmergencyRequest>) => {
+    const units = newReq.unitsNeeded || 1;
+    const requiresCoSign = units > 4;
+
     const created: EmergencyRequest = {
       id: `req_${Date.now()}`,
       patientName: newReq.patientName || "Emergency Patient",
       bloodGroup: newReq.bloodGroup || "O-",
-      unitsNeeded: newReq.unitsNeeded || 1,
+      unitsNeeded: units,
       unitsFulfilled: 0,
       urgency: newReq.urgency || "CRITICAL",
       hospitalName: newReq.hospitalName || "City Civil Hospital",
@@ -99,14 +117,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       reason: newReq.reason || "Urgent medical transfusion requirement",
       status: "ACTIVE",
       aiUrgencyScore: newReq.urgency === "CRITICAL" ? 98 : 84,
+      decayScore: 95,
+      trendingReason: requiresCoSign ? "High Unit Demand (>4 units) • Hospital Verified" : "Urgent Regional Request",
       sharesCount: 1,
       matchedDonorsCount: 6,
+      requiresHospitalCoSign: requiresCoSign,
+      isCoSignedByHospital: true,
       lat: 15.3688,
       lng: 75.1274
     };
 
     setRequests(prev => [created, ...prev]);
-    showToast(`Emergency Request published! 6 nearby donors notified.`);
+    showToast(requiresCoSign
+      ? `Request submitted! Hospital co-sign verified for >4 units.`
+      : `Emergency Request published! 6 nearby donors notified.`
+    );
   };
 
   const toggleCampRSVP = (campId: string) => {
@@ -122,6 +147,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           };
         }
         return c;
+      })
+    );
+  };
+
+  const toggleCircleJoin = (circleId: string) => {
+    setGroupCircles(prev =>
+      prev.map(cir => {
+        if (cir.id === circleId) {
+          const joined = !cir.joined;
+          showToast(joined ? `Joined ${cir.name}!` : `Left ${cir.name}`);
+          return { ...cir, joined, membersCount: joined ? cir.membersCount + 1 : cir.membersCount - 1 };
+        }
+        return cir;
       })
     );
   };
@@ -162,6 +200,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateInventoryStock,
         camps,
         toggleCampRSVP,
+        groupCircles,
+        toggleCircleJoin,
+        interCityTransfers,
         leaderboard,
         notifications,
         toastMessage,
@@ -173,7 +214,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeCertificateModal,
         setActiveCertificateModal,
         activeChatModal,
-        setActiveChatModal
+        setActiveChatModal,
+        activeHealthPassportModal,
+        setActiveHealthPassportModal,
+        activeCorporateImpactModal,
+        setActiveCorporateImpactModal
       }}
     >
       {children}

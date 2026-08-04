@@ -5,7 +5,9 @@ import {
   BloodBank,
   DonationCamp,
   LeaderboardItem,
-  NotificationItem
+  NotificationItem,
+  GroupCircle,
+  InterCityTransfer
 } from '../types';
 
 export const MOCK_CURRENT_USER: User = {
@@ -15,6 +17,7 @@ export const MOCK_CURRENT_USER: User = {
   email: "ananya.sharma@example.com",
   phone: "+91 98765 43210",
   bloodGroup: "O-",
+  gender: "female",
   city: "Hubballi",
   state: "Karnataka",
   address: "Vidyanagar, Near BVB College, Hubballi",
@@ -33,6 +36,12 @@ export const MOCK_CURRENT_USER: User = {
     medications: "None",
     chronicIllness: false
   },
+  hbTrendHistory: [
+    { date: "2025-03", hb: 13.6 },
+    { date: "2025-07", hb: 13.9 },
+    { date: "2025-11", hb: 14.0 },
+    { date: "2026-03", hb: 14.2 }
+  ],
   badges: [
     { id: "b1", title: "Universal Lifesaver", icon: "🛡️", desc: "Donated rare O- blood 5+ times" },
     { id: "b2", title: "Fast Responder", icon: "⚡", desc: "Responded within 15 mins to emergency alert" },
@@ -59,13 +68,17 @@ export const MOCK_EMERGENCY_REQUESTS: EmergencyRequest[] = [
     state: "Karnataka",
     contactPerson: "Dr. Anish K",
     maskedPhone: "+91 98*** **412",
-    requestedAt: "2026-08-03T17:30:00Z",
-    deadline: "2026-08-04T06:00:00Z",
+    requestedAt: "2026-08-04T18:30:00Z",
+    deadline: "2026-08-05T06:00:00Z",
     reason: "Emergency Trauma Surgery following highway accident.",
     status: "ACTIVE",
     aiUrgencyScore: 98,
+    decayScore: 96,
+    trendingReason: "42 shares in the last hour • Critical shortage in Hubballi",
     sharesCount: 42,
     matchedDonorsCount: 6,
+    requiresHospitalCoSign: false,
+    isCoSignedByHospital: true,
     lat: 15.3688,
     lng: 75.1274
   },
@@ -73,7 +86,7 @@ export const MOCK_EMERGENCY_REQUESTS: EmergencyRequest[] = [
     id: "req_102",
     patientName: "Savitri Devi",
     bloodGroup: "AB-",
-    unitsNeeded: 3,
+    unitsNeeded: 5, // Requires hospital co-sign (>4 units)
     unitsFulfilled: 2,
     urgency: "CRITICAL",
     hospitalName: "SDM Medical College & Hospital",
@@ -81,59 +94,45 @@ export const MOCK_EMERGENCY_REQUESTS: EmergencyRequest[] = [
     state: "Karnataka",
     contactPerson: "Mahesh Devi (Son)",
     maskedPhone: "+91 97*** **901",
-    requestedAt: "2026-08-03T15:10:00Z",
-    deadline: "2026-08-04T12:00:00Z",
-    reason: "Severe Anemia & Low Platelets treatment.",
+    requestedAt: "2026-08-04T16:10:00Z",
+    deadline: "2026-08-05T12:00:00Z",
+    reason: "Severe Anemia & Low Platelets transfusion requiring high volume.",
     status: "ACTIVE",
     aiUrgencyScore: 92,
+    decayScore: 88,
+    trendingReason: "High unit volume requirement (>4 units)",
     sharesCount: 29,
     matchedDonorsCount: 4,
+    requiresHospitalCoSign: true,
+    isCoSignedByHospital: true,
     lat: 15.4589,
     lng: 75.0078
   },
   {
     id: "req_103",
     patientName: "Kavita Rao",
-    bloodGroup: "B+",
+    bloodGroup: "Bombay Phenotype (O-h)",
     unitsNeeded: 1,
     unitsFulfilled: 0,
-    urgency: "HIGH",
+    urgency: "CRITICAL",
     hospitalName: "Manipal Hospital",
     city: "Bengaluru",
     state: "Karnataka",
     contactPerson: "Suresh Rao",
     maskedPhone: "+91 94*** **554",
-    requestedAt: "2026-08-03T12:00:00Z",
-    deadline: "2026-08-04T18:00:00Z",
-    reason: "Scheduled Cardiac Bypass Procedure.",
+    requestedAt: "2026-08-04T12:00:00Z",
+    deadline: "2026-08-05T18:00:00Z",
+    reason: "Rare Bombay Phenotype O-h required for specialized surgery.",
     status: "ACTIVE",
-    aiUrgencyScore: 78,
-    sharesCount: 18,
-    matchedDonorsCount: 12,
+    aiUrgencyScore: 99,
+    decayScore: 90,
+    trendingReason: "Extremely Rare Blood Group (Bombay Phenotype)",
+    sharesCount: 88,
+    matchedDonorsCount: 2,
+    requiresHospitalCoSign: true,
+    isCoSignedByHospital: true,
     lat: 12.9716,
     lng: 77.5946
-  },
-  {
-    id: "req_104",
-    patientName: "Mohammed Farooq",
-    bloodGroup: "A-",
-    unitsNeeded: 2,
-    unitsFulfilled: 2,
-    urgency: "MODERATE",
-    hospitalName: "Tatwadarsha Hospital",
-    city: "Hubballi",
-    state: "Karnataka",
-    contactPerson: "Farooq Ali",
-    maskedPhone: "+91 99*** **118",
-    requestedAt: "2026-08-02T09:00:00Z",
-    deadline: "2026-08-03T20:00:00Z",
-    reason: "Thalassemia routine transfusion requirement.",
-    status: "FULFILLED",
-    aiUrgencyScore: 65,
-    sharesCount: 35,
-    matchedDonorsCount: 8,
-    lat: 15.3500,
-    lng: 75.1400
   }
 ];
 
@@ -148,10 +147,12 @@ export const MOCK_DONORS: Donor[] = [
     lng: 75.1240,
     lastDonationDate: "2026-03-10",
     reliabilityScore: 99,
+    responseLikelihoodScore: 96,
     totalDonations: 7,
     phone: "+91 98765 43210",
     isAvailable: true,
-    distanceKm: 1.2
+    distanceKm: 1.2,
+    escalationTier: 1
   },
   {
     id: "donor_202",
@@ -163,10 +164,12 @@ export const MOCK_DONORS: Donor[] = [
     lng: 75.1380,
     lastDonationDate: "2026-02-01",
     reliabilityScore: 95,
+    responseLikelihoodScore: 91,
     totalDonations: 4,
     phone: "+91 98801 12233",
     isAvailable: true,
-    distanceKm: 2.8
+    distanceKm: 2.8,
+    escalationTier: 1
   },
   {
     id: "donor_203",
@@ -178,55 +181,89 @@ export const MOCK_DONORS: Donor[] = [
     lng: 75.0120,
     lastDonationDate: "2026-01-20",
     reliabilityScore: 97,
+    responseLikelihoodScore: 89,
     totalDonations: 9,
     phone: "+91 97412 88990",
     isAvailable: true,
-    distanceKm: 18.5
+    distanceKm: 18.5,
+    escalationTier: 2
   },
   {
     id: "donor_204",
-    name: "Rajesh Kulkarni",
-    bloodGroup: "A+",
-    city: "Hubballi",
+    name: "Vikram Bombay Donor",
+    bloodGroup: "Bombay Phenotype (O-h)",
+    city: "Bengaluru",
     state: "Karnataka",
-    lat: 15.3610,
-    lng: 75.1290,
-    lastDonationDate: "2026-04-12",
-    reliabilityScore: 92,
-    totalDonations: 3,
-    phone: "+91 94481 77665",
+    lat: 12.9750,
+    lng: 77.5900,
+    lastDonationDate: "2025-12-10",
+    reliabilityScore: 100,
+    responseLikelihoodScore: 99,
+    totalDonations: 11,
+    phone: "+91 91122 33445",
     isAvailable: true,
-    distanceKm: 0.9
+    distanceKm: 12.0,
+    escalationTier: 1
+  }
+];
+
+export const MOCK_GROUP_CIRCLES: GroupCircle[] = [
+  {
+    id: "circle_1",
+    name: "KLE Tech Campus Lifesavers Circle",
+    category: "College",
+    city: "Hubballi",
+    membersCount: 420,
+    activeRequests: 2,
+    isVerified: true,
+    joined: true
   },
   {
-    id: "donor_205",
-    name: "Vinayaka Bhat",
-    bloodGroup: "B+",
+    id: "circle_2",
+    name: "Infosys Hubballi Corporate Circle",
+    category: "Corporate",
     city: "Hubballi",
-    state: "Karnataka",
-    lat: 15.3700,
-    lng: 75.1200,
-    lastDonationDate: "2026-05-01",
-    reliabilityScore: 88,
-    totalDonations: 5,
-    phone: "+91 99002 33445",
-    isAvailable: true,
-    distanceKm: 1.8
+    membersCount: 280,
+    activeRequests: 1,
+    isVerified: true,
+    joined: true
   },
   {
-    id: "donor_206",
-    name: "Deepa Nayak",
-    bloodGroup: "O+",
-    city: "Hubballi",
-    state: "Karnataka",
-    lat: 15.3580,
-    lng: 75.1320,
-    lastDonationDate: "2026-03-25",
-    reliabilityScore: 96,
-    totalDonations: 12,
-    phone: "+91 96321 44556",
-    isAvailable: true,
-    distanceKm: 1.5
+    id: "circle_3",
+    name: "Patil Family Emergency Blood Network",
+    category: "Family",
+    city: "Dharwad",
+    membersCount: 18,
+    activeRequests: 0,
+    isVerified: true,
+    joined: false
+  }
+];
+
+export const MOCK_INTERCITY_TRANSFERS: InterCityTransfer[] = [
+  {
+    id: "trans_1",
+    fromCity: "Hubballi",
+    toCity: "Dharwad",
+    fromHospital: "Rotary Blood Center Hubballi (Surplus O-)",
+    toHospital: "SDM Hospital Dharwad (Deficit O-)",
+    bloodGroup: "O-",
+    units: 2,
+    estimatedTimeMins: 35,
+    urgencyReason: "Trauma ICU Shortage in Dharwad",
+    status: "RECOMMENDED"
+  },
+  {
+    id: "trans_2",
+    fromCity: "Belagavi",
+    toCity: "Hubballi",
+    fromHospital: "KLE Hospital Belagavi",
+    toHospital: "KIMS Hospital Hubballi",
+    bloodGroup: "AB-",
+    units: 1,
+    estimatedTimeMins: 90,
+    urgencyReason: "Rare AB- Unit Inter-City Dispatch",
+    status: "IN_TRANSIT"
   }
 ];
 
@@ -253,7 +290,8 @@ export const MOCK_BLOOD_BANKS: BloodBank[] = [
       { group: "AB+", units: 19, status: "Adequate", minThreshold: 10, expiring7Days: 2 },
       { group: "AB-", units: 2, status: "CRITICAL", minThreshold: 6, expiring7Days: 1 },
       { group: "O+", units: 55, status: "Optimal", minThreshold: 25, expiring7Days: 8 },
-      { group: "O-", units: 3, status: "CRITICAL", minThreshold: 12, expiring7Days: 1 }
+      { group: "O-", units: 3, status: "CRITICAL", minThreshold: 12, expiring7Days: 1 },
+      { group: "Bombay Phenotype (O-h)", units: 1, status: "CRITICAL", minThreshold: 2, expiring7Days: 0 }
     ]
   },
   {
@@ -280,31 +318,6 @@ export const MOCK_BLOOD_BANKS: BloodBank[] = [
       { group: "O+", units: 40, status: "Optimal", minThreshold: 20, expiring7Days: 6 },
       { group: "O-", units: 2, status: "CRITICAL", minThreshold: 10, expiring7Days: 1 }
     ]
-  },
-  {
-    id: "bb_3",
-    name: "SDM Hospital & Research Blood Bank",
-    licenseNo: "KA-BB-2024-9011",
-    city: "Dharwad",
-    state: "Karnataka",
-    address: "Sattur, Dharwad",
-    phone: "+91 836 2477777",
-    email: "sdmbloodbank@sdm.edu",
-    lat: 15.4589,
-    lng: 75.0078,
-    distanceKm: 17.8,
-    isOpen24Hours: true,
-    verified: true,
-    inventory: [
-      { group: "A+", units: 25, status: "Adequate", minThreshold: 15, expiring7Days: 2 },
-      { group: "A-", units: 5, status: "Low", minThreshold: 8, expiring7Days: 1 },
-      { group: "B+", units: 38, status: "Optimal", minThreshold: 20, expiring7Days: 3 },
-      { group: "B-", units: 6, status: "Low", minThreshold: 8, expiring7Days: 0 },
-      { group: "AB+", units: 15, status: "Adequate", minThreshold: 10, expiring7Days: 2 },
-      { group: "AB-", units: 3, status: "Low", minThreshold: 5, expiring7Days: 1 },
-      { group: "O+", units: 48, status: "Optimal", minThreshold: 25, expiring7Days: 5 },
-      { group: "O-", units: 5, status: "Low", minThreshold: 10, expiring7Days: 0 }
-    ]
   }
 ];
 
@@ -322,35 +335,18 @@ export const MOCK_CAMPS: DonationCamp[] = [
     bannerUrl: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=800&q=80",
     amenities: ["Free Refreshments", "Health Checkup", "Digital Certificate", "Donor T-Shirt"],
     isJoined: false
-  },
-  {
-    id: "camp_2",
-    title: "Community Lifesavers Camp Dharwad",
-    organizer: "Red Cross Society Karnataka",
-    venue: "Karnaataka College Ground (KCD), Dharwad",
-    date: "2026-08-20",
-    time: "10:00 AM - 05:00 PM",
-    expectedDonors: 150,
-    rsvpsCount: 92,
-    city: "Dharwad",
-    bannerUrl: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=800&q=80",
-    amenities: ["Juice & Snacks", "Donor Badge", "Doctor Consultation"],
-    isJoined: true
   }
 ];
 
-export const MOCK_LEADERBOARD: { monthly: LeaderboardItem[]; allTime: LeaderboardItem[] } = {
+export const MOCK_LEADERBOARD = {
   monthly: [
     { rank: 1, name: "Siddharth Rao", city: "Bengaluru", college: "RVCE", donations: 4, points: 1600, badge: "🏆 Monthly Legend" },
     { rank: 2, name: "Dr. Ananya Sharma", city: "Hubballi", college: "KIMS", donations: 3, points: 1250, badge: "🥇 Gold Donor" },
-    { rank: 3, name: "Kiran Joshi", city: "Dharwad", college: "SDM Tech", donations: 3, points: 1100, badge: "🥈 Fast Responder" },
-    { rank: 4, name: "Priya V", city: "Mysuru", college: "SJCE", donations: 2, points: 950, badge: "🥉 Lifesaver" },
-    { rank: 5, name: "Abhishek N", city: "Hubballi", college: "KLE Tech", donations: 2, points: 880, badge: "⭐ Hero" }
+    { rank: 3, name: "Kiran Joshi", city: "Dharwad", college: "SDM Tech", donations: 3, points: 1100, badge: "🥈 Fast Responder" }
   ],
   allTime: [
     { rank: 1, name: "Capt. Ramesh Naik", city: "Belagavi", college: "Veterans Association", donations: 48, points: 19200, badge: "👑 Lifetime Centurion" },
-    { rank: 2, name: "Dr. Ananya Sharma", city: "Hubballi", college: "KIMS Hospital", donations: 28, points: 11200, badge: "🛡️ O- Universal Guardian" },
-    { rank: 3, name: "Deepa Nayak", city: "Hubballi", college: "Rotary Club", donations: 24, points: 9600, badge: "🔥 10x Hero" }
+    { rank: 2, name: "Dr. Ananya Sharma", city: "Hubballi", college: "KIMS Hospital", donations: 28, points: 11200, badge: "🛡️ O- Universal Guardian" }
   ]
 };
 
@@ -358,16 +354,9 @@ export const MOCK_NOTIFICATIONS: NotificationItem[] = [
   {
     id: "n1",
     title: "🚨 Urgent Blood Alert",
-    message: "Critical O- blood needed at KIMS Hospital Hubballi (ICU Bed 14). You are a 98% matched donor!",
+    message: "Critical O- blood needed at KIMS Hospital Hubballi. Escalation Tier 1 active!",
     time: "10m ago",
     read: false,
     requestId: "req_101"
-  },
-  {
-    id: "n2",
-    title: "🏆 Badge Earned!",
-    message: "Congratulations! You unlocked the '3x Donor 2026' badge.",
-    time: "2h ago",
-    read: true
   }
 ];

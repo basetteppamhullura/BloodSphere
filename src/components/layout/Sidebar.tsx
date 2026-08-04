@@ -13,12 +13,12 @@ import {
   Tent,
   Trophy,
   User,
-  LogIn,
-  UserPlus,
-  Sun,
-  Moon,
   ShieldCheck,
-  ChevronRight
+  Users,
+  Truck,
+  ChevronRight,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -30,6 +30,9 @@ export const Sidebar: React.FC = () => {
     { tab: 'landing', label: 'Home Landing', icon: Home },
     { tab: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
     { tab: 'emergency-requests', label: 'Emergency Board', icon: AlertTriangle },
+    { tab: 'rare-registry', label: 'Rare Blood Registry', icon: ShieldCheck },
+    { tab: 'group-circles', label: 'Family & Circles', icon: Users },
+    { tab: 'blood-bridge', label: 'Inter-City Supply', icon: Truck },
     { tab: 'donor-search', label: 'Donor Directory', icon: Search },
     { tab: 'blood-banks', label: 'Blood Banks & Stock', icon: Building2 },
     { tab: 'camps', label: 'Donation Drives', icon: Tent },
@@ -75,7 +78,7 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Navigation Links */}
+      {/* Navigation Links */}
       <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
         <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold px-3 py-1 block">
           Navigation Pages
@@ -103,31 +106,9 @@ export const Sidebar: React.FC = () => {
             </button>
           );
         })}
-
-        <div className="pt-4 border-t border-slate-800/80 my-2 space-y-1">
-          <button
-            onClick={() => navigateTo('login')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-              activePage === 'login' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800/60'
-            }`}
-          >
-            <LogIn className="w-4 h-4 text-blue-400" />
-            <span>Login Page</span>
-          </button>
-
-          <button
-            onClick={() => navigateTo('register')}
-            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-              activePage === 'register' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800/60'
-            }`}
-          >
-            <UserPlus className="w-4 h-4 text-emerald-400" />
-            <span>Register Account</span>
-          </button>
-        </div>
       </nav>
 
-      {/* Theme Toggle & Bottom User Info */}
+      {/* Theme Toggle */}
       <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between text-xs">
         <button
           onClick={toggleTheme}
