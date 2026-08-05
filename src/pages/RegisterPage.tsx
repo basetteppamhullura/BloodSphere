@@ -18,7 +18,7 @@ export const RegisterPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     login(email, role);
-    showToast(`Account registered successfully! Welcome to BloodSphere.`);
+    showToast(`Account registered successfully! Welcome to Blood Net.`);
     navigateTo('dashboard');
   };
 
@@ -29,7 +29,7 @@ export const RegisterPage: React.FC = () => {
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-rose-600 text-white font-extrabold mx-auto flex items-center justify-center shadow-xl shadow-red-950">
           <Heart className="w-8 h-8 fill-white animate-pulse" />
         </div>
-        <h2 className="text-2xl font-black text-white tracking-tight">Join the BloodSphere Network</h2>
+        <h2 className="text-2xl font-black text-white tracking-tight">Join the Blood Net Network</h2>
         <p className="text-xs text-slate-400">Register as a voluntary donor, hospital desk, or requester</p>
       </div>
 
@@ -120,7 +120,7 @@ export const RegisterPage: React.FC = () => {
           type="submit"
           className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center justify-center gap-2"
         >
-          <UserPlus className="w-4 h-4" /> Create BloodSphere Account
+          <UserPlus className="w-4 h-4" /> Create Blood Net Account
         </button>
 
       </form>

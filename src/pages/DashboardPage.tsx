@@ -78,7 +78,7 @@ export const DashboardPage: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-black text-white tracking-tight">
-              Blood<span className="text-red-500">Sphere</span> Dashboard
+              Blood<span className="text-red-500">Net</span> Dashboard
             </h2>
             <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-red-950 text-red-300 border border-red-800 uppercase tracking-wider">
               {currentRole} Mode

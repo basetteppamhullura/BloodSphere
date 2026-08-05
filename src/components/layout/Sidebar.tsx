@@ -58,7 +58,7 @@ export const Sidebar: React.FC = () => {
         </div>
         <div>
           <h1 className="font-extrabold text-base tracking-tight text-white flex items-center gap-1">
-            Blood<span className="text-red-500">Sphere</span>
+            Blood<span className="text-red-500">Net</span>
           </h1>
           <p className="text-[10px] text-slate-400 font-medium">Healthcare Donor Network</p>
         </div>

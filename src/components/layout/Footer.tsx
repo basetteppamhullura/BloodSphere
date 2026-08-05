@@ -12,7 +12,7 @@ export const Footer: React.FC = () => {
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <Heart className="w-5 h-5 text-red-500 fill-red-500" />
-            <span className="font-extrabold text-slate-100 text-base">BloodSphere Healthcare</span>
+            <span className="font-extrabold text-slate-100 text-base">Blood Net Healthcare</span>
           </div>
           <p className="text-slate-400 text-xs leading-relaxed">
             Real-Time Blood Donor Network connecting donors, recipients, hospitals, and blood banks across India.
@@ -53,7 +53,7 @@ export const Footer: React.FC = () => {
             </div>
             <div className="flex items-center gap-2 text-slate-300">
               <Mail className="w-4 h-4 text-blue-400" />
-              <span>emergency@bloodsphere.org</span>
+              <span>emergency@bloodnet.org</span>
             </div>
             <p className="text-[11px] text-slate-500 pt-2">
               Hubballi • Dharwad • Bengaluru • Belagavi • Karnataka Network
@@ -64,7 +64,7 @@ export const Footer: React.FC = () => {
       </div>
 
       <div className="max-w-7xl mx-auto border-t border-slate-800/80 mt-8 pt-6 flex flex-col sm:flex-row justify-between items-center text-[11px] text-slate-500 gap-4">
-        <div>© 2026 BloodSphere Healthcare. All Rights Reserved.</div>
+        <div>© 2026 Blood Net Healthcare. All Rights Reserved.</div>
         <div className="flex gap-4">
           <span className="hover:text-slate-300 cursor-pointer">Privacy Policy</span>
           <span className="hover:text-slate-300 cursor-pointer">Terms of Service</span>

@@ -20,8 +20,6 @@ import {
 export const LandingPage: React.FC = () => {
   const { navigateTo, setActiveEmergencyPostModal, requests } = useApp();
 
-  const urgentRequests = requests.slice(0, 3);
-
   return (
     <div className="space-y-16 animate-in fade-in">
       
@@ -39,7 +37,7 @@ export const LandingPage: React.FC = () => {
         </h1>
 
         <p className="text-sm lg:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
-          BloodSphere connects voluntary blood donors with hospitals, blood banks, and emergency trauma patients using AI matching, backup escalation queues, and verified hospital co-signs.
+          Blood Net connects voluntary blood donors with hospitals, blood banks, and emergency trauma patients using AI matching, backup escalation queues, and verified hospital co-signs.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
@@ -89,7 +87,7 @@ export const LandingPage: React.FC = () => {
 
       {/* How it Works */}
       <section className="space-y-6 text-center">
-        <h2 className="text-2xl font-bold text-white">How BloodSphere Saves Lives</h2>
+        <h2 className="text-2xl font-bold text-white">How Blood Net Saves Lives</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
           
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">

@@ -40,7 +40,7 @@ export const LoginPage: React.FC = () => {
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-rose-600 text-white font-extrabold mx-auto flex items-center justify-center shadow-xl shadow-red-950">
           <Heart className="w-8 h-8 fill-white animate-pulse" />
         </div>
-        <h2 className="text-2xl font-black text-white tracking-tight">Login to BloodSphere</h2>
+        <h2 className="text-2xl font-black text-white tracking-tight">Login to Blood Net</h2>
         <p className="text-xs text-slate-400">Select your role perspective to access your dedicated dashboard</p>
       </div>
 
