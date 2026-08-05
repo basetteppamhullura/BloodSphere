@@ -2,7 +2,7 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { PageTab } from '../../types';
+import { PageTab, UserRole } from '../../types';
 import {
   Heart,
   Home,
@@ -40,6 +40,14 @@ export const Sidebar: React.FC = () => {
     { tab: 'profile', label: 'My Health Profile', icon: User }
   ];
 
+  const roles: { role: UserRole; label: string }[] = [
+    { role: 'donor', label: 'Donor' },
+    { role: 'requester', label: 'Requester' },
+    { role: 'hospital', label: 'Hospital' },
+    { role: 'bloodbank', label: 'Blood Bank' },
+    { role: 'admin', label: 'Admin' }
+  ];
+
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-slate-900 border-r border-slate-800/80 min-h-screen sticky top-0 z-40 text-slate-300">
       
@@ -50,7 +58,7 @@ export const Sidebar: React.FC = () => {
         </div>
         <div>
           <h1 className="font-extrabold text-base tracking-tight text-white flex items-center gap-1">
-            Blood<span className="text-red-500">Net</span>
+            Blood<span className="text-red-500">Sphere</span>
           </h1>
           <p className="text-[10px] text-slate-400 font-medium">Healthcare Donor Network</p>
         </div>
@@ -59,20 +67,20 @@ export const Sidebar: React.FC = () => {
       {/* Role Switcher Pill */}
       <div className="p-4 border-b border-slate-800/60 bg-slate-950/40">
         <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block mb-1.5">
-          Role Perspective:
+          Active Role Perspective:
         </span>
         <div className="grid grid-cols-2 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
-          {(['donor', 'requester', 'hospital', 'admin'] as const).map(role => (
+          {roles.map(r => (
             <button
-              key={role}
-              onClick={() => switchRole(role)}
+              key={r.role}
+              onClick={() => switchRole(r.role)}
               className={`py-1 rounded text-[10px] font-bold capitalize transition-all ${
-                currentRole === role
+                currentRole === r.role
                   ? 'bg-red-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
-              {role}
+              {r.label}
             </button>
           ))}
         </div>

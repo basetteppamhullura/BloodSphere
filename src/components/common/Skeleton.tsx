@@ -36,3 +36,6 @@ export const TableSkeleton: React.FC = () => {
     </div>
   );
 };
+
+export const SkeletonCard = CardSkeleton;
+export const SkeletonRow = TableSkeleton;

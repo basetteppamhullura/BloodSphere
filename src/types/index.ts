@@ -2,7 +2,7 @@ export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-'
 
 export type UrgencyLevel = 'CRITICAL' | 'HIGH' | 'MODERATE';
 
-export type UserRole = 'donor' | 'requester' | 'hospital' | 'admin';
+export type UserRole = 'donor' | 'requester' | 'hospital' | 'bloodbank' | 'admin';
 
 export type PageTab = 
   | 'landing' 
@@ -18,6 +18,15 @@ export type PageTab =
   | 'rare-registry'
   | 'group-circles'
   | 'blood-bridge';
+
+export type RequestWorkflowStatus = 
+  | 'PENDING_HOSPITAL_APPROVAL'
+  | 'APPROVED'
+  | 'SEARCHING_DONORS'
+  | 'DONOR_CONFIRMED'
+  | 'APPOINTMENT_SCHEDULED'
+  | 'COMPLETED'
+  | 'REJECTED';
 
 export interface Badge {
   id: string;
@@ -66,6 +75,15 @@ export interface User {
   hbTrendHistory?: { date: string; hb: number }[];
 }
 
+export interface AppointmentDetails {
+  date: string;
+  time: string;
+  venue: string;
+  assignedDonorId: string;
+  assignedDonorName: string;
+  assignedDonorPhone: string;
+}
+
 export interface EmergencyRequest {
   id: string;
   patientName: string;
@@ -78,10 +96,17 @@ export interface EmergencyRequest {
   state: string;
   contactPerson: string;
   maskedPhone: string;
+  contactPhone?: string;
   requestedAt: string;
   deadline: string;
+  requiredDate?: string;
   reason: string;
-  status: 'ACTIVE' | 'FULFILLED' | 'EXPIRED';
+  additionalNotes?: string;
+  hospitalNotes?: string;
+  status: RequestWorkflowStatus;
+  assignedDonorId?: string;
+  assignedDonorName?: string;
+  appointmentDetails?: AppointmentDetails;
   aiUrgencyScore: number;
   decayScore?: number;
   trendingReason?: string;

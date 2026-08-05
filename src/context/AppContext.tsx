@@ -19,7 +19,7 @@ import {
   MOCK_NOTIFICATIONS,
   MOCK_GROUP_CIRCLES,
   MOCK_INTERCITY_TRANSFERS
-} from '../data/mockData';
+} from '../data/mockData.ts';
 
 interface AppContextType {
   activePage: PageTab;
@@ -27,6 +27,15 @@ interface AppContextType {
   isLoading: boolean;
   requests: EmergencyRequest[];
   createEmergencyRequest: (req: Partial<EmergencyRequest>) => void;
+  
+  // Workflow Phase Handlers
+  approveRequestByHospital: (requestId: string, notes?: string) => void;
+  rejectRequestByHospital: (requestId: string, reason?: string) => void;
+  donorAcceptRequest: (requestId: string, donorId: string) => void;
+  donorDeclineRequest: (requestId: string, donorId: string) => void;
+  scheduleDonationAppointment: (requestId: string, date: string, time: string, venue: string) => void;
+  markDonationCompleted: (requestId: string) => void;
+
   donors: Donor[];
   bloodBanks: BloodBank[];
   updateInventoryStock: (bankId: string, group: string, change: number) => void;
@@ -68,7 +77,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [groupCircles, setGroupCircles] = useState<GroupCircle[]>(MOCK_GROUP_CIRCLES);
   const [interCityTransfers] = useState<InterCityTransfer[]>(MOCK_INTERCITY_TRANSFERS);
   const [leaderboard] = useState(MOCK_LEADERBOARD);
-  const [notifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
+  const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -96,42 +105,184 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 3500);
   };
 
+  // Step 1: Requester creates request
   const createEmergencyRequest = (newReq: Partial<EmergencyRequest>) => {
-    const units = newReq.unitsNeeded || 1;
-    const requiresCoSign = units > 4;
-
     const created: EmergencyRequest = {
       id: `req_${Date.now()}`,
       patientName: newReq.patientName || "Emergency Patient",
       bloodGroup: newReq.bloodGroup || "O-",
-      unitsNeeded: units,
+      unitsNeeded: newReq.unitsNeeded || 1,
       unitsFulfilled: 0,
       urgency: newReq.urgency || "CRITICAL",
-      hospitalName: newReq.hospitalName || "City Civil Hospital",
+      hospitalName: newReq.hospitalName || "KIMS Teaching Hospital",
       city: newReq.city || "Hubballi",
       state: "Karnataka",
       contactPerson: newReq.contactPerson || "Attendant",
       maskedPhone: "+91 98*** **412",
+      contactPhone: newReq.contactPhone || "+91 98765 43210",
       requestedAt: new Date().toISOString(),
       deadline: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+      requiredDate: newReq.requiredDate || new Date().toISOString().split('T')[0],
       reason: newReq.reason || "Urgent medical transfusion requirement",
-      status: "ACTIVE",
+      additionalNotes: newReq.additionalNotes || "Patient requires urgent blood assistance.",
+      status: "PENDING_HOSPITAL_APPROVAL", // Initial Step 1 Status
       aiUrgencyScore: newReq.urgency === "CRITICAL" ? 98 : 84,
       decayScore: 95,
-      trendingReason: requiresCoSign ? "High Unit Demand (>4 units) • Hospital Verified" : "Urgent Regional Request",
+      trendingReason: "Pending Hospital Verification",
       sharesCount: 1,
-      matchedDonorsCount: 6,
-      requiresHospitalCoSign: requiresCoSign,
-      isCoSignedByHospital: true,
+      matchedDonorsCount: 4,
       lat: 15.3688,
       lng: 75.1274
     };
 
     setRequests(prev => [created, ...prev]);
-    showToast(requiresCoSign
-      ? `Request submitted! Hospital co-sign verified for >4 units.`
-      : `Emergency Request published! 6 nearby donors notified.`
+    showToast(`Request submitted! Sent to ${created.hospitalName} for hospital verification.`);
+  };
+
+  // Step 2: Hospital Approves Request
+  const approveRequestByHospital = (requestId: string, notes?: string) => {
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          showToast(`Request approved by hospital! Matching algorithms activated for ${r.bloodGroup} donors.`);
+          return {
+            ...r,
+            status: "APPROVED",
+            hospitalNotes: notes || "Approved by Hospital Blood Desk.",
+            trendingReason: "Hospital Verified • Matching Donors Search Active"
+          };
+        }
+        return r;
+      })
     );
+  };
+
+  // Step 2: Hospital Rejects Request
+  const rejectRequestByHospital = (requestId: string, reason?: string) => {
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          showToast(`Request rejected by hospital.`);
+          return {
+            ...r,
+            status: "REJECTED",
+            hospitalNotes: reason || "Incomplete patient documentation."
+          };
+        }
+        return r;
+      })
+    );
+  };
+
+  // Step 4/5: Donor Accepts Request
+  const donorAcceptRequest = (requestId: string, donorId: string) => {
+    const donorObj = donors.find(d => d.id === donorId) || donors[0];
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          showToast(`Donor ${donorObj.name} accepted! Requester and Hospital notified.`);
+          return {
+            ...r,
+            status: "DONOR_CONFIRMED",
+            assignedDonorId: donorObj.id,
+            assignedDonorName: donorObj.name
+          };
+        }
+        return r;
+      })
+    );
+
+    // Push Notification
+    setNotifications(prev => [
+      {
+        id: `notif_${Date.now()}`,
+        title: "✅ Donor Confirmed!",
+        message: `${donorObj.name} accepted request for patient. Hospital scheduling appointment.`,
+        time: "Just now",
+        read: false,
+        requestId
+      },
+      ...prev
+    ]);
+  };
+
+  // Step 4: Donor Declines Request -> Auto-notifies next donor
+  const donorDeclineRequest = (requestId: string, donorId: string) => {
+    showToast(`Donor declined. Escalation queue auto-notifying next tier donor.`);
+    setNotifications(prev => [
+      {
+        id: `notif_${Date.now()}`,
+        title: "⚡ Auto-Escalation Active",
+        message: `Donor declined. Escalation engine notified next Tier 2 matching donor.`,
+        time: "Just now",
+        read: false,
+        requestId
+      },
+      ...prev
+    ]);
+  };
+
+  // Step 6: Hospital Schedules Appointment
+  const scheduleDonationAppointment = (requestId: string, date: string, time: string, venue: string) => {
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          const donorName = r.assignedDonorName || "Dr. Ananya Sharma";
+          showToast(`Appointment scheduled for ${date} at ${time}!`);
+          return {
+            ...r,
+            status: "APPOINTMENT_SCHEDULED",
+            appointmentDetails: {
+              date,
+              time,
+              venue: venue || `${r.hospitalName} Blood Bank Unit`,
+              assignedDonorId: r.assignedDonorId || "usr_donor_001",
+              assignedDonorName: donorName,
+              assignedDonorPhone: "+91 98765 43210"
+            }
+          };
+        }
+        return r;
+      })
+    );
+  };
+
+  // Step 7: Mark Donation Completed
+  const markDonationCompleted = (requestId: string) => {
+    let targetReq: EmergencyRequest | undefined;
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          targetReq = r;
+          showToast(`🎉 Donation completed! Awarded +250 pts, certificate generated, and inventory stock updated!`);
+          return {
+            ...r,
+            status: "COMPLETED",
+            unitsFulfilled: r.unitsNeeded
+          };
+        }
+        return r;
+      })
+    );
+
+    // Auto-update Blood Inventory stock (+units)
+    if (targetReq) {
+      const hospitalName = targetReq.hospitalName;
+      setBloodBanks(prevBanks =>
+        prevBanks.map(bank => {
+          if (bank.name.toLowerCase().includes(hospitalName.toLowerCase()) || bank.id === 'bb_1') {
+            const updatedInv = bank.inventory.map(item => {
+              if (item.group === targetReq?.bloodGroup) {
+                return { ...item, units: item.units + (targetReq?.unitsNeeded || 1) };
+              }
+              return item;
+            });
+            return { ...bank, inventory: updatedInv };
+          }
+          return bank;
+        })
+      );
+    }
   };
 
   const toggleCampRSVP = (campId: string) => {
@@ -195,6 +346,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isLoading,
         requests,
         createEmergencyRequest,
+        approveRequestByHospital,
+        rejectRequestByHospital,
+        donorAcceptRequest,
+        donorDeclineRequest,
+        scheduleDonationAppointment,
+        markDonationCompleted,
         donors,
         bloodBanks,
         updateInventoryStock,

@@ -1,147 +1,513 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { CardSkeleton } from '../components/common/Skeleton';
+import { useAuth } from '../context/AuthContext';
+import { SkeletonCard, SkeletonRow } from '../components/common/Skeleton';
 import {
-  LayoutDashboard,
-  Heart,
+  Activity,
   AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Heart,
+  PlusCircle,
+  ShieldCheck,
+  Sparkles,
   Users,
   Building2,
+  Calendar,
+  Award,
+  ChevronRight,
   TrendingUp,
-  PlusCircle,
+  XCircle,
+  Check,
+  FileText,
   MapPin,
-  Clock,
-  Sparkles,
-  CheckCircle2,
-  ShieldAlert
+  Phone,
+  Droplet
 } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
-  const { navigateTo, isLoading, requests, bloodBanks, donors, setActiveEmergencyPostModal } = useApp();
+  const {
+    isLoading,
+    requests,
+    approveRequestByHospital,
+    rejectRequestByHospital,
+    donorAcceptRequest,
+    donorDeclineRequest,
+    scheduleDonationAppointment,
+    markDonationCompleted,
+    bloodBanks,
+    updateInventoryStock,
+    donors,
+    setActiveSmartMatchModal,
+    setActiveEmergencyPostModal,
+    setActiveCertificateModal,
+    showToast
+  } = useApp();
+
+  const { currentRole, currentUser } = useAuth();
+
+  // Schedule Modal State
+  const [scheduleModalReqId, setScheduleModalReqId] = useState<string | null>(null);
+  const [schDate, setSchDate] = useState<string>('2026-08-07');
+  const [schTime, setSchTime] = useState<string>('10:00 AM');
+  const [schVenue, setSchVenue] = useState<string>('KIMS Hospital Blood Bank Unit');
 
   if (isLoading) {
     return (
-      <div className="space-y-6 animate-in fade-in">
-        <div className="h-8 w-48 bg-slate-800 rounded-xl animate-pulse"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => <CardSkeleton key={i} />)}
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <CardSkeleton />
-          <CardSkeleton />
-        </div>
+      <div className="space-y-6">
+        <SkeletonCard />
+        <SkeletonRow />
+        <SkeletonCard />
       </div>
     );
   }
 
+  const handleScheduleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (scheduleModalReqId) {
+      scheduleDonationAppointment(scheduleModalReqId, schDate, schTime, schVenue);
+      setScheduleModalReqId(null);
+    }
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in">
       
-      {/* Top Banner & Quick Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-red-950/40 border border-slate-800 shadow-xl">
+      {/* Top Banner & Role Indicator */}
+      <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-red-950/60 border border-slate-800 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-black text-white flex items-center gap-2">
-            <LayoutDashboard className="w-6 h-6 text-red-500" /> Executive Dashboard
-          </h2>
-          <p className="text-xs text-slate-400 mt-1">Real-time emergency monitoring, donor availability & stock gauges</p>
+          <div className="flex items-center gap-2">
+            <h2 className="text-2xl font-black text-white tracking-tight">
+              Blood<span className="text-red-500">Sphere</span> Dashboard
+            </h2>
+            <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-red-950 text-red-300 border border-red-800 uppercase tracking-wider">
+              {currentRole} Mode
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 mt-1">
+            Real-Time Blood Donor Network • Hubballi-Dharwad Regional Grid
+          </p>
         </div>
 
         <button
           onClick={() => setActiveEmergencyPostModal(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 transition-all hover:scale-105 active:scale-95"
+          className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center justify-center gap-2 transition-all hover:scale-105"
         >
-          <PlusCircle className="w-4 h-4" /> Post Emergency Need
+          <PlusCircle className="w-4 h-4" /> Create Blood Request
         </button>
       </div>
 
-      {/* Analytics KPI Widgets */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { title: 'Active Emergency Needs', count: `${requests.filter(r => r.status === 'ACTIVE').length} Active`, icon: AlertTriangle, color: 'text-red-400', link: 'emergency-requests' },
-          { title: 'Verified Donors Nearby', count: `${donors.length} Donors`, icon: Users, color: 'text-blue-400', link: 'donor-search' },
-          { title: 'Blood Banks Active', count: `${bloodBanks.length} Facilities`, icon: Building2, color: 'text-emerald-400', link: 'blood-banks' },
-          { title: 'Critical Stock Groups', count: 'O-, AB-', icon: ShieldAlert, color: 'text-amber-400', link: 'blood-banks' }
-        ].map((widget, i) => (
-          <div
-            key={i}
-            onClick={() => navigateTo(widget.link as any)}
-            className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-slate-700 transition-all cursor-pointer space-y-2 group"
-          >
-            <div className="flex justify-between items-center">
-              <span className="text-xs font-semibold text-slate-400">{widget.title}</span>
-              <widget.icon className={`w-5 h-5 ${widget.color}`} />
-            </div>
-            <div className="text-2xl font-black text-white group-hover:text-red-400 transition-colors">
-              {widget.count}
-            </div>
-            <span className="text-[10px] text-slate-500 block">Click to manage & view directory</span>
-          </div>
-        ))}
-      </div>
-
-      {/* Main Grid: Urgent Requests Feed + Blood Bank Stock Alerts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Recent Urgent Requests */}
-        <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+      {/* ---------------------------------------------------- */}
+      {/* 1. REQUESTER DASHBOARD VIEW                           */}
+      {/* ---------------------------------------------------- */}
+      {currentRole === 'requester' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
             <h3 className="font-bold text-base text-white flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-500 animate-pulse" /> Recent Emergency Requests
+              <FileText className="w-5 h-5 text-red-500" /> My Blood Requests & 7-Step Life-Cycle Tracker
             </h3>
-            <button
-              onClick={() => navigateTo('emergency-requests')}
-              className="text-xs font-bold text-red-400 hover:underline"
-            >
-              View All
-            </button>
+            <span className="text-xs text-slate-400">Total Requests: {requests.length}</span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-6">
             {requests.map(req => (
-              <div key={req.id} className="p-4 rounded-xl bg-slate-800/40 border border-slate-800 flex items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-red-600 text-white font-extrabold flex items-center justify-center">
-                    {req.bloodGroup}
-                  </div>
+              <div key={req.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl">
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
                   <div>
-                    <h4 className="font-bold text-slate-200">{req.patientName}</h4>
-                    <p className="text-[11px] text-slate-400">{req.hospitalName}, {req.city}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="w-8 h-8 rounded-xl bg-red-600 text-white font-extrabold text-xs flex items-center justify-center">
+                        {req.bloodGroup}
+                      </span>
+                      <h4 className="font-extrabold text-base text-white">{req.patientName}</h4>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-amber-400 border border-slate-700">
+                        {req.unitsNeeded} Units
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {req.hospitalName}, {req.city} • Required Date: <strong>{req.requiredDate || 'Immediate'}</strong>
+                    </p>
+                  </div>
+
+                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold border ${
+                    req.status === 'COMPLETED'
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                      : req.status === 'APPOINTMENT_SCHEDULED'
+                      ? 'bg-indigo-950 text-indigo-300 border-indigo-800'
+                      : req.status === 'DONOR_CONFIRMED'
+                      ? 'bg-blue-950 text-blue-300 border-blue-800'
+                      : req.status === 'APPROVED'
+                      ? 'bg-amber-950 text-amber-300 border-amber-800'
+                      : 'bg-slate-800 text-slate-300 border-slate-700'
+                  }`}>
+                    Status: {req.status.replace(/_/g, ' ')}
+                  </span>
+                </div>
+
+                {/* Step-by-Step Pipeline Tracker */}
+                <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                    Workflow Progress Pipeline:
+                  </span>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-[10px]">
+                    <div className={`p-2 rounded-xl border font-bold ${
+                      req.status !== 'REJECTED' ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-500'
+                    }`}>
+                      1. Created
+                    </div>
+
+                    <div className={`p-2 rounded-xl border font-bold ${
+                      ['APPROVED', 'DONOR_CONFIRMED', 'APPOINTMENT_SCHEDULED', 'COMPLETED'].includes(req.status)
+                        ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
+                        : req.status === 'PENDING_HOSPITAL_APPROVAL'
+                        ? 'bg-amber-950/60 border-amber-800 text-amber-300 animate-pulse'
+                        : 'bg-slate-900 border-slate-800 text-slate-500'
+                    }`}>
+                      2. Hospital Approved
+                    </div>
+
+                    <div className={`p-2 rounded-xl border font-bold ${
+                      ['DONOR_CONFIRMED', 'APPOINTMENT_SCHEDULED', 'COMPLETED'].includes(req.status)
+                        ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
+                        : req.status === 'APPROVED'
+                        ? 'bg-blue-950/60 border-blue-800 text-blue-300 animate-pulse'
+                        : 'bg-slate-900 border-slate-800 text-slate-500'
+                    }`}>
+                      3. Donor Confirmed
+                    </div>
+
+                    <div className={`p-2 rounded-xl border font-bold ${
+                      ['APPOINTMENT_SCHEDULED', 'COMPLETED'].includes(req.status)
+                        ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
+                        : req.status === 'DONOR_CONFIRMED'
+                        ? 'bg-indigo-950/60 border-indigo-800 text-indigo-300 animate-pulse'
+                        : 'bg-slate-900 border-slate-800 text-slate-500'
+                    }`}>
+                      4. Appt Scheduled
+                    </div>
+
+                    <div className={`p-2 rounded-xl border font-bold ${
+                      req.status === 'COMPLETED' ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-500'
+                    }`}>
+                      5. Completed
+                    </div>
                   </div>
                 </div>
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-red-950 text-red-400 border border-red-800">
-                  {req.urgency}
-                </span>
+
+                {/* Assigned Donor & Appointment Details */}
+                {req.appointmentDetails && (
+                  <div className="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-800/80 space-y-2 text-xs">
+                    <span className="font-extrabold text-indigo-300 flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4" /> Confirmed Donation Appointment:
+                    </span>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-slate-300">
+                      <div>Date: <strong className="text-white">{req.appointmentDetails.date}</strong></div>
+                      <div>Time: <strong className="text-white">{req.appointmentDetails.time}</strong></div>
+                      <div>Venue: <strong className="text-white">{req.appointmentDetails.venue}</strong></div>
+                      <div>Donor: <strong className="text-amber-400">{req.appointmentDetails.assignedDonorName}</strong></div>
+                    </div>
+                  </div>
+                )}
+
               </div>
             ))}
           </div>
         </div>
+      )}
 
-        {/* Hospital Inventory Stock Gauges */}
-        <div className="p-6 rounded-3xl bg-slate-900/80 border border-slate-800 space-y-4">
-          <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+      {/* ---------------------------------------------------- */}
+      {/* 2. HOSPITAL DASHBOARD VIEW                            */}
+      {/* ---------------------------------------------------- */}
+      {currentRole === 'hospital' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
             <h3 className="font-bold text-base text-white flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-emerald-400" /> KIMS Blood Bank Live Stock
+              <Building2 className="w-5 h-5 text-blue-400" /> Hospital Blood Verification & Appointment Desk
             </h3>
-            <button
-              onClick={() => navigateTo('blood-banks')}
-              className="text-xs font-bold text-emerald-400 hover:underline"
-            >
-              Full Inventory
-            </button>
+            <span className="text-xs text-slate-400">Incoming Requests Queue</span>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {bloodBanks[0]?.inventory.map(item => (
-              <div key={item.group} className="p-3 rounded-xl bg-slate-800/50 border border-slate-800 text-center">
-                <span className="font-extrabold text-lg text-white block">{item.group}</span>
-                <span className="text-xl font-black text-emerald-400">{item.units}</span>
-                <span className="text-[10px] text-slate-400 block mt-1">{item.status}</span>
+          <div className="space-y-4">
+            {requests.map(req => (
+              <div key={req.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+                
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-extrabold text-xs">
+                        {req.bloodGroup}
+                      </span>
+                      <h4 className="font-extrabold text-base text-white">{req.patientName}</h4>
+                      <span className="text-xs text-slate-400">({req.unitsNeeded} Units needed)</span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Requester Contact: <strong>{req.contactPerson} ({req.maskedPhone})</strong> • Hospital: <strong>{req.hospitalName}</strong>
+                    </p>
+                  </div>
+
+                  {/* Step 2 Actions */}
+                  {req.status === 'PENDING_HOSPITAL_APPROVAL' && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => approveRequestByHospital(req.id)}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md flex items-center gap-1"
+                      >
+                        <Check className="w-4 h-4" /> Approve Request
+                      </button>
+
+                      <button
+                        onClick={() => rejectRequestByHospital(req.id)}
+                        className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 flex items-center gap-1"
+                      >
+                        <XCircle className="w-4 h-4 text-red-400" /> Reject
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Step 6 Actions: Schedule Appointment */}
+                  {req.status === 'DONOR_CONFIRMED' && (
+                    <button
+                      onClick={() => setScheduleModalReqId(req.id)}
+                      className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5"
+                    >
+                      <Calendar className="w-4 h-4" /> Schedule Appointment
+                    </button>
+                  )}
+
+                  {/* Step 7 Actions: Mark Donation Completed */}
+                  {req.status === 'APPOINTMENT_SCHEDULED' && (
+                    <button
+                      onClick={() => markDonationCompleted(req.id)}
+                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-950 flex items-center gap-1.5"
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Mark Donation Completed
+                    </button>
+                  )}
+
+                  {req.status === 'COMPLETED' && (
+                    <span className="px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 font-bold text-xs border border-emerald-800 flex items-center gap-1">
+                      <CheckCircle2 className="w-4 h-4" /> Completed & Stocked
+                    </span>
+                  )}
+                </div>
+
               </div>
             ))}
           </div>
         </div>
+      )}
 
-      </div>
+      {/* ---------------------------------------------------- */}
+      {/* 3. DONOR DASHBOARD VIEW                               */}
+      {/* ---------------------------------------------------- */}
+      {currentRole === 'donor' && (
+        <div className="space-y-6">
+          
+          {/* Donor Stats Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-xs text-slate-400">Total Donations</span>
+              <span className="text-2xl font-black text-white block">{currentUser?.totalDonations || 7}</span>
+            </div>
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-xs text-slate-400">Reward Points</span>
+              <span className="text-2xl font-black text-amber-400 block">{currentUser?.points || 1250} pts</span>
+            </div>
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-xs text-slate-400">Donation Streak</span>
+              <span className="text-2xl font-black text-rose-500 block">🔥 {currentUser?.streak || 4}x</span>
+            </div>
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-xs text-slate-400">Eligibility Status</span>
+              <span className="text-xs font-bold text-emerald-400 block mt-1">Eligible to Donate</span>
+            </div>
+          </div>
+
+          {/* Active Nearby Requests for Donor */}
+          <div className="space-y-4">
+            <h3 className="font-bold text-base text-white flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" /> Urgent Nearby Requests Matching ({currentUser?.bloodGroup || 'O-'})
+            </h3>
+
+            <div className="space-y-4">
+              {requests.map(req => (
+                <div key={req.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-extrabold text-xs">
+                          {req.bloodGroup}
+                        </span>
+                        <h4 className="font-extrabold text-base text-white">{req.patientName}</h4>
+                        <span className="text-xs text-slate-400">({req.unitsNeeded} Units needed)</span>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Hospital: <strong>{req.hospitalName}</strong> • Reason: {req.reason}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => donorAcceptRequest(req.id, currentUser?.id || 'usr_donor_001')}
+                        className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center gap-1.5"
+                      >
+                        <Check className="w-4 h-4" /> Accept & Confirm
+                      </button>
+
+                      <button
+                        onClick={() => donorDeclineRequest(req.id, currentUser?.id || 'usr_donor_001')}
+                        className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold text-xs border border-slate-700"
+                      >
+                        Decline
+                      </button>
+                    </div>
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* 4. BLOOD BANK DASHBOARD VIEW                          */}
+      {/* ---------------------------------------------------- */}
+      {currentRole === 'bloodbank' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-base text-white flex items-center gap-2">
+              <Droplet className="w-5 h-5 text-red-500" /> Regional Blood Stock & Inventory Management
+            </h3>
+            <span className="text-xs text-slate-400">KIMS Regional Center</span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {bloodBanks.map(bank => (
+              <div key={bank.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+                <h4 className="font-extrabold text-base text-white">{bank.name}</h4>
+                
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  {bank.inventory.map(item => (
+                    <div key={item.group} className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between">
+                      <span className="font-extrabold text-red-400 text-sm">{item.group}</span>
+                      <span className="text-lg font-black text-white">{item.units} Units</span>
+                      
+                      <div className="flex items-center gap-1 mt-2">
+                        <button
+                          onClick={() => updateInventoryStock(bank.id, item.group, 1)}
+                          className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold"
+                        >
+                          +1
+                        </button>
+                        <button
+                          onClick={() => updateInventoryStock(bank.id, item.group, -1)}
+                          className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold"
+                        >
+                          -1
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* 5. ADMIN DASHBOARD VIEW                               */}
+      {/* ---------------------------------------------------- */}
+      {currentRole === 'admin' && (
+        <div className="space-y-6">
+          <h3 className="font-bold text-base text-white flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-400" /> Super Admin Network Control & Analytics
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+              <span className="text-slate-400">Total Registered Donors</span>
+              <span className="text-2xl font-black text-white block mt-1">4,820</span>
+            </div>
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+              <span className="text-slate-400">Verified Hospitals</span>
+              <span className="text-2xl font-black text-blue-400 block mt-1">42</span>
+            </div>
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+              <span className="text-slate-400">Active Blood Banks</span>
+              <span className="text-2xl font-black text-emerald-400 block mt-1">18</span>
+            </div>
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
+              <span className="text-slate-400">Successful Match Rate</span>
+              <span className="text-2xl font-black text-amber-400 block mt-1">98.4%</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Schedule Appointment Modal */}
+      {scheduleModalReqId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 text-xs">
+            <h3 className="font-extrabold text-base text-white">Schedule Donation Appointment</h3>
+            
+            <form onSubmit={handleScheduleSubmit} className="space-y-3">
+              <div>
+                <label className="text-slate-400 block mb-1">Appointment Date</label>
+                <input
+                  type="date"
+                  value={schDate}
+                  onChange={e => setSchDate(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-400 block mb-1">Appointment Time</label>
+                <input
+                  type="text"
+                  value={schTime}
+                  onChange={e => setSchTime(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-400 block mb-1">Hospital Venue</label>
+                <input
+                  type="text"
+                  value={schVenue}
+                  onChange={e => setSchVenue(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setScheduleModalReqId(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
+                >
+                  Confirm Appointment
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
     </div>
   );
