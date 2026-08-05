@@ -3,167 +3,119 @@ import { useApp } from '../context/AppContext';
 import {
   Heart,
   Search,
-  AlertTriangle,
-  Users,
-  Building2,
+  PlusCircle,
   ShieldCheck,
   Zap,
+  Users,
+  Activity,
   Award,
+  ChevronRight,
   ArrowRight,
-  CheckCircle2,
-  MapPin,
+  Sparkles,
+  Building2,
   Clock,
-  Sparkles
+  Phone
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
-  const { navigateTo, requests, setActiveEmergencyPostModal } = useApp();
+  const { navigateTo, setActiveEmergencyPostModal, requests } = useApp();
+
+  const urgentRequests = requests.slice(0, 3);
 
   return (
     <div className="space-y-16 animate-in fade-in">
       
       {/* Hero Section */}
-      <section className="relative rounded-3xl bg-gradient-to-br from-slate-900 via-slate-900 to-red-950/60 border border-slate-800 p-8 lg:p-14 overflow-hidden shadow-2xl">
-        <div className="max-w-3xl space-y-6 relative z-10">
-          
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/80 border border-red-800/60 text-xs font-bold text-red-400">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-            <span>REAL-TIME BLOOD DONOR NETWORK</span>
-          </div>
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-slate-900 via-slate-900 to-red-950/40 border border-slate-800 p-8 lg:p-14 text-center space-y-6 shadow-2xl">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950 text-red-300 border border-red-800 text-xs font-bold animate-pulse">
+          <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Real-Time Blood Donor Network • Hubballi-Dharwad Grid
+        </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
-            Connecting Lifesavers with Urgent Blood Needs in <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 via-rose-500 to-amber-400">Seconds</span>.
-          </h1>
+        <h1 className="text-4xl lg:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto">
+          Every Drop Counts. <br className="hidden sm:inline" />
+          <span className="bg-gradient-to-r from-red-500 via-rose-400 to-amber-300 bg-clip-text text-transparent">
+            Connect Donors with Patients in Real Time.
+          </span>
+        </h1>
 
-          <p className="text-sm sm:text-base text-slate-300 leading-relaxed font-normal">
-            A fast, mobile-first platform bringing together voluntary blood donors, emergency requesters, hospitals, and blood banks across Karnataka and India.
-          </p>
+        <p className="text-sm lg:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+          BloodSphere connects voluntary blood donors with hospitals, blood banks, and emergency trauma patients using AI matching, backup escalation queues, and verified hospital co-signs.
+        </p>
 
-          <div className="flex flex-wrap items-center gap-4 pt-4">
-            <button
-              onClick={() => navigateTo('donor-search')}
-              className="px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-bold text-sm shadow-xl shadow-red-950 flex items-center gap-2 transition-all hover:scale-105 active:scale-95"
-            >
-              <Search className="w-4 h-4" /> Find Donors Now
-            </button>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-2">
+          <button
+            onClick={() => setActiveEmergencyPostModal(true)}
+            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-sm shadow-xl shadow-red-950 flex items-center justify-center gap-2 transition-all hover:scale-105"
+          >
+            <PlusCircle className="w-5 h-5" /> Post Emergency Need
+          </button>
 
-            <button
-              onClick={() => setActiveEmergencyPostModal(true)}
-              className="px-6 py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-100 font-bold text-sm border border-slate-700 flex items-center gap-2 transition-all"
-            >
-              <AlertTriangle className="w-4 h-4 text-amber-400" /> Post Emergency Need
-            </button>
-          </div>
+          <button
+            onClick={() => navigateTo('donor-search')}
+            className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm border border-slate-700 flex items-center justify-center gap-2 transition-all"
+          >
+            <Search className="w-5 h-5 text-red-400" /> Find Donors Nearby
+          </button>
+        </div>
 
-          {/* Quick Features List */}
-          <div className="flex flex-wrap items-center gap-6 pt-4 text-xs text-slate-400">
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Aadhaar Verified Donors</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> Masked Contact Privacy</span>
-            <span className="flex items-center gap-1.5"><CheckCircle2 className="w-4 h-4 text-emerald-400" /> 24/7 Hospital Inventory</span>
-          </div>
-
+        {/* Live Emergency Marquee */}
+        <div className="pt-6 border-t border-slate-800/80 max-w-3xl mx-auto flex items-center justify-between text-xs text-slate-400">
+          <span className="flex items-center gap-1.5 font-bold text-red-400">
+            <Activity className="w-4 h-4 animate-pulse" /> Live Emergency Ticker:
+          </span>
+          <span className="truncate">O- needed at KIMS Hubballi (Bed 14) • AB- needed at SDM Dharwad</span>
         </div>
       </section>
 
       {/* Impact Statistics */}
-      <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: 'Lives Saved', value: '14,890+', color: 'text-red-400', icon: Heart },
-          { label: 'Verified Donors', value: '8,420+', color: 'text-blue-400', icon: Users },
-          { label: 'Blood Banks', value: '142', color: 'text-emerald-400', icon: Building2 },
-          { label: 'Avg Match Time', value: '4.2 Mins', color: 'text-amber-400', icon: Zap }
-        ].map((stat, i) => {
-          const IconComp = stat.icon;
-          return (
-            <div key={i} className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center gap-4">
-              <div className="p-3 rounded-xl bg-slate-800 text-slate-200">
-                <IconComp className="w-6 h-6 text-red-500" />
-              </div>
-              <div>
-                <span className={`text-2xl font-black ${stat.color}`}>{stat.value}</span>
-                <span className="text-xs text-slate-400 block font-medium mt-0.5">{stat.label}</span>
-              </div>
-            </div>
-          );
-        })}
-      </section>
-
-      {/* How it Works Section */}
-      <section className="space-y-6">
-        <div className="text-center max-w-2xl mx-auto space-y-2">
-          <h2 className="text-2xl font-bold text-white">How BloodNet Saves Lives</h2>
-          <p className="text-xs text-slate-400">Three simple steps to request blood or become a donor hero</p>
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
+          <span className="text-3xl font-black text-white">14,890+</span>
+          <span className="text-xs text-slate-400 block">Lives Saved in 2026</span>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {[
-            {
-              step: "01",
-              title: "Post Emergency Need",
-              desc: "Requesters type or paste plain language emergency details (blood group, hospital, units).",
-              icon: AlertTriangle
-            },
-            {
-              step: "02",
-              title: "Smart Donor Matching",
-              desc: "Our algorithm ranks nearby eligible donors by compatibility matrix and Haversine distance.",
-              icon: Zap
-            },
-            {
-              step: "03",
-              title: "Privacy Relay & Donation",
-              desc: "Donors respond, communicate via masked chat relay, and donate safely at the blood bank.",
-              icon: ShieldCheck
-            }
-          ].map((item) => (
-            <div key={item.step} className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-3 relative overflow-hidden">
-              <span className="text-4xl font-black text-slate-800 absolute right-4 top-4">{item.step}</span>
-              <item.icon className="w-8 h-8 text-red-500" />
-              <h3 className="font-bold text-slate-100 text-base">{item.title}</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">{item.desc}</p>
-            </div>
-          ))}
+        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
+          <span className="text-3xl font-black text-red-500">4,820</span>
+          <span className="text-xs text-slate-400 block">Active Verified Donors</span>
+        </div>
+        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
+          <span className="text-3xl font-black text-amber-400">12 Mins</span>
+          <span className="text-xs text-slate-400 block">Avg Response Time</span>
+        </div>
+        <div className="p-6 rounded-2xl bg-slate-900 border border-slate-800 text-center space-y-1">
+          <span className="text-3xl font-black text-emerald-400">42</span>
+          <span className="text-xs text-slate-400 block">Partner Hospitals</span>
         </div>
       </section>
 
-      {/* Urgent Requests Marquee Section */}
-      <section className="p-6 rounded-3xl bg-slate-900/90 border border-slate-800 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-red-500 animate-pulse" />
-            <h3 className="font-bold text-base text-slate-100">Live Critical Emergency Board</h3>
+      {/* How it Works */}
+      <section className="space-y-6 text-center">
+        <h2 className="text-2xl font-bold text-white">How BloodSphere Saves Lives</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-left">
+          
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-red-950 text-red-400 border border-red-800 font-extrabold flex items-center justify-center">1</div>
+            <h3 className="font-bold text-base text-white">Post Request</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Create an emergency blood request with hospital verification and patient blood group requirements.
+            </p>
           </div>
-          <button
-            onClick={() => navigateTo('emergency-requests')}
-            className="text-xs font-bold text-red-400 hover:text-red-300 flex items-center gap-1"
-          >
-            View All ({requests.length}) <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {requests.slice(0, 2).map((req) => (
-            <div key={req.id} className="p-4 rounded-xl bg-slate-800/50 border border-slate-700/80 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-red-600 text-white font-black text-base flex items-center justify-center">
-                  {req.bloodGroup}
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-white">{req.patientName}</h4>
-                  <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                    <MapPin className="w-3.5 h-3.5 text-red-400" /> {req.hospitalName}, {req.city}
-                  </p>
-                </div>
-              </div>
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-950 text-blue-400 border border-blue-800 font-extrabold flex items-center justify-center">2</div>
+            <h3 className="font-bold text-base text-white">AI Donor Match</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Our algorithm ranks donors by compatibility, distance, availability, and response likelihood score.
+            </p>
+          </div>
 
-              <button
-                onClick={() => navigateTo('emergency-requests')}
-                className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold text-xs"
-              >
-                Respond
-              </button>
-            </div>
-          ))}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-950 text-emerald-400 border border-emerald-800 font-extrabold flex items-center justify-center">3</div>
+            <h3 className="font-bold text-base text-white">Donate & Save Life</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Donor confirms, appointment is scheduled at the hospital, certificate generated, and reward points awarded.
+            </p>
+          </div>
+
         </div>
       </section>
 
