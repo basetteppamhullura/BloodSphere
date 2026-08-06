@@ -23,7 +23,7 @@ import {
 
 export const Sidebar: React.FC = () => {
   const { activePage, navigateTo } = useApp();
-  const { currentRole, switchRole, isPageAllowedForRole } = useAuth();
+  const { currentRole, isPageAllowedForRole } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
 
   const allNavItems: { tab: PageTab; label: string; icon: React.FC<{ className?: string }> }[] = [
@@ -43,14 +43,6 @@ export const Sidebar: React.FC = () => {
   // Filter navigation links based on current role permissions
   const permittedNavItems = allNavItems.filter(item => isPageAllowedForRole(item.tab, currentRole));
 
-  const roles: { role: UserRole; label: string }[] = [
-    { role: 'donor', label: 'Donor' },
-    { role: 'requester', label: 'Requester' },
-    { role: 'hospital', label: 'Hospital' },
-    { role: 'bloodbank', label: 'Blood Bank' },
-    { role: 'admin', label: 'Admin' }
-  ];
-
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-slate-900 border-r border-slate-800/80 min-h-screen sticky top-0 z-40 text-slate-300">
       
@@ -67,35 +59,10 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Role Switcher Pill */}
-      <div className="p-4 border-b border-slate-800/60 bg-slate-950/40">
-        <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block mb-1.5">
-          Active Role Perspective:
-        </span>
-        <div className="grid grid-cols-2 gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800 text-xs">
-          {roles.map(r => (
-            <button
-              key={r.role}
-              onClick={() => {
-                switchRole(r.role);
-                navigateTo('dashboard');
-              }}
-              className={`py-1 rounded text-[10px] font-bold capitalize transition-all ${
-                currentRole === r.role
-                  ? 'bg-red-600 text-white shadow-sm ring-1 ring-red-400'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Permitted Navigation Links */}
-      <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
-        <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold px-3 py-1 block">
-          {currentRole.toUpperCase()} Navigation
+      <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
+        <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold px-3 py-1 block mb-1">
+          {currentRole.toUpperCase()} Perspective
         </span>
 
         {permittedNavItems.map(item => {
@@ -122,7 +89,7 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* Theme Toggle */}
+      {/* Theme Toggle & Session Info */}
       <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between text-xs">
         <button
           onClick={toggleTheme}

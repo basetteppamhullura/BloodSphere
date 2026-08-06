@@ -45,15 +45,18 @@ export const Header: React.FC = () => {
         />
       </div>
 
-      {/* Role Switcher Pill (Header bar) */}
-      <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+      {/* Global Role Switcher Pill (Single Control Bar) */}
+      <div className="flex items-center gap-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs shadow-inner">
         {roles.map(r => (
           <button
             key={r.role}
-            onClick={() => switchRole(r.role)}
+            onClick={() => {
+              switchRole(r.role);
+              navigateTo('dashboard');
+            }}
             className={`px-3 py-1 rounded-lg text-[11px] font-bold transition-all ${
               currentRole === r.role
-                ? 'bg-red-600 text-white shadow-sm'
+                ? 'bg-red-600 text-white shadow-sm ring-1 ring-red-400'
                 : 'text-slate-400 hover:text-slate-200'
             }`}
           >
