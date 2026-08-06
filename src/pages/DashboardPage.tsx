@@ -22,7 +22,10 @@ import {
   FileText,
   MapPin,
   Phone,
-  Droplet
+  Droplet,
+  Download,
+  UserCheck,
+  RefreshCw
 } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
@@ -48,9 +51,16 @@ export const DashboardPage: React.FC = () => {
 
   // Schedule Modal State
   const [scheduleModalReqId, setScheduleModalReqId] = useState<string | null>(null);
-  const [schDate, setSchDate] = useState<string>('2026-08-07');
+  const [schDate, setSchDate] = useState<string>('2026-08-08');
   const [schTime, setSchTime] = useState<string>('10:00 AM');
   const [schVenue, setSchVenue] = useState<string>('KIMS Hospital Blood Bank Unit');
+
+  // Admin Verification State
+  const [verifiedUsers, setVerifiedUsers] = useState<Record<string, boolean>>({
+    usr_donor_001: true,
+    donor_202: false,
+    donor_203: true
+  });
 
   if (isLoading) {
     return (
@@ -70,22 +80,30 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
+  const toggleAdminUserVerify = (userId: string) => {
+    setVerifiedUsers(prev => {
+      const updated = !prev[userId];
+      showToast(updated ? `User ${userId} verified by Super Admin!` : `User ${userId} verification revoked.`);
+      return { ...prev, [userId]: updated };
+    });
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in">
       
-      {/* Top Banner & Role Indicator */}
+      {/* Top Banner & Role Perspective Pill */}
       <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-red-950/60 border border-slate-800 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-black text-white tracking-tight">
-              Blood<span className="text-red-500">Net</span> Dashboard
+              Blood<span className="text-red-500">Sphere</span> Dashboard
             </h2>
             <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-red-950 text-red-300 border border-red-800 uppercase tracking-wider">
-              {currentRole} Mode
+              {currentRole} Mode Active
             </span>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            Real-Time Blood Donor Network • Hubballi-Dharwad Regional Grid
+            Real-Time Production Grid • Hubballi-Dharwad Regional Healthcare System
           </p>
         </div>
 
@@ -121,11 +139,11 @@ export const DashboardPage: React.FC = () => {
                       </span>
                       <h4 className="font-extrabold text-base text-white">{req.patientName}</h4>
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-amber-400 border border-slate-700">
-                        {req.unitsNeeded} Units
+                        {req.unitsNeeded} Units Required
                       </span>
                     </div>
                     <p className="text-xs text-slate-400 mt-1">
-                      {req.hospitalName}, {req.city} • Required Date: <strong>{req.requiredDate || 'Immediate'}</strong>
+                      Hospital: <strong>{req.hospitalName}</strong>, {req.city} • Required Date: <strong>{req.requiredDate || 'Immediate'}</strong>
                     </p>
                   </div>
 
@@ -225,7 +243,7 @@ export const DashboardPage: React.FC = () => {
             <h3 className="font-bold text-base text-white flex items-center gap-2">
               <Building2 className="w-5 h-5 text-blue-400" /> Hospital Blood Verification & Appointment Desk
             </h3>
-            <span className="text-xs text-slate-400">Incoming Requests Queue</span>
+            <span className="text-xs text-slate-400">Incoming Requests Queue ({requests.length})</span>
           </div>
 
           <div className="space-y-4">
@@ -446,6 +464,39 @@ export const DashboardPage: React.FC = () => {
               <span className="text-2xl font-black text-amber-400 block mt-1">98.4%</span>
             </div>
           </div>
+
+          {/* Admin User Management Directory */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+            <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
+              <UserCheck className="w-4 h-4 text-emerald-400" /> Registered User & Hospital Verification Desk
+            </h4>
+
+            <div className="space-y-2 text-xs">
+              {donors.map(donor => {
+                const isVerified = verifiedUsers[donor.id] ?? true;
+                return (
+                  <div key={donor.id} className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <span className="font-bold text-white block">{donor.name} ({donor.bloodGroup})</span>
+                      <span className="text-[10px] text-slate-400">{donor.city} • {donor.phone}</span>
+                    </div>
+
+                    <button
+                      onClick={() => toggleAdminUserVerify(donor.id)}
+                      className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${
+                        isVerified
+                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                          : 'bg-amber-950 text-amber-300 border border-amber-800'
+                      }`}
+                    >
+                      {isVerified ? 'Verified Active' : 'Pending Verification'}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
         </div>
       )}
 

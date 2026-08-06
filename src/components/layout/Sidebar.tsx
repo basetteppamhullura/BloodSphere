@@ -23,10 +23,10 @@ import {
 
 export const Sidebar: React.FC = () => {
   const { activePage, navigateTo } = useApp();
-  const { currentRole, switchRole } = useAuth();
+  const { currentRole, switchRole, isPageAllowedForRole } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
 
-  const navItems: { tab: PageTab; label: string; icon: React.FC<{ className?: string }> }[] = [
+  const allNavItems: { tab: PageTab; label: string; icon: React.FC<{ className?: string }> }[] = [
     { tab: 'landing', label: 'Home Landing', icon: Home },
     { tab: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
     { tab: 'emergency-requests', label: 'Emergency Board', icon: AlertTriangle },
@@ -39,6 +39,9 @@ export const Sidebar: React.FC = () => {
     { tab: 'leaderboard', label: 'Leaderboard', icon: Trophy },
     { tab: 'profile', label: 'My Health Profile', icon: User }
   ];
+
+  // Filter navigation links based on current role permissions
+  const permittedNavItems = allNavItems.filter(item => isPageAllowedForRole(item.tab, currentRole));
 
   const roles: { role: UserRole; label: string }[] = [
     { role: 'donor', label: 'Donor' },
@@ -58,7 +61,7 @@ export const Sidebar: React.FC = () => {
         </div>
         <div>
           <h1 className="font-extrabold text-base tracking-tight text-white flex items-center gap-1">
-            Blood<span className="text-red-500">Net</span>
+            Blood<span className="text-red-500">Sphere</span>
           </h1>
           <p className="text-[10px] text-slate-400 font-medium">Healthcare Donor Network</p>
         </div>
@@ -73,10 +76,13 @@ export const Sidebar: React.FC = () => {
           {roles.map(r => (
             <button
               key={r.role}
-              onClick={() => switchRole(r.role)}
+              onClick={() => {
+                switchRole(r.role);
+                navigateTo('dashboard');
+              }}
               className={`py-1 rounded text-[10px] font-bold capitalize transition-all ${
                 currentRole === r.role
-                  ? 'bg-red-600 text-white shadow-sm'
+                  ? 'bg-red-600 text-white shadow-sm ring-1 ring-red-400'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -86,13 +92,13 @@ export const Sidebar: React.FC = () => {
         </div>
       </div>
 
-      {/* Navigation Links */}
+      {/* Permitted Navigation Links */}
       <nav className="p-3 space-y-1 flex-1 overflow-y-auto">
         <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold px-3 py-1 block">
-          Navigation Pages
+          {currentRole.toUpperCase()} Navigation
         </span>
 
-        {navItems.map(item => {
+        {permittedNavItems.map(item => {
           const IconComp = item.icon;
           const isActive = activePage === item.tab;
 
@@ -127,7 +133,7 @@ export const Sidebar: React.FC = () => {
         </button>
 
         <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-          <ShieldCheck className="w-3.5 h-3.5" /> Online
+          <ShieldCheck className="w-3.5 h-3.5" /> Session Active
         </span>
       </div>
 
