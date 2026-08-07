@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { SkeletonCard, SkeletonRow } from '../components/common/Skeleton';
+import { BloodGroup } from '../types';
 import {
   Activity,
   AlertTriangle,
@@ -25,7 +26,9 @@ import {
   Droplet,
   Download,
   UserCheck,
-  RefreshCw
+  RefreshCw,
+  KeyRound,
+  Copy
 } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
@@ -41,9 +44,9 @@ export const DashboardPage: React.FC = () => {
     bloodBanks,
     updateInventoryStock,
     donors,
-    setActiveSmartMatchModal,
+    patientVerifications,
+    createPatientVerification,
     setActiveEmergencyPostModal,
-    setActiveCertificateModal,
     showToast
   } = useApp();
 
@@ -54,6 +57,12 @@ export const DashboardPage: React.FC = () => {
   const [schDate, setSchDate] = useState<string>('2026-08-08');
   const [schTime, setSchTime] = useState<string>('10:00 AM');
   const [schVenue, setSchVenue] = useState<string>('KIMS Hospital Blood Bank Unit');
+
+  // Hospital Verification Generator Form State
+  const [pvPatientName, setPvPatientName] = useState('Rohan Deshmukh');
+  const [pvBloodGroup, setPvBloodGroup] = useState<BloodGroup>('O-');
+  const [pvHospitalName, setPvHospitalName] = useState('KIMS Teaching Hospital');
+  const [generatedPv, setGeneratedPv] = useState<any | null>(null);
 
   // Admin Verification State
   const [verifiedUsers, setVerifiedUsers] = useState<Record<string, boolean>>({
@@ -78,6 +87,12 @@ export const DashboardPage: React.FC = () => {
       scheduleDonationAppointment(scheduleModalReqId, schDate, schTime, schVenue);
       setScheduleModalReqId(null);
     }
+  };
+
+  const handleGeneratePvSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const created = createPatientVerification(pvPatientName, pvBloodGroup, pvHospitalName);
+    setGeneratedPv(created);
   };
 
   const toggleAdminUserVerify = (userId: string) => {
@@ -141,6 +156,9 @@ export const DashboardPage: React.FC = () => {
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-amber-400 border border-slate-700">
                         {req.unitsNeeded} Units Required
                       </span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-950 text-slate-400 border border-slate-800">
+                        ID: {req.patientId || 'BN-HUB-2026-00852'}
+                      </span>
                     </div>
                     <p className="text-xs text-slate-400 mt-1">
                       Hospital: <strong>{req.hospitalName}</strong>, {req.city} • Required Date: <strong>{req.requiredDate || 'Immediate'}</strong>
@@ -154,9 +172,9 @@ export const DashboardPage: React.FC = () => {
                       ? 'bg-indigo-950 text-indigo-300 border-indigo-800'
                       : req.status === 'DONOR_CONFIRMED'
                       ? 'bg-blue-950 text-blue-300 border-blue-800'
-                      : req.status === 'APPROVED'
-                      ? 'bg-amber-950 text-amber-300 border-amber-800'
-                      : 'bg-slate-800 text-slate-300 border-slate-700'
+                      : req.status === 'VERIFIED_SEARCHING_DONORS'
+                      ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                      : 'bg-amber-950 text-amber-300 border-amber-800'
                   }`}>
                     Status: {req.status.replace(/_/g, ' ')}
                   </span>
@@ -169,37 +187,29 @@ export const DashboardPage: React.FC = () => {
                   </span>
                   
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-center text-[10px]">
-                    <div className={`p-2 rounded-xl border font-bold ${
-                      req.status !== 'REJECTED' ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-500'
-                    }`}>
-                      1. Created
+                    <div className="p-2 rounded-xl border font-bold bg-emerald-950/60 border-emerald-800 text-emerald-300">
+                      1. Verified
                     </div>
 
                     <div className={`p-2 rounded-xl border font-bold ${
-                      ['APPROVED', 'DONOR_CONFIRMED', 'APPOINTMENT_SCHEDULED', 'COMPLETED'].includes(req.status)
-                        ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
-                        : req.status === 'PENDING_HOSPITAL_APPROVAL'
-                        ? 'bg-amber-950/60 border-amber-800 text-amber-300 animate-pulse'
+                      ['VERIFIED_SEARCHING_DONORS', 'APPROVED', 'DONOR_CONFIRMED', 'APPOINTMENT_SCHEDULED', 'COMPLETED'].includes(req.status)
+                        ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300 animate-pulse'
                         : 'bg-slate-900 border-slate-800 text-slate-500'
                     }`}>
-                      2. Hospital Approved
+                      2. Searching Donors
                     </div>
 
                     <div className={`p-2 rounded-xl border font-bold ${
                       ['DONOR_CONFIRMED', 'APPOINTMENT_SCHEDULED', 'COMPLETED'].includes(req.status)
                         ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
-                        : req.status === 'APPROVED'
-                        ? 'bg-blue-950/60 border-blue-800 text-blue-300 animate-pulse'
                         : 'bg-slate-900 border-slate-800 text-slate-500'
                     }`}>
-                      3. Donor Confirmed
+                      3. Donor Accepted
                     </div>
 
                     <div className={`p-2 rounded-xl border font-bold ${
                       ['APPOINTMENT_SCHEDULED', 'COMPLETED'].includes(req.status)
                         ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
-                        : req.status === 'DONOR_CONFIRMED'
-                        ? 'bg-indigo-950/60 border-indigo-800 text-indigo-300 animate-pulse'
                         : 'bg-slate-900 border-slate-800 text-slate-500'
                     }`}>
                       4. Appt Scheduled
@@ -239,11 +249,89 @@ export const DashboardPage: React.FC = () => {
       {/* ---------------------------------------------------- */}
       {currentRole === 'hospital' && (
         <div className="space-y-6">
+          
+          {/* Hospital Patient Verification Generator Tool */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-amber-400" />
+                <h3 className="font-extrabold text-base text-white">Generate Patient Verification Record (Pre-Approval Code)</h3>
+              </div>
+              <span className="text-[10px] text-slate-400">Hospital Pre-Verification Desk</span>
+            </div>
+
+            <form onSubmit={handleGeneratePvSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+              <div>
+                <label className="text-slate-300 font-bold block mb-1">Patient Full Name</label>
+                <input
+                  type="text"
+                  value={pvPatientName}
+                  onChange={e => setPvPatientName(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-300 font-bold block mb-1">Required Blood Group</label>
+                <select
+                  value={pvBloodGroup}
+                  onChange={e => setPvBloodGroup(e.target.value as BloodGroup)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
+                >
+                  {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(bg => (
+                    <option key={bg} value={bg}>{bg}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-slate-300 font-bold block mb-1">Hospital Unit</label>
+                <input
+                  type="text"
+                  value={pvHospitalName}
+                  onChange={e => setPvHospitalName(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-black text-xs shadow-md flex items-center justify-center gap-1.5"
+              >
+                <KeyRound className="w-4 h-4" /> Generate Credentials
+              </button>
+            </form>
+
+            {generatedPv && (
+              <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-800 flex items-center justify-between text-slate-200">
+                <div>
+                  <span className="font-extrabold text-amber-300 block text-sm">Pre-Verification Credentials Generated:</span>
+                  <div className="flex items-center gap-4 mt-1 font-mono text-xs">
+                    <span>Patient ID: <strong className="text-white bg-slate-950 px-2 py-0.5 rounded">{generatedPv.patientId}</strong></span>
+                    <span>Verification Code: <strong className="text-amber-400 bg-slate-950 px-2 py-0.5 rounded">{generatedPv.verificationCode}</strong></span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`Patient ID: ${generatedPv.patientId}, Verification Code: ${generatedPv.verificationCode}`);
+                    showToast('Credentials copied to clipboard!');
+                  }}
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 flex items-center gap-1"
+                >
+                  <Copy className="w-4 h-4" /> Copy
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="flex justify-between items-center">
             <h3 className="font-bold text-base text-white flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-blue-400" /> Hospital Blood Verification & Appointment Desk
+              <Building2 className="w-5 h-5 text-blue-400" /> Active Hospital Blood Requests Queue ({requests.length})
             </h3>
-            <span className="text-xs text-slate-400">Incoming Requests Queue ({requests.length})</span>
+            <span className="text-xs text-slate-400">KIMS Regional Desk</span>
           </div>
 
           <div className="space-y-4">
@@ -260,28 +348,9 @@ export const DashboardPage: React.FC = () => {
                       <span className="text-xs text-slate-400">({req.unitsNeeded} Units needed)</span>
                     </div>
                     <p className="text-xs text-slate-400 mt-1">
-                      Requester Contact: <strong>{req.contactPerson} ({req.maskedPhone})</strong> • Hospital: <strong>{req.hospitalName}</strong>
+                      Requester: <strong>{req.contactPerson} ({req.maskedPhone})</strong> • Hospital: <strong>{req.hospitalName}</strong>
                     </p>
                   </div>
-
-                  {/* Step 2 Actions */}
-                  {req.status === 'PENDING_HOSPITAL_APPROVAL' && (
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => approveRequestByHospital(req.id)}
-                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md flex items-center gap-1"
-                      >
-                        <Check className="w-4 h-4" /> Approve Request
-                      </button>
-
-                      <button
-                        onClick={() => rejectRequestByHospital(req.id)}
-                        className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs border border-slate-700 flex items-center gap-1"
-                      >
-                        <XCircle className="w-4 h-4 text-red-400" /> Reject
-                      </button>
-                    </div>
-                  )}
 
                   {/* Step 6 Actions: Schedule Appointment */}
                   {req.status === 'DONOR_CONFIRMED' && (
@@ -345,46 +414,53 @@ export const DashboardPage: React.FC = () => {
           {/* Active Nearby Requests for Donor */}
           <div className="space-y-4">
             <h3 className="font-bold text-base text-white flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-500" /> Urgent Nearby Requests Matching ({currentUser?.bloodGroup || 'O-'})
+              <AlertTriangle className="w-5 h-5 text-red-500" /> Distance-Ranked Emergency Requests ({currentUser?.bloodGroup || 'O-'})
             </h3>
 
             <div className="space-y-4">
-              {requests.map(req => (
-                <div key={req.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-                  
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-extrabold text-xs">
-                          {req.bloodGroup}
-                        </span>
-                        <h4 className="font-extrabold text-base text-white">{req.patientName}</h4>
-                        <span className="text-xs text-slate-400">({req.unitsNeeded} Units needed)</span>
+              {requests.map((req, idx) => {
+                const distances = ['3.2 km away', '7.8 km away', '14.5 km away', '22.0 km away'];
+                const distTag = distances[idx % distances.length];
+
+                return (
+                  <div key={req.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+                    
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-extrabold text-xs">
+                            {req.bloodGroup}
+                          </span>
+                          <h4 className="font-extrabold text-base text-white">{req.patientName}</h4>
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-950 text-emerald-400 border border-slate-800">
+                            📍 {distTag}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Hospital: <strong>{req.hospitalName}</strong> • Reason: {req.reason}
+                        </p>
                       </div>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Hospital: <strong>{req.hospitalName}</strong> • Reason: {req.reason}
-                      </p>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => donorAcceptRequest(req.id, currentUser?.id || 'usr_donor_001')}
+                          className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center gap-1.5"
+                        >
+                          <Check className="w-4 h-4" /> Accept & Confirm
+                        </button>
+
+                        <button
+                          onClick={() => donorDeclineRequest(req.id, currentUser?.id || 'usr_donor_001')}
+                          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold text-xs border border-slate-700"
+                        >
+                          Decline
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => donorAcceptRequest(req.id, currentUser?.id || 'usr_donor_001')}
-                        className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center gap-1.5"
-                      >
-                        <Check className="w-4 h-4" /> Accept & Confirm
-                      </button>
-
-                      <button
-                        onClick={() => donorDeclineRequest(req.id, currentUser?.id || 'usr_donor_001')}
-                        className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold text-xs border border-slate-700"
-                      >
-                        Decline
-                      </button>
-                    </div>
                   </div>
-
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
