@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import {
   PageTab,
   EmergencyRequest,
@@ -64,13 +64,26 @@ interface AppContextType {
   setActiveCorporateImpactModal: (open: boolean) => void;
 }
 
+const REQUESTS_STORAGE_KEY = 'bloodsphere_requests_data';
+
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activePage, setActivePage] = useState<PageTab>('landing');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const [requests, setRequests] = useState<EmergencyRequest[]>(MOCK_EMERGENCY_REQUESTS);
+  const [requests, setRequests] = useState<EmergencyRequest[]>(() => {
+    const saved = localStorage.getItem(REQUESTS_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return MOCK_EMERGENCY_REQUESTS;
+      }
+    }
+    return MOCK_EMERGENCY_REQUESTS;
+  });
+
   const [donors] = useState<Donor[]>(MOCK_DONORS);
   const [bloodBanks, setBloodBanks] = useState<BloodBank[]>(MOCK_BLOOD_BANKS);
   const [camps, setCamps] = useState<DonationCamp[]>(MOCK_CAMPS);
@@ -88,6 +101,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeChatModal, setActiveChatModal] = useState<{ request: EmergencyRequest; donor: Donor } | null>(null);
   const [activeHealthPassportModal, setActiveHealthPassportModal] = useState<boolean>(false);
   const [activeCorporateImpactModal, setActiveCorporateImpactModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    localStorage.setItem(REQUESTS_STORAGE_KEY, JSON.stringify(requests));
+  }, [requests]);
 
   const navigateTo = (tab: PageTab) => {
     setIsLoading(true);
@@ -199,27 +216,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         title: "✅ Donor Confirmed!",
         message: `${donorObj.name} accepted request for patient. Hospital scheduling appointment.`,
         time: "Just now",
-        read: false,
-        requestId
+        type: "success",
+        read: false
       },
       ...prev
     ]);
   };
 
-  // Step 4: Donor Declines Request -> Auto-notifies next donor
+  // Step 4/5: Donor Declines Request
   const donorDeclineRequest = (requestId: string, donorId: string) => {
-    showToast(`Donor declined. Escalation queue auto-notifying next tier donor.`);
-    setNotifications(prev => [
-      {
-        id: `notif_${Date.now()}`,
-        title: "⚡ Auto-Escalation Active",
-        message: `Donor declined. Escalation engine notified next Tier 2 matching donor.`,
-        time: "Just now",
-        read: false,
-        requestId
-      },
-      ...prev
-    ]);
+    showToast(`Donor declined. Tier 2 auto-escalation searching next closest donor...`);
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          return {
+            ...r,
+            aiUrgencyScore: Math.min(r.aiUrgencyScore + 5, 99)
+          };
+        }
+        return r;
+      })
+    );
   };
 
   // Step 6: Hospital Schedules Appointment
@@ -227,18 +244,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRequests(prev =>
       prev.map(r => {
         if (r.id === requestId) {
-          const donorName = r.assignedDonorName || "Dr. Ananya Sharma";
-          showToast(`Appointment scheduled for ${date} at ${time}!`);
+          showToast(`Appointment scheduled at ${venue} on ${date} ${time}!`);
           return {
             ...r,
             status: "APPOINTMENT_SCHEDULED",
             appointmentDetails: {
               date,
               time,
-              venue: venue || `${r.hospitalName} Blood Bank Unit`,
-              assignedDonorId: r.assignedDonorId || "usr_donor_001",
-              assignedDonorName: donorName,
-              assignedDonorPhone: "+91 98765 43210"
+              venue,
+              assignedDonorName: r.assignedDonorName || "Dr. Ananya Sharma"
             }
           };
         }
@@ -249,12 +263,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Step 7: Mark Donation Completed
   const markDonationCompleted = (requestId: string) => {
-    let targetReq: EmergencyRequest | undefined;
     setRequests(prev =>
       prev.map(r => {
         if (r.id === requestId) {
-          targetReq = r;
-          showToast(`🎉 Donation completed! Awarded +250 pts, certificate generated, and inventory stock updated!`);
+          showToast(`Donation completed! +250 reward points awarded to donor & stock updated.`);
           return {
             ...r,
             status: "COMPLETED",
@@ -265,53 +277,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    // Auto-update Blood Inventory stock (+units)
-    if (targetReq) {
-      const hospitalName = targetReq.hospitalName;
-      setBloodBanks(prevBanks =>
-        prevBanks.map(bank => {
-          if (bank.name.toLowerCase().includes(hospitalName.toLowerCase()) || bank.id === 'bb_1') {
-            const updatedInv = bank.inventory.map(item => {
-              if (item.group === targetReq?.bloodGroup) {
-                return { ...item, units: item.units + (targetReq?.unitsNeeded || 1) };
-              }
-              return item;
-            });
-            return { ...bank, inventory: updatedInv };
-          }
-          return bank;
-        })
-      );
-    }
-  };
-
-  const toggleCampRSVP = (campId: string) => {
-    setCamps(prev =>
-      prev.map(c => {
-        if (c.id === campId) {
-          const isJoined = !c.isJoined;
-          showToast(isJoined ? `RSVP Confirmed for ${c.title}!` : `RSVP Cancelled for ${c.title}`);
-          return {
-            ...c,
-            isJoined,
-            rsvpsCount: isJoined ? c.rsvpsCount + 1 : c.rsvpsCount - 1
-          };
-        }
-        return c;
-      })
-    );
-  };
-
-  const toggleCircleJoin = (circleId: string) => {
-    setGroupCircles(prev =>
-      prev.map(cir => {
-        if (cir.id === circleId) {
-          const joined = !cir.joined;
-          showToast(joined ? `Joined ${cir.name}!` : `Left ${cir.name}`);
-          return { ...cir, joined, membersCount: joined ? cir.membersCount + 1 : cir.membersCount - 1 };
-        }
-        return cir;
-      })
+    // Auto-update regional blood bank inventory stock
+    setBloodBanks(prev =>
+      prev.map(bank => ({
+        ...bank,
+        inventory: bank.inventory.map(item =>
+          item.group === "O-" ? { ...item, units: item.units + 1 } : item
+        )
+      }))
     );
   };
 
@@ -319,21 +292,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setBloodBanks(prev =>
       prev.map(bank => {
         if (bank.id === bankId) {
-          const updatedInv = bank.inventory.map(item => {
-            if (item.group === group) {
-              const newUnits = Math.max(0, item.units + change);
-              let newStatus: 'Optimal' | 'Adequate' | 'Low' | 'CRITICAL' = 'Optimal';
-              if (newUnits < item.minThreshold) newStatus = 'CRITICAL';
-              else if (newUnits < item.minThreshold + 5) newStatus = 'Low';
-              else newStatus = 'Adequate';
-              return { ...item, units: newUnits, status: newStatus };
-            }
-            return item;
-          });
-          showToast(`Updated ${group} stock at ${bank.name}`);
-          return { ...bank, inventory: updatedInv };
+          return {
+            ...bank,
+            inventory: bank.inventory.map(item => {
+              if (item.group === group) {
+                const updated = Math.max(0, item.units + change);
+                showToast(`Inventory updated: ${group} stock is now ${updated} units.`);
+                return { ...item, units: updated };
+              }
+              return item;
+            })
+          };
         }
         return bank;
+      })
+    );
+  };
+
+  const toggleCampRSVP = (campId: string) => {
+    setCamps(prev =>
+      prev.map(camp => {
+        if (camp.id === campId) {
+          const isRSVP = camp.isUserRegistered;
+          showToast(isRSVP ? `RSVP cancelled for ${camp.title}` : `RSVP confirmed for ${camp.title}!`);
+          return {
+            ...camp,
+            isUserRegistered: !isRSVP,
+            registeredDonorsCount: isRSVP ? camp.registeredDonorsCount - 1 : camp.registeredDonorsCount + 1
+          };
+        }
+        return camp;
+      })
+    );
+  };
+
+  const toggleCircleJoin = (circleId: string) => {
+    setGroupCircles(prev =>
+      prev.map(c => {
+        if (c.id === circleId) {
+          const isJoined = c.isUserMember;
+          showToast(isJoined ? `Left circle ${c.name}` : `Joined circle ${c.name}!`);
+          return {
+            ...c,
+            isUserMember: !isJoined,
+            membersCount: isJoined ? c.membersCount - 1 : c.membersCount + 1
+          };
+        }
+        return c;
       })
     );
   };
