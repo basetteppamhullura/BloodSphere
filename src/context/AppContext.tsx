@@ -8,7 +8,8 @@ import {
   LeaderboardItem,
   NotificationItem,
   GroupCircle,
-  InterCityTransfer
+  InterCityTransfer,
+  PatientVerification
 } from '../types';
 import {
   MOCK_EMERGENCY_REQUESTS,
@@ -18,7 +19,8 @@ import {
   MOCK_LEADERBOARD,
   MOCK_NOTIFICATIONS,
   MOCK_GROUP_CIRCLES,
-  MOCK_INTERCITY_TRANSFERS
+  MOCK_INTERCITY_TRANSFERS,
+  MOCK_PATIENT_VERIFICATIONS
 } from '../data/mockData.ts';
 
 interface AppContextType {
@@ -28,6 +30,11 @@ interface AppContextType {
   requests: EmergencyRequest[];
   createEmergencyRequest: (req: Partial<EmergencyRequest>) => void;
   
+  // Patient Verification API
+  patientVerifications: PatientVerification[];
+  createPatientVerification: (patientName: string, bloodGroup: any, hospitalName: string) => PatientVerification;
+  verifyPatientCredentials: (patientId: string, code: string, bloodGroup: string) => { isValid: boolean; message: string; record?: PatientVerification };
+
   // Workflow Phase Handlers
   approveRequestByHospital: (requestId: string, notes?: string) => void;
   rejectRequestByHospital: (requestId: string, reason?: string) => void;
@@ -65,6 +72,7 @@ interface AppContextType {
 }
 
 const REQUESTS_STORAGE_KEY = 'bloodsphere_requests_data';
+const VERIFICATIONS_STORAGE_KEY = 'bloodsphere_verifications_data';
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -82,6 +90,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
     return MOCK_EMERGENCY_REQUESTS;
+  });
+
+  const [patientVerifications, setPatientVerifications] = useState<PatientVerification[]>(() => {
+    const saved = localStorage.getItem(VERIFICATIONS_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return MOCK_PATIENT_VERIFICATIONS;
+      }
+    }
+    return MOCK_PATIENT_VERIFICATIONS;
   });
 
   const [donors] = useState<Donor[]>(MOCK_DONORS);
@@ -106,6 +126,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(REQUESTS_STORAGE_KEY, JSON.stringify(requests));
   }, [requests]);
 
+  useEffect(() => {
+    localStorage.setItem(VERIFICATIONS_STORAGE_KEY, JSON.stringify(patientVerifications));
+  }, [patientVerifications]);
+
   const navigateTo = (tab: PageTab) => {
     setIsLoading(true);
     setActivePage(tab);
@@ -122,12 +146,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }, 3500);
   };
 
-  // Step 1: Requester creates request
+  // Hospital generates Patient Verification credentials (Patient ID & Code)
+  const createPatientVerification = (patientName: string, bloodGroup: any, hospitalName: string): PatientVerification => {
+    const randomNum = Math.floor(10000 + Math.random() * 90000);
+    const randomCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    const newRecord: PatientVerification = {
+      id: `pv_${Date.now()}`,
+      patientId: `BN-HUB-2026-${randomNum}`,
+      verificationCode: randomCode,
+      patientName,
+      bloodGroup,
+      hospitalName,
+      expiryDate: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString().split('T')[0],
+      isActive: true
+    };
+
+    setPatientVerifications(prev => [newRecord, ...prev]);
+    showToast(`Patient Verification record created! Patient ID: ${newRecord.patientId}, Code: ${newRecord.verificationCode}`);
+    return newRecord;
+  };
+
+  // Requester verifies Patient ID & Code
+  const verifyPatientCredentials = (patientId: string, code: string, bloodGroup: string) => {
+    const record = patientVerifications.find(
+      p => p.patientId.toUpperCase().trim() === patientId.toUpperCase().trim() && p.isActive
+    );
+
+    if (!record) {
+      return { isValid: false, message: "Patient ID not found or expired. Please contact hospital desk." };
+    }
+
+    if (record.verificationCode.trim() !== code.trim()) {
+      return { isValid: false, message: "Verification Code is incorrect. Please re-check hospital slip." };
+    }
+
+    return { isValid: true, message: "Patient verified successfully.", record };
+  };
+
+  // Requester creates request (Bypasses manual hospital approval if verified)
   const createEmergencyRequest = (newReq: Partial<EmergencyRequest>) => {
+    const isPreVerified = newReq.isVerifiedByHospital ?? true;
+
     const created: EmergencyRequest = {
       id: `req_${Date.now()}`,
       patientName: newReq.patientName || "Emergency Patient",
+      patientAge: newReq.patientAge,
+      patientGender: newReq.patientGender,
+      patientId: newReq.patientId || "BN-HUB-2026-00852",
+      verificationCode: newReq.verificationCode || "739241",
+      isVerifiedByHospital: isPreVerified,
       bloodGroup: newReq.bloodGroup || "O-",
+      bloodComponent: newReq.bloodComponent || "Whole Blood",
       unitsNeeded: newReq.unitsNeeded || 1,
       unitsFulfilled: 0,
       urgency: newReq.urgency || "CRITICAL",
@@ -140,12 +210,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       requestedAt: new Date().toISOString(),
       deadline: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
       requiredDate: newReq.requiredDate || new Date().toISOString().split('T')[0],
+      requiredTime: newReq.requiredTime || "10:00 AM",
       reason: newReq.reason || "Urgent medical transfusion requirement",
       additionalNotes: newReq.additionalNotes || "Patient requires urgent blood assistance.",
-      status: "PENDING_HOSPITAL_APPROVAL", // Initial Step 1 Status
+      status: isPreVerified ? "VERIFIED_SEARCHING_DONORS" : "PENDING_HOSPITAL_APPROVAL",
       aiUrgencyScore: newReq.urgency === "CRITICAL" ? 98 : 84,
       decayScore: 95,
-      trendingReason: "Pending Hospital Verification",
+      trendingReason: isPreVerified ? "Patient Verified • Searching Nearby Donors" : "Pending Hospital Verification",
       sharesCount: 1,
       matchedDonorsCount: 4,
       lat: 15.3688,
@@ -153,7 +224,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setRequests(prev => [created, ...prev]);
-    showToast(`Request submitted! Sent to ${created.hospitalName} for hospital verification.`);
+    showToast(
+      isPreVerified
+        ? `Patient Verified! Request active — instant donor matching initiated for ${created.bloodGroup}.`
+        : `Request submitted to ${created.hospitalName}.`
+    );
   };
 
   // Step 2: Hospital Approves Request
@@ -164,7 +239,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           showToast(`Request approved by hospital! Matching algorithms activated for ${r.bloodGroup} donors.`);
           return {
             ...r,
-            status: "APPROVED",
+            status: "VERIFIED_SEARCHING_DONORS",
             hospitalNotes: notes || "Approved by Hospital Blood Desk.",
             trendingReason: "Hospital Verified • Matching Donors Search Active"
           };
@@ -223,9 +298,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ]);
   };
 
-  // Step 4/5: Donor Declines Request
+  // Step 4/5: Donor Declines Request (Radius Auto-Escalation)
   const donorDeclineRequest = (requestId: string, donorId: string) => {
-    showToast(`Donor declined. Tier 2 auto-escalation searching next closest donor...`);
+    showToast(`Donor declined. Radius escalated (5km → 10km → 25km → 50km) searching next closest donor...`);
     setRequests(prev =>
       prev.map(r => {
         if (r.id === requestId) {
@@ -351,6 +426,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isLoading,
         requests,
         createEmergencyRequest,
+        patientVerifications,
+        createPatientVerification,
+        verifyPatientCredentials,
         approveRequestByHospital,
         rejectRequestByHospital,
         donorAcceptRequest,

@@ -7,8 +7,33 @@ import {
   LeaderboardItem,
   NotificationItem,
   GroupCircle,
-  InterCityTransfer
+  InterCityTransfer,
+  PatientVerification
 } from '../types';
+
+export const MOCK_PATIENT_VERIFICATIONS: PatientVerification[] = [
+  {
+    id: 'pv_001',
+    patientId: 'BN-HUB-2026-00852',
+    verificationCode: '739241',
+    patientName: 'Rohan Deshmukh',
+    bloodGroup: 'O-',
+    hospitalName: 'KIMS Teaching Hospital',
+    expiryDate: '2026-08-30',
+    isActive: true
+  },
+  {
+    id: 'pv_002',
+    patientId: 'BN-DHA-2026-00914',
+    verificationCode: '482105',
+    patientName: 'Savitri Devi',
+    bloodGroup: 'AB-',
+    hospitalName: 'SDM Medical College & Hospital',
+    expiryDate: '2026-08-30',
+    isActive: true
+  }
+];
+
 
 export const MOCK_CURRENT_USER: User = {
   id: "usr_donor_001",

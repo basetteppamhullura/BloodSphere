@@ -19,18 +19,33 @@ import {
   ChevronLeft,
   Crosshair,
   Edit2,
-  FileCheck
+  FileCheck,
+  KeyRound,
+  Check
 } from 'lucide-react';
 
 export const EmergencyPostModal: React.FC = () => {
-  const { activeEmergencyPostModal, setActiveEmergencyPostModal, createEmergencyRequest, bloodBanks } = useApp();
+  const {
+    activeEmergencyPostModal,
+    setActiveEmergencyPostModal,
+    createEmergencyRequest,
+    bloodBanks,
+    verifyPatientCredentials,
+    patientVerifications
+  } = useApp();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // Patient Verification State
+  const [patientIdInput, setPatientIdInput] = useState('BN-HUB-2026-00852');
+  const [verificationCodeInput, setVerificationCodeInput] = useState('739241');
+  const [isVerified, setIsVerified] = useState(true);
+  const [verificationFeedback, setVerificationFeedback] = useState<string>('Patient verified successfully.');
+
   // 1. Patient Info
-  const [patientName, setPatientName] = useState('');
-  const [patientAge, setPatientAge] = useState<number | ''>('');
+  const [patientName, setPatientName] = useState('Rohan Deshmukh');
+  const [patientAge, setPatientAge] = useState<number | ''>(34);
   const [patientGender, setPatientGender] = useState<'Male' | 'Female' | 'Other'>('Male');
 
   // 2. Blood Requirement
@@ -72,6 +87,23 @@ export const EmergencyPostModal: React.FC = () => {
 
   if (!activeEmergencyPostModal) return null;
 
+  // Patient Credentials Verification Handler
+  const handleVerifyCredentials = () => {
+    const res = verifyPatientCredentials(patientIdInput, verificationCodeInput, bloodGroup);
+    if (res.isValid) {
+      setIsVerified(true);
+      setVerificationFeedback(res.message);
+      if (res.record) {
+        setPatientName(res.record.patientName);
+        setBloodGroup(res.record.bloodGroup);
+        setSelectedHospital(res.record.hospitalName);
+      }
+    } else {
+      setIsVerified(false);
+      setVerificationFeedback(res.message);
+    }
+  };
+
   // Registered Hospital Dropdown Auto-Fill
   const handleHospitalSelect = (hName: string) => {
     setSelectedHospital(hName);
@@ -107,6 +139,8 @@ export const EmergencyPostModal: React.FC = () => {
     if (step === 1) {
       if (!patientName.trim()) newErrors.patientName = 'Patient name is required.';
       if (!patientAge || Number(patientAge) <= 0) newErrors.patientAge = 'Valid patient age is required.';
+      if (!patientIdInput.trim()) newErrors.patientIdInput = 'Patient ID is required.';
+      if (!verificationCodeInput.trim()) newErrors.verificationCodeInput = 'Verification code is required.';
     }
 
     if (step === 2) {
@@ -154,17 +188,26 @@ export const EmergencyPostModal: React.FC = () => {
     const finalReason = reasonCategory === 'Other' ? customReason : `${reasonCategory} Requirement`;
     createEmergencyRequest({
       patientName,
+      patientAge: Number(patientAge),
+      patientGender,
+      patientId: patientIdInput,
+      verificationCode: verificationCodeInput,
+      isVerifiedByHospital: isVerified,
       bloodGroup,
+      bloodComponent,
       unitsNeeded,
       hospitalName: selectedHospital,
       city,
       urgency,
       requiredDate,
+      requiredTime,
       contactPerson: requesterName,
       contactPhone: requesterPhone,
+      contactEmail: requesterEmail,
+      relationship,
       reason: finalReason,
       additionalNotes: `${medicalNotes} (Doctor: ${doctorName || 'N/A'}, Dept: ${wardDept || 'General'})`,
-      status: 'PENDING_HOSPITAL_APPROVAL'
+      status: isVerified ? 'VERIFIED_SEARCHING_DONORS' : 'PENDING_HOSPITAL_APPROVAL'
     });
     setActiveEmergencyPostModal(false);
   };
@@ -181,7 +224,7 @@ export const EmergencyPostModal: React.FC = () => {
             </div>
             <div>
               <h3 className="font-extrabold text-base text-white">Create Blood Request Wizard</h3>
-              <p className="text-[10px] text-slate-400">Step {currentStep} of 8 — Multi-Section Verification</p>
+              <p className="text-[10px] text-slate-400">Step {currentStep} of 8 — Patient ID Pre-Verification Grid</p>
             </div>
           </div>
 
@@ -219,14 +262,68 @@ export const EmergencyPostModal: React.FC = () => {
         {/* Form Body Steps */}
         <div className="p-6 overflow-y-auto space-y-4 text-xs flex-1">
           
-          {/* STEP 1: PATIENT INFO */}
+          {/* STEP 1: PATIENT INFO & PRE-VERIFICATION */}
           {currentStep === 1 && (
             <div className="space-y-4 animate-in fade-in">
               <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
-                <User className="w-4 h-4 text-red-500" /> Section 1: Patient Information
+                <KeyRound className="w-4 h-4 text-amber-400" /> Section 1: Patient Verification & Information
               </h4>
 
-              <div className="space-y-3">
+              {/* Patient ID & Verification Code Card */}
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">
+                  Hospital Patient Verification Credentials (Instant Donor Search):
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-300 font-bold block mb-1">Patient ID *</label>
+                    <input
+                      type="text"
+                      placeholder="BN-HUB-2026-00852"
+                      value={patientIdInput}
+                      onChange={e => setPatientIdInput(e.target.value)}
+                      className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white focus:border-red-600 font-mono"
+                    />
+                    {errors.patientIdInput && <span className="text-[10px] text-red-400 block mt-1">{errors.patientIdInput}</span>}
+                  </div>
+
+                  <div>
+                    <label className="text-slate-300 font-bold block mb-1">6-Digit Verification Code *</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="739241"
+                        value={verificationCodeInput}
+                        onChange={e => setVerificationCodeInput(e.target.value)}
+                        className="w-full p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white focus:border-red-600 font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleVerifyCredentials}
+                        className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-black shrink-0 flex items-center gap-1"
+                      >
+                        <Check className="w-4 h-4" /> Verify
+                      </button>
+                    </div>
+                    {errors.verificationCodeInput && <span className="text-[10px] text-red-400 block mt-1">{errors.verificationCodeInput}</span>}
+                  </div>
+                </div>
+
+                {/* Verification Feedback Banner */}
+                {verificationFeedback && (
+                  <div className={`p-2.5 rounded-xl border text-xs flex items-center gap-2 font-bold ${
+                    isVerified
+                      ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
+                      : 'bg-red-950/60 border-red-800 text-red-300'
+                  }`}>
+                    <ShieldCheck className="w-4 h-4 shrink-0" />
+                    <span>{verificationFeedback}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-3 pt-1">
                 <div>
                   <label className="text-slate-300 font-bold block mb-1">Patient Full Name *</label>
                   <input
@@ -273,7 +370,7 @@ export const EmergencyPostModal: React.FC = () => {
           {currentStep === 2 && (
             <div className="space-y-4 animate-in fade-in">
               <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
-                <Droplet className="w-4 h-4 text-red-500" /> Section 2: Blood Requirement Details
+                <FileText className="w-4 h-4 text-red-500" /> Section 2: Blood Requirement Details
               </h4>
 
               <div className="grid grid-cols-2 gap-3">
@@ -709,14 +806,18 @@ export const EmergencyPostModal: React.FC = () => {
               <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-800 flex items-center justify-between">
                 <div>
                   <h4 className="font-extrabold text-sm text-emerald-300">Confirmation Summary Review</h4>
-                  <p className="text-[11px] text-slate-400">Review all details before submitting to hospital approval.</p>
+                  <p className="text-[11px] text-slate-400">
+                    {isVerified
+                      ? 'Patient verified! Instant donor matching will be activated upon submission.'
+                      : 'Review details before submitting to hospital.'}
+                  </p>
                 </div>
                 <CheckCircle2 className="w-6 h-6 text-emerald-400" />
               </div>
 
               <div className="space-y-3 bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs">
                 <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-                  <span className="font-bold text-white">1. Patient: {patientName} ({patientAge} yrs, {patientGender})</span>
+                  <span className="font-bold text-white">1. Patient: {patientName} ({patientAge} yrs, {patientGender}) [ID: {patientIdInput}]</span>
                   <button onClick={() => setCurrentStep(1)} className="text-red-400 font-bold flex items-center gap-1"><Edit2 className="w-3 h-3" /> Edit</button>
                 </div>
 
@@ -781,7 +882,7 @@ export const EmergencyPostModal: React.FC = () => {
               onClick={handleFinalSubmit}
               className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-black text-xs shadow-xl shadow-red-950 flex items-center gap-2"
             >
-              <Send className="w-4 h-4" /> Submit Blood Request (Step 1)
+              <Send className="w-4 h-4" /> Submit Verified Request
             </button>
           )}
         </div>

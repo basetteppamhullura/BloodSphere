@@ -1,8 +1,17 @@
 export type BloodGroup = 'A+' | 'A-' | 'B+' | 'B-' | 'AB+' | 'AB-' | 'O+' | 'O-' | 'Bombay Phenotype (O-h)';
 
-export type UrgencyLevel = 'CRITICAL' | 'HIGH' | 'MODERATE';
+export type UrgencyLevel = 'CRITICAL' | 'HIGH' | 'MODERATE' | 'LOW';
 
 export type UserRole = 'donor' | 'requester' | 'hospital' | 'bloodbank' | 'admin';
+
+export type RequestWorkflowStatus = 
+  | 'PENDING_HOSPITAL_APPROVAL'
+  | 'VERIFIED_SEARCHING_DONORS'
+  | 'APPROVED'
+  | 'DONOR_CONFIRMED'
+  | 'APPOINTMENT_SCHEDULED'
+  | 'COMPLETED'
+  | 'REJECTED';
 
 export type PageTab = 
   | 'landing' 
@@ -11,109 +20,89 @@ export type PageTab =
   | 'dashboard' 
   | 'donor-search' 
   | 'emergency-requests' 
+  | 'rare-registry'
+  | 'group-circles'
+  | 'blood-bridge'
   | 'blood-banks' 
   | 'camps' 
   | 'leaderboard' 
-  | 'profile'
-  | 'rare-registry'
-  | 'group-circles'
-  | 'blood-bridge';
-
-export type RequestWorkflowStatus = 
-  | 'PENDING_HOSPITAL_APPROVAL'
-  | 'APPROVED'
-  | 'SEARCHING_DONORS'
-  | 'DONOR_CONFIRMED'
-  | 'APPOINTMENT_SCHEDULED'
-  | 'COMPLETED'
-  | 'REJECTED';
-
-export interface Badge {
-  id: string;
-  title: string;
-  icon: string;
-  desc: string;
-}
-
-export interface DonationHistoryRecord {
-  id: string;
-  date: string;
-  location: string;
-  units: number;
-  bloodGroup: BloodGroup;
-  certificateUrl: string;
-}
+  | 'profile';
 
 export interface User {
   id: string;
   name: string;
-  role: UserRole;
   email: string;
-  phone: string;
+  role: UserRole;
   bloodGroup: BloodGroup;
   city: string;
-  state: string;
-  address: string;
-  gender?: 'male' | 'female' | 'other';
-  lat: number;
-  lng: number;
-  lastDonationDate: string;
-  totalDonations: number;
-  streak: number;
-  points: number;
-  isEligible: boolean;
-  verificationStatus: string;
-  badges: Badge[];
-  donationHistory: DonationHistoryRecord[];
-  medicalFlags?: {
-    weight: number;
-    hbLevel: number;
-    recentTattoo: boolean;
-    medications: string;
-    chronicIllness: boolean;
-  };
-  hbTrendHistory?: { date: string; hb: number }[];
+  phone: string;
+  totalDonations?: number;
+  lastDonationDate?: string;
+  points?: number;
+  streak?: number;
+  badges?: string[];
+  isVerified?: boolean;
+}
+
+export interface PatientVerification {
+  id: string;
+  patientId: string; // e.g. "BN-HUB-2026-00852"
+  verificationCode: string; // e.g. "739241"
+  patientName: string;
+  bloodGroup: BloodGroup;
+  hospitalName: string;
+  expiryDate: string;
+  isActive: boolean;
 }
 
 export interface AppointmentDetails {
   date: string;
   time: string;
   venue: string;
-  assignedDonorId: string;
   assignedDonorName: string;
-  assignedDonorPhone: string;
 }
 
 export interface EmergencyRequest {
   id: string;
   patientName: string;
+  patientAge?: number;
+  patientGender?: string;
+  patientId?: string;
+  verificationCode?: string;
+  isVerifiedByHospital?: boolean;
   bloodGroup: BloodGroup;
+  bloodComponent?: string;
   unitsNeeded: number;
   unitsFulfilled: number;
   urgency: UrgencyLevel;
   hospitalName: string;
+  hospitalAddress?: string;
+  wardDept?: string;
   city: string;
-  state: string;
+  state?: string;
+  pincode?: string;
   contactPerson: string;
   maskedPhone: string;
-  contactPhone?: string;
+  contactPhone: string;
+  contactEmail?: string;
+  relationship?: string;
   requestedAt: string;
   deadline: string;
   requiredDate?: string;
+  requiredTime?: string;
   reason: string;
-  additionalNotes?: string;
-  hospitalNotes?: string;
+  additionalNotes: string;
+  doctorName?: string;
+  prescriptionFileName?: string;
   status: RequestWorkflowStatus;
+  aiUrgencyScore: number;
+  decayScore: number;
+  trendingReason: string;
+  sharesCount: number;
+  matchedDonorsCount: number;
   assignedDonorId?: string;
   assignedDonorName?: string;
   appointmentDetails?: AppointmentDetails;
-  aiUrgencyScore: number;
-  decayScore?: number;
-  trendingReason?: string;
-  sharesCount: number;
-  matchedDonorsCount: number;
-  requiresHospitalCoSign?: boolean;
-  isCoSignedByHospital?: boolean;
   lat: number;
   lng: number;
 }
@@ -123,69 +112,59 @@ export interface Donor {
   name: string;
   bloodGroup: BloodGroup;
   city: string;
-  state: string;
+  distanceKm: number;
+  phone: string;
+  maskedPhone: string;
+  totalDonations: number;
+  lastDonationDate: string;
+  points: number;
+  responseLikelihoodScore: number;
+  isAvailable: boolean;
+  isEligible: boolean;
+  isRareGroup: boolean;
   lat: number;
   lng: number;
-  lastDonationDate: string;
-  reliabilityScore: number;
-  totalDonations: number;
-  phone: string;
-  isAvailable: boolean;
-  distanceKm: number;
-  matchPercentage?: number;
-  responseLikelihoodScore?: number;
-  matchReasons?: string[];
-  escalationTier?: 1 | 2;
 }
 
-export interface BloodStockItem {
+export interface InventoryItem {
   group: BloodGroup;
   units: number;
-  status: 'Optimal' | 'Adequate' | 'Low' | 'CRITICAL';
-  minThreshold: number;
-  expiring7Days: number;
+  lastUpdated: string;
 }
 
 export interface BloodBank {
   id: string;
   name: string;
-  licenseNo: string;
   city: string;
-  state: string;
   address: string;
   phone: string;
-  email: string;
+  inventory: InventoryItem[];
   lat: number;
   lng: number;
-  distanceKm: number;
-  isOpen24Hours: boolean;
-  verified: boolean;
-  inventory: BloodStockItem[];
 }
 
 export interface DonationCamp {
   id: string;
   title: string;
   organizer: string;
-  venue: string;
+  location: string;
+  city: string;
   date: string;
   time: string;
-  expectedDonors: number;
-  rsvpsCount: number;
-  city: string;
-  bannerUrl: string;
-  amenities: string[];
-  isJoined: boolean;
+  targetUnits: number;
+  registeredDonorsCount: number;
+  isUserRegistered?: boolean;
 }
 
 export interface LeaderboardItem {
   rank: number;
+  donorId: string;
   name: string;
   city: string;
-  college: string;
-  donations: number;
+  bloodGroup: BloodGroup;
+  donationsCount: number;
   points: number;
-  badge: string;
+  badgeTitle: string;
 }
 
 export interface NotificationItem {
@@ -193,30 +172,27 @@ export interface NotificationItem {
   title: string;
   message: string;
   time: string;
+  type: 'urgent' | 'success' | 'info';
   read: boolean;
-  requestId?: string;
 }
 
 export interface GroupCircle {
   id: string;
   name: string;
-  category: 'Family' | 'Corporate' | 'College';
-  city: string;
+  type: 'Campus' | 'Corporate' | 'Family';
+  location: string;
   membersCount: number;
-  activeRequests: number;
-  isVerified: boolean;
-  joined: boolean;
+  totalUnitsDonated: number;
+  isUserMember?: boolean;
 }
 
 export interface InterCityTransfer {
   id: string;
-  fromCity: string;
-  toCity: string;
-  fromHospital: string;
-  toHospital: string;
+  sourceCity: string;
+  targetCity: string;
   bloodGroup: BloodGroup;
   units: number;
-  estimatedTimeMins: number;
-  urgencyReason: string;
-  status: 'RECOMMENDED' | 'IN_TRANSIT' | 'COMPLETED';
+  urgency: UrgencyLevel;
+  courierStatus: 'In Transit' | 'Dispatch Pending' | 'Delivered';
+  etaMinutes: number;
 }
