@@ -4,6 +4,22 @@ export type UrgencyLevel = 'CRITICAL' | 'HIGH' | 'MODERATE' | 'LOW';
 
 export type UserRole = 'donor' | 'requester' | 'hospital' | 'bloodbank' | 'admin';
 
+export type AccountVerificationStatus = 'Pending Verification' | 'Verified' | 'Disabled';
+
+export interface PortalAccount {
+  id: string;
+  email: string;
+  role: UserRole;
+  name: string;
+  phone: string;
+  licenseNumber?: string;
+  address?: string;
+  city: string;
+  state?: string;
+  contactPerson?: string;
+  status: AccountVerificationStatus;
+}
+
 export type RequestWorkflowStatus = 
   | 'PENDING_HOSPITAL_APPROVAL'
   | 'VERIFIED_SEARCHING_DONORS'

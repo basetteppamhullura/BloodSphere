@@ -28,7 +28,9 @@ import {
   UserCheck,
   RefreshCw,
   KeyRound,
-  Copy
+  Copy,
+  Ban,
+  ShieldAlert
 } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
@@ -44,13 +46,12 @@ export const DashboardPage: React.FC = () => {
     bloodBanks,
     updateInventoryStock,
     donors,
-    patientVerifications,
     createPatientVerification,
     setActiveEmergencyPostModal,
     showToast
   } = useApp();
 
-  const { currentRole, currentUser } = useAuth();
+  const { currentRole, currentUser, portalAccounts, updateAccountStatusByAdmin } = useAuth();
 
   // Schedule Modal State
   const [scheduleModalReqId, setScheduleModalReqId] = useState<string | null>(null);
@@ -63,13 +64,6 @@ export const DashboardPage: React.FC = () => {
   const [pvBloodGroup, setPvBloodGroup] = useState<BloodGroup>('O-');
   const [pvHospitalName, setPvHospitalName] = useState('KIMS Teaching Hospital');
   const [generatedPv, setGeneratedPv] = useState<any | null>(null);
-
-  // Admin Verification State
-  const [verifiedUsers, setVerifiedUsers] = useState<Record<string, boolean>>({
-    usr_donor_001: true,
-    donor_202: false,
-    donor_203: true
-  });
 
   if (isLoading) {
     return (
@@ -93,14 +87,6 @@ export const DashboardPage: React.FC = () => {
     e.preventDefault();
     const created = createPatientVerification(pvPatientName, pvBloodGroup, pvHospitalName);
     setGeneratedPv(created);
-  };
-
-  const toggleAdminUserVerify = (userId: string) => {
-    setVerifiedUsers(prev => {
-      const updated = !prev[userId];
-      showToast(updated ? `User ${userId} verified by Super Admin!` : `User ${userId} verification revoked.`);
-      return { ...prev, [userId]: updated };
-    });
   };
 
   return (
@@ -519,57 +505,92 @@ export const DashboardPage: React.FC = () => {
       {currentRole === 'admin' && (
         <div className="space-y-6">
           <h3 className="font-bold text-base text-white flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-400" /> Super Admin Network Control & Analytics
+            <ShieldCheck className="w-5 h-5 text-emerald-400" /> Super Admin Network Control & License Verification Desk
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
             <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-              <span className="text-slate-400">Total Registered Donors</span>
-              <span className="text-2xl font-black text-white block mt-1">4,820</span>
+              <span className="text-slate-400">Total Registered Accounts</span>
+              <span className="text-2xl font-black text-white block mt-1">{portalAccounts.length}</span>
             </div>
             <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
               <span className="text-slate-400">Verified Hospitals</span>
-              <span className="text-2xl font-black text-blue-400 block mt-1">42</span>
+              <span className="text-2xl font-black text-blue-400 block mt-1">
+                {portalAccounts.filter(a => a.role === 'hospital' && a.status === 'Verified').length + 42}
+              </span>
             </div>
             <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
               <span className="text-slate-400">Active Blood Banks</span>
-              <span className="text-2xl font-black text-emerald-400 block mt-1">18</span>
+              <span className="text-2xl font-black text-emerald-400 block mt-1">
+                {portalAccounts.filter(a => a.role === 'bloodbank' && a.status === 'Verified').length + 18}
+              </span>
             </div>
             <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-              <span className="text-slate-400">Successful Match Rate</span>
-              <span className="text-2xl font-black text-amber-400 block mt-1">98.4%</span>
+              <span className="text-slate-400">Pending License Verifications</span>
+              <span className="text-2xl font-black text-amber-400 block mt-1">
+                {portalAccounts.filter(a => a.status === 'Pending Verification').length}
+              </span>
             </div>
           </div>
 
-          {/* Admin User Management Directory */}
+          {/* Admin Pending Hospital & Blood Bank License Approval Desk */}
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
             <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
-              <UserCheck className="w-4 h-4 text-emerald-400" /> Registered User & Hospital Verification Desk
+              <Building2 className="w-4 h-4 text-amber-400" /> Hospital & Blood Bank License Verification Queue
             </h4>
 
-            <div className="space-y-2 text-xs">
-              {donors.map(donor => {
-                const isVerified = verifiedUsers[donor.id] ?? true;
-                return (
-                  <div key={donor.id} className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-white block">{donor.name} ({donor.bloodGroup})</span>
-                      <span className="text-[10px] text-slate-400">{donor.city} • {donor.phone}</span>
+            <div className="space-y-3 text-xs">
+              {portalAccounts.map(acc => (
+                <div key={acc.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-white text-sm">{acc.name}</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-900 text-slate-300 border border-slate-800">
+                        {acc.role}
+                      </span>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                        acc.status === 'Verified'
+                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                          : acc.status === 'Pending Verification'
+                          ? 'bg-amber-950 text-amber-300 border-amber-800 animate-pulse'
+                          : 'bg-red-950 text-red-300 border-red-800'
+                      }`}>
+                        {acc.status}
+                      </span>
                     </div>
 
-                    <button
-                      onClick={() => toggleAdminUserVerify(donor.id)}
-                      className={`px-3 py-1 rounded-lg font-bold text-xs transition-all ${
-                        isVerified
-                          ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                          : 'bg-amber-950 text-amber-300 border border-amber-800'
-                      }`}
-                    >
-                      {isVerified ? 'Verified Active' : 'Pending Verification'}
-                    </button>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Email: <strong>{acc.email}</strong> • Phone: {acc.phone} • License: <strong className="text-amber-400">{acc.licenseNumber || 'N/A'}</strong>
+                    </p>
                   </div>
-                );
-              })}
+
+                  <div className="flex items-center gap-2">
+                    {acc.status !== 'Verified' && (
+                      <button
+                        onClick={() => {
+                          updateAccountStatusByAdmin(acc.id, 'Verified');
+                          showToast(`Approved ${acc.name}! Account is now Verified.`);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1"
+                      >
+                        <Check className="w-4 h-4" /> Approve License
+                      </button>
+                    )}
+
+                    {acc.status !== 'Disabled' && (
+                      <button
+                        onClick={() => {
+                          updateAccountStatusByAdmin(acc.id, 'Disabled');
+                          showToast(`Disabled ${acc.name}. Account access revoked.`);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-red-400 font-bold text-xs border border-slate-700 flex items-center gap-1"
+                      >
+                        <Ban className="w-4 h-4" /> Disable
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

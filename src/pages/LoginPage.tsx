@@ -2,80 +2,165 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { UserRole } from '../types';
-import { Heart, LogIn, ShieldCheck, User, Building2, Droplet, Lock } from 'lucide-react';
+import { Heart, LogIn, ShieldCheck, User, Building2, Droplet, Lock, AlertCircle, Building, ShieldAlert } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { login } = useAuth();
+  const { login, portalAccounts } = useAuth();
   const { navigateTo, showToast } = useApp();
 
+  const [activePortalTab, setActivePortalTab] = useState<'donor_requester' | 'hospital' | 'bloodbank' | 'admin'>('donor_requester');
   const [selectedRole, setSelectedRole] = useState<UserRole>('donor');
+
   const [email, setEmail] = useState('ananya.sharma@example.com');
   const [password, setPassword] = useState('••••••••');
 
-  const demoAccounts: { role: UserRole; name: string; email: string; desc: string }[] = [
-    { role: 'donor', name: 'Dr. Ananya Sharma', email: 'ananya.sharma@example.com', desc: 'Registered O- Donor' },
-    { role: 'requester', name: 'Rohan Deshmukh', email: 'rohan.deshmukh@example.com', desc: 'Patient Attendant' },
-    { role: 'hospital', name: 'KIMS Hospital Admin', email: 'admin@kims.edu.in', desc: 'Verified Hospital Desk' },
-    { role: 'bloodbank', name: 'Rotary Blood Center', email: 'contact@rotaryblood.org', desc: 'Blood Inventory Mgr' },
-    { role: 'admin', name: 'National Super Admin', email: 'admin@bloodnet.gov.in', desc: 'System Moderator' }
-  ];
+  const [loginError, setLoginError] = useState<string | null>(null);
 
-  const handleRoleSelect = (acc: typeof demoAccounts[0]) => {
-    setSelectedRole(acc.role);
-    setEmail(acc.email);
+  const handlePortalSwitch = (portal: 'donor_requester' | 'hospital' | 'bloodbank' | 'admin') => {
+    setActivePortalTab(portal);
+    setLoginError(null);
+
+    if (portal === 'donor_requester') {
+      setSelectedRole('donor');
+      setEmail('ananya.sharma@example.com');
+    } else if (portal === 'hospital') {
+      setSelectedRole('hospital');
+      setEmail('admin@kims.edu.in');
+    } else if (portal === 'bloodbank') {
+      setSelectedRole('bloodbank');
+      setEmail('contact@rotaryblood.org');
+    } else if (portal === 'admin') {
+      setSelectedRole('admin');
+      setEmail('admin@bloodnet.gov.in');
+    }
+  };
+
+  const handleRoleToggle = (role: UserRole) => {
+    setSelectedRole(role);
+    setLoginError(null);
+    if (role === 'donor') setEmail('ananya.sharma@example.com');
+    if (role === 'requester') setEmail('rohan.deshmukh@example.com');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, selectedRole);
-    showToast(`Logged in successfully as ${selectedRole.toUpperCase()}!`);
-    navigateTo('dashboard');
+    setLoginError(null);
+
+    const res = login(email, selectedRole);
+    if (res.success) {
+      showToast(res.message);
+      navigateTo('dashboard');
+    } else {
+      setLoginError(res.message);
+    }
   };
 
   return (
-    <div className="max-w-md mx-auto my-8 space-y-6 animate-in fade-in">
+    <div className="max-w-xl mx-auto my-8 space-y-6 animate-in fade-in">
       
       {/* Brand Header */}
       <div className="text-center space-y-2">
         <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-rose-600 text-white font-extrabold mx-auto flex items-center justify-center shadow-xl shadow-red-950">
           <Heart className="w-8 h-8 fill-white animate-pulse" />
         </div>
-        <h2 className="text-2xl font-black text-white tracking-tight">Login to Blood Net</h2>
-        <p className="text-xs text-slate-400">Select your role perspective to access your dedicated dashboard</p>
+        <h2 className="text-2xl font-black text-white tracking-tight">Choose how you want to access Blood Net</h2>
+        <p className="text-xs text-slate-400">Select your access portal to enter your dedicated system</p>
       </div>
 
-      {/* Demo Account Quick Selector */}
-      <div className="p-4 rounded-3xl bg-slate-900 border border-slate-800 space-y-3">
-        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
-          Select Role Demo Account (1-Click Login):
-        </span>
+      {/* 4 Separate Login Portal Choice Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+        <button
+          type="button"
+          onClick={() => handlePortalSwitch('donor_requester')}
+          className={`p-3 rounded-2xl border text-center space-y-1 transition-all ${
+            activePortalTab === 'donor_requester'
+              ? 'bg-red-950/80 border-red-600 text-white shadow-lg ring-1 ring-red-500'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+          }`}
+        >
+          <User className="w-5 h-5 mx-auto text-red-500" />
+          <span className="font-extrabold block text-[11px]">🩸 Donor / Requester</span>
+        </button>
 
-        <div className="space-y-1.5">
-          {demoAccounts.map(acc => (
-            <button
-              key={acc.role}
-              type="button"
-              onClick={() => handleRoleSelect(acc)}
-              className={`w-full p-2.5 rounded-xl border text-left flex items-center justify-between text-xs transition-all ${
-                selectedRole === acc.role
-                  ? 'bg-red-950/60 border-red-700 text-white shadow-md'
-                  : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <div>
-                <span className="font-bold block capitalize text-slate-200">{acc.name} ({acc.role})</span>
-                <span className="text-[10px] text-slate-500">{acc.desc}</span>
-              </div>
-              {selectedRole === acc.role && <ShieldCheck className="w-4 h-4 text-red-500" />}
-            </button>
-          ))}
+        <button
+          type="button"
+          onClick={() => handlePortalSwitch('hospital')}
+          className={`p-3 rounded-2xl border text-center space-y-1 transition-all ${
+            activePortalTab === 'hospital'
+              ? 'bg-blue-950/80 border-blue-600 text-white shadow-lg ring-1 ring-blue-500'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+          }`}
+        >
+          <Building2 className="w-5 h-5 mx-auto text-blue-400" />
+          <span className="font-extrabold block text-[11px]">🏥 Hospital Portal</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handlePortalSwitch('bloodbank')}
+          className={`p-3 rounded-2xl border text-center space-y-1 transition-all ${
+            activePortalTab === 'bloodbank'
+              ? 'bg-emerald-950/80 border-emerald-600 text-white shadow-lg ring-1 ring-emerald-500'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+          }`}
+        >
+          <Droplet className="w-5 h-5 mx-auto text-emerald-400" />
+          <span className="font-extrabold block text-[11px]">🏦 Blood Bank Portal</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handlePortalSwitch('admin')}
+          className={`p-3 rounded-2xl border text-center space-y-1 transition-all ${
+            activePortalTab === 'admin'
+              ? 'bg-amber-950/80 border-amber-600 text-white shadow-lg ring-1 ring-amber-500'
+              : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+          }`}
+        >
+          <Lock className="w-5 h-5 mx-auto text-amber-400" />
+          <span className="font-extrabold block text-[11px]">👨‍💼 Super Admin</span>
+        </button>
+      </div>
+
+      {/* Shared Donor/Requester Role Selector Toggle */}
+      {activePortalTab === 'donor_requester' && (
+        <div className="p-1 rounded-2xl bg-slate-900 border border-slate-800 grid grid-cols-2 text-xs">
+          <button
+            type="button"
+            onClick={() => handleRoleToggle('donor')}
+            className={`py-2 rounded-xl font-bold transition-all ${
+              selectedRole === 'donor' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            🩸 Voluntary Donor
+          </button>
+          <button
+            type="button"
+            onClick={() => handleRoleToggle('requester')}
+            className={`py-2 rounded-xl font-bold transition-all ${
+              selectedRole === 'requester' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            🆘 Patient Requester
+          </button>
         </div>
-      </div>
+      )}
 
-      {/* Form */}
+      {/* Error Message Banner */}
+      {loginError && (
+        <div className="p-4 rounded-2xl bg-red-950/80 border border-red-800 text-red-300 text-xs flex items-center gap-2 font-bold animate-in fade-in">
+          <ShieldAlert className="w-5 h-5 shrink-0" />
+          <span>{loginError}</span>
+        </div>
+      )}
+
+      {/* Login Form */}
       <form onSubmit={handleSubmit} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
+        
         <div>
-          <label className="text-slate-300 font-bold block mb-1">Email Address</label>
+          <label className="text-slate-300 font-bold block mb-1">
+            {activePortalTab === 'hospital' ? 'Official Hospital Email *' : activePortalTab === 'bloodbank' ? 'Official Blood Bank Email *' : activePortalTab === 'admin' ? 'Admin Credential Email *' : 'Email Address or Mobile Number *'}
+          </label>
           <input
             type="email"
             value={email}
@@ -86,7 +171,7 @@ export const LoginPage: React.FC = () => {
         </div>
 
         <div>
-          <label className="text-slate-300 font-bold block mb-1">Password</label>
+          <label className="text-slate-300 font-bold block mb-1">Password *</label>
           <input
             type="password"
             value={password}
@@ -98,10 +183,53 @@ export const LoginPage: React.FC = () => {
 
         <button
           type="submit"
-          className="w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center justify-center gap-2"
+          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center justify-center gap-2"
         >
-          <LogIn className="w-4 h-4" /> Enter Dashboard as {selectedRole.toUpperCase()}
+          <LogIn className="w-4 h-4" /> Enter Portal as {selectedRole.toUpperCase()}
         </button>
+
+        {/* Portal Registration Links */}
+        <div className="pt-2 text-center text-slate-400">
+          {activePortalTab === 'hospital' && (
+            <p>
+              New Hospital Desk?{' '}
+              <button
+                type="button"
+                onClick={() => navigateTo('register')}
+                className="text-blue-400 font-bold underline"
+              >
+                Register Hospital (License Verification)
+              </button>
+            </p>
+          )}
+
+          {activePortalTab === 'bloodbank' && (
+            <p>
+              New Blood Bank?{' '}
+              <button
+                type="button"
+                onClick={() => navigateTo('register')}
+                className="text-emerald-400 font-bold underline"
+              >
+                Register Blood Bank Unit
+              </button>
+            </p>
+          )}
+
+          {activePortalTab === 'donor_requester' && (
+            <p>
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={() => navigateTo('register')}
+                className="text-red-400 font-bold underline"
+              >
+                Register New Donor/Requester
+              </button>
+            </p>
+          )}
+        </div>
+
       </form>
 
     </div>
