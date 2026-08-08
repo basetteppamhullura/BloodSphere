@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { SkeletonCard, SkeletonRow } from '../components/common/Skeleton';
 import { BloodGroup } from '../types';
+import { RequesterActionHub } from '../components/requester/RequesterActionHub';
 import {
   Activity,
   AlertTriangle,
@@ -32,7 +33,8 @@ import {
   Ban,
   ShieldAlert,
   Share2,
-  CheckSquare
+  CheckSquare,
+  RotateCcw
 } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
@@ -46,6 +48,7 @@ export const DashboardPage: React.FC = () => {
     scheduleDonationAppointment,
     markDonationCompleted,
     approveBloodBankReservation,
+    createEmergencyRequest,
     bloodBanks,
     updateInventoryStock,
     donors,
@@ -92,6 +95,24 @@ export const DashboardPage: React.FC = () => {
     setGeneratedPv(created);
   };
 
+  // 1-Click Request Reorder Handler
+  const handleReorderRequest = (req: any) => {
+    createEmergencyRequest({
+      patientName: req.patientName,
+      patientAge: req.patientAge,
+      patientGender: req.patientGender,
+      bloodGroup: req.bloodGroup,
+      unitsNeeded: req.unitsNeeded,
+      hospitalName: req.hospitalName,
+      city: req.city,
+      contactPerson: req.contactPerson,
+      contactPhone: req.contactPhone,
+      selectedChannels: req.selectedChannels || ['hospital', 'donors', 'bloodbank'],
+      reason: `REORDERED: ${req.reason}`
+    });
+    showToast(`Request for ${req.patientName} reordered with 1-click!`);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in">
       
@@ -123,7 +144,11 @@ export const DashboardPage: React.FC = () => {
       {/* 1. REQUESTER DASHBOARD VIEW                           */}
       {/* ---------------------------------------------------- */}
       {currentRole === 'requester' && (
-        <div className="space-y-6">
+        <div className="space-y-8">
+          
+          {/* Guided Action Hub (3 Tiles: Emergency, Find Hospital, Find Blood Bank) */}
+          <RequesterActionHub />
+
           <div className="flex justify-between items-center">
             <h3 className="font-bold text-base text-white flex items-center gap-2">
               <FileText className="w-5 h-5 text-red-500" /> My Multi-Channel Requests & Pipeline Tracker
@@ -177,17 +202,26 @@ export const DashboardPage: React.FC = () => {
                       </p>
                     </div>
 
-                    <span className={`px-3 py-1 rounded-full text-xs font-extrabold border shrink-0 ${
-                      req.status === 'COMPLETED'
-                        ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                        : req.status === 'APPOINTMENT_SCHEDULED'
-                        ? 'bg-indigo-950 text-indigo-300 border-indigo-800'
-                        : req.status === 'DONOR_CONFIRMED'
-                        ? 'bg-blue-950 text-blue-300 border-blue-800'
-                        : 'bg-amber-950 text-amber-300 border-amber-800'
-                    }`}>
-                      Overall: {req.status.replace(/_/g, ' ')}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleReorderRequest(req)}
+                        className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-xs border border-slate-700 flex items-center gap-1"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-400" /> Reorder Request
+                      </button>
+
+                      <span className={`px-3 py-1 rounded-full text-xs font-extrabold border shrink-0 ${
+                        req.status === 'COMPLETED'
+                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                          : req.status === 'APPOINTMENT_SCHEDULED'
+                          ? 'bg-indigo-950 text-indigo-300 border-indigo-800'
+                          : req.status === 'DONOR_CONFIRMED'
+                          ? 'bg-blue-950 text-blue-300 border-blue-800'
+                          : 'bg-amber-950 text-amber-300 border-amber-800'
+                      }`}>
+                        Overall: {req.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Multi-Channel Mini Status Tracker Cards */}
@@ -507,7 +541,6 @@ export const DashboardPage: React.FC = () => {
             <span className="text-xs text-slate-400">KIMS Regional Center</span>
           </div>
 
-          {/* Direct Stock Reserve Requests Queue */}
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
             <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
               <CheckSquare className="w-4 h-4 text-emerald-400" /> Direct Blood Bank Stock Reservation Queue
