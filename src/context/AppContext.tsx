@@ -9,7 +9,9 @@ import {
   NotificationItem,
   GroupCircle,
   InterCityTransfer,
-  PatientVerification
+  PatientVerification,
+  RequestChannel,
+  ChannelStatuses
 } from '../types';
 import {
   MOCK_EMERGENCY_REQUESTS,
@@ -34,6 +36,9 @@ interface AppContextType {
   patientVerifications: PatientVerification[];
   createPatientVerification: (patientName: string, bloodGroup: any, hospitalName: string) => PatientVerification;
   verifyPatientCredentials: (patientId: string, code: string, bloodGroup: string) => { isValid: boolean; message: string; record?: PatientVerification };
+
+  // Multi-Channel Handlers & Stock Reservation
+  approveBloodBankReservation: (requestId: string, bankId: string) => void;
 
   // Workflow Phase Handlers
   approveRequestByHospital: (requestId: string, notes?: string) => void;
@@ -184,9 +189,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { isValid: true, message: "Patient verified successfully.", record };
   };
 
-  // Requester creates request (Bypasses manual hospital approval if verified)
+  // Requester creates Multi-Channel Request
   const createEmergencyRequest = (newReq: Partial<EmergencyRequest>) => {
     const isPreVerified = newReq.isVerifiedByHospital ?? true;
+    const channels: RequestChannel[] = newReq.selectedChannels?.length ? newReq.selectedChannels : ['hospital', 'donors'];
+
+    const initialChannelStatuses: ChannelStatuses = {
+      hospitalStatus: channels.includes('hospital') ? 'PENDING' : undefined,
+      donorStatus: channels.includes('donors') ? 'SEARCHING' : undefined,
+      bloodBankStatus: channels.includes('bloodbank') ? 'PENDING' : undefined
+    };
 
     const created: EmergencyRequest = {
       id: `req_${Date.now()}`,
@@ -196,6 +208,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       patientId: newReq.patientId || "BN-HUB-2026-00852",
       verificationCode: newReq.verificationCode || "739241",
       isVerifiedByHospital: isPreVerified,
+      selectedChannels: channels,
+      channelStatuses: initialChannelStatuses,
       bloodGroup: newReq.bloodGroup || "O-",
       bloodComponent: newReq.bloodComponent || "Whole Blood",
       unitsNeeded: newReq.unitsNeeded || 1,
@@ -216,7 +230,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: isPreVerified ? "VERIFIED_SEARCHING_DONORS" : "PENDING_HOSPITAL_APPROVAL",
       aiUrgencyScore: newReq.urgency === "CRITICAL" ? 98 : 84,
       decayScore: 95,
-      trendingReason: isPreVerified ? "Patient Verified • Searching Nearby Donors" : "Pending Hospital Verification",
+      trendingReason: `Dispatched to: ${channels.map(c => c.toUpperCase()).join(', ')}`,
       sharesCount: 1,
       matchedDonorsCount: 4,
       lat: 15.3688,
@@ -224,10 +238,62 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setRequests(prev => [created, ...prev]);
-    showToast(
-      isPreVerified
-        ? `Patient Verified! Request active — instant donor matching initiated for ${created.bloodGroup}.`
-        : `Request submitted to ${created.hospitalName}.`
+
+    // Dispatch real multi-channel notifications
+    const channelNames = channels.map(c => c === 'donors' ? 'Nearby Donors' : c === 'bloodbank' ? 'Blood Banks' : 'Hospital').join(', ');
+    showToast(`Multi-Channel Request dispatched to: ${channelNames}!`);
+
+    setNotifications(prev => [
+      {
+        id: `notif_${Date.now()}`,
+        title: `🚨 Multi-Channel Alert: ${created.bloodGroup} Needed`,
+        message: `Request sent via [${channelNames}] for ${created.patientName} at ${created.hospitalName}.`,
+        time: "Just now",
+        type: "urgent",
+        read: false
+      },
+      ...prev
+    ]);
+  };
+
+  // Blood Bank Approves Stock Reservation
+  const approveBloodBankReservation = (requestId: string, bankId: string) => {
+    const matchedBank = bloodBanks.find(b => b.id === bankId) || bloodBanks[0];
+    
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          showToast(`Stock Reserved! ${r.unitsNeeded} units of ${r.bloodGroup} reserved at ${matchedBank.name}.`);
+          return {
+            ...r,
+            status: "COMPLETED",
+            fulfilledChannel: 'bloodbank',
+            unitsFulfilled: r.unitsNeeded,
+            channelStatuses: {
+              hospitalStatus: r.channelStatuses?.hospitalStatus ? 'CANCELLED' : undefined,
+              donorStatus: r.channelStatuses?.donorStatus ? 'CANCELLED' : undefined,
+              bloodBankStatus: 'RESERVED'
+            },
+            trendingReason: `Fulfilled via Blood Bank Stock Reservation (${matchedBank.name})`
+          };
+        }
+        return r;
+      })
+    );
+
+    // Reserve stock from Blood Bank inventory
+    setBloodBanks(prev =>
+      prev.map(bank => {
+        if (bank.id === bankId) {
+          return {
+            ...bank,
+            inventory: bank.inventory.map(item =>
+              item.group === "O-" ? { ...item, units: Math.max(0, item.units - 1) } : item
+            )
+          };
+        }
+        return bank;
+      })
     );
   };
 
@@ -240,6 +306,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return {
             ...r,
             status: "VERIFIED_SEARCHING_DONORS",
+            channelStatuses: {
+              ...r.channelStatuses,
+              hospitalStatus: 'APPROVED'
+            },
             hospitalNotes: notes || "Approved by Hospital Blood Desk.",
             trendingReason: "Hospital Verified • Matching Donors Search Active"
           };
@@ -258,6 +328,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return {
             ...r,
             status: "REJECTED",
+            channelStatuses: {
+              ...r.channelStatuses,
+              hospitalStatus: 'REJECTED'
+            },
             hospitalNotes: reason || "Incomplete patient documentation."
           };
         }
@@ -276,6 +350,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return {
             ...r,
             status: "DONOR_CONFIRMED",
+            channelStatuses: {
+              ...r.channelStatuses,
+              donorStatus: 'DONOR_ACCEPTED'
+            },
             assignedDonorId: donorObj.id,
             assignedDonorName: donorObj.name
           };
@@ -345,7 +423,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return {
             ...r,
             status: "COMPLETED",
-            unitsFulfilled: r.unitsNeeded
+            fulfilledChannel: 'donors',
+            unitsFulfilled: r.unitsNeeded,
+            channelStatuses: {
+              hospitalStatus: r.channelStatuses?.hospitalStatus ? 'FULFILLED' : undefined,
+              donorStatus: 'FULFILLED',
+              bloodBankStatus: r.channelStatuses?.bloodBankStatus ? 'CANCELLED' : undefined
+            }
           };
         }
         return r;
@@ -429,6 +513,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         patientVerifications,
         createPatientVerification,
         verifyPatientCredentials,
+        approveBloodBankReservation,
         approveRequestByHospital,
         rejectRequestByHospital,
         donorAcceptRequest,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { BloodGroup, UrgencyLevel } from '../../types';
+import { BloodGroup, UrgencyLevel, RequestChannel } from '../../types';
 import {
   AlertTriangle,
   X,
@@ -21,7 +21,10 @@ import {
   Edit2,
   FileCheck,
   KeyRound,
-  Check
+  Check,
+  Share2,
+  Droplet,
+  Users
 } from 'lucide-react';
 
 export const EmergencyPostModal: React.FC = () => {
@@ -30,12 +33,14 @@ export const EmergencyPostModal: React.FC = () => {
     setActiveEmergencyPostModal,
     createEmergencyRequest,
     bloodBanks,
-    verifyPatientCredentials,
-    patientVerifications
+    verifyPatientCredentials
   } = useApp();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Multi-Channel Selection State (Requires min 1)
+  const [selectedChannels, setSelectedChannels] = useState<RequestChannel[]>(['hospital', 'donors']);
 
   // Patient Verification State
   const [patientIdInput, setPatientIdInput] = useState('BN-HUB-2026-00852');
@@ -67,25 +72,37 @@ export const EmergencyPostModal: React.FC = () => {
   const [requiredDate, setRequiredDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [requiredTime, setRequiredTime] = useState('10:00 AM');
 
-  // 5. Requester Info
+  // 6. Requester Info
   const [requesterName, setRequesterName] = useState('Dr. Anish K');
   const [relationship, setRelationship] = useState<'Self' | 'Family' | 'Friend' | 'Hospital Staff' | 'Other'>('Family');
   const [requesterPhone, setRequesterPhone] = useState('9876543210');
   const [requesterEmail, setRequesterEmail] = useState('anish@example.com');
 
-  // 6. Location & GPS
+  // 7. Location & GPS
   const [stateName, setStateName] = useState('Karnataka');
   const [district, setDistrict] = useState('Dharwad');
   const [pincode, setPincode] = useState('580031');
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>({ lat: 15.3688, lng: 75.1274 });
   const [isLocating, setIsLocating] = useState(false);
 
-  // 7. Additional Info & Prescription
+  // 8. Additional Info & Prescription
   const [doctorName, setDoctorName] = useState('Dr. Mahesh Kulkarni');
   const [medicalNotes, setMedicalNotes] = useState('Emergency trauma surgery requirement following highway collision.');
   const [prescriptionFile, setPrescriptionFile] = useState<File | null>(null);
 
   if (!activeEmergencyPostModal) return null;
+
+  // Toggle Multi-Channel Selection
+  const toggleChannel = (ch: RequestChannel) => {
+    setSelectedChannels(prev => {
+      if (prev.includes(ch)) {
+        const next = prev.filter(c => c !== ch);
+        return next;
+      } else {
+        return [...prev, ch];
+      }
+    });
+  };
 
   // Patient Credentials Verification Handler
   const handleVerifyCredentials = () => {
@@ -126,7 +143,7 @@ export const EmergencyPostModal: React.FC = () => {
         },
         () => {
           setIsLocating(false);
-          setGpsCoords({ lat: 15.3647, lng: 75.1240 }); // Fallback Hubballi
+          setGpsCoords({ lat: 15.3647, lng: 75.1240 });
         }
       );
     }
@@ -160,12 +177,18 @@ export const EmergencyPostModal: React.FC = () => {
     }
 
     if (step === 5) {
+      if (selectedChannels.length === 0) {
+        newErrors.channels = 'Please select at least one dispatch channel (Hospital, Donors, or Blood Banks).';
+      }
+    }
+
+    if (step === 6) {
       if (!requesterName.trim()) newErrors.requesterName = 'Requester name is required.';
       if (!/^\d{10}$/.test(requesterPhone.trim())) newErrors.requesterPhone = 'Valid 10-digit mobile number required.';
       if (requesterEmail && !/\S+@\S+\.\S+/.test(requesterEmail)) newErrors.requesterEmail = 'Invalid email address.';
     }
 
-    if (step === 6) {
+    if (step === 7) {
       if (!city.trim()) newErrors.city = 'City is required.';
       if (!/^\d{6}$/.test(pincode.trim())) newErrors.pincode = 'Valid 6-digit pincode required.';
     }
@@ -176,7 +199,7 @@ export const EmergencyPostModal: React.FC = () => {
 
   const handleNextStep = () => {
     if (validateStep(currentStep)) {
-      setCurrentStep(prev => Math.min(prev + 1, 8));
+      setCurrentStep(prev => Math.min(prev + 1, 9));
     }
   };
 
@@ -193,6 +216,7 @@ export const EmergencyPostModal: React.FC = () => {
       patientId: patientIdInput,
       verificationCode: verificationCodeInput,
       isVerifiedByHospital: isVerified,
+      selectedChannels,
       bloodGroup,
       bloodComponent,
       unitsNeeded,
@@ -224,7 +248,7 @@ export const EmergencyPostModal: React.FC = () => {
             </div>
             <div>
               <h3 className="font-extrabold text-base text-white">Create Blood Request Wizard</h3>
-              <p className="text-[10px] text-slate-400">Step {currentStep} of 8 — Patient ID Pre-Verification Grid</p>
+              <p className="text-[10px] text-slate-400">Step {currentStep} of 9 — Multi-Channel Dispatch Grid</p>
             </div>
           </div>
 
@@ -233,9 +257,9 @@ export const EmergencyPostModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Progress Bar (Steps 1-8) */}
+        {/* Progress Bar (Steps 1-9) */}
         <div className="w-full bg-slate-950 px-6 py-3 border-b border-slate-800 flex items-center justify-between gap-1 overflow-x-auto text-[10px] font-bold">
-          {['Patient', 'Blood', 'Hospital', 'Urgency', 'Requester', 'Location', 'Medical', 'Review'].map((label, idx) => {
+          {['Patient', 'Blood', 'Hospital', 'Urgency', 'Channels', 'Requester', 'Location', 'Medical', 'Review'].map((label, idx) => {
             const stepNum = idx + 1;
             const isActive = currentStep === stepNum;
             const isDone = currentStep > stepNum;
@@ -269,7 +293,6 @@ export const EmergencyPostModal: React.FC = () => {
                 <KeyRound className="w-4 h-4 text-amber-400" /> Section 1: Patient Verification & Information
               </h4>
 
-              {/* Patient ID & Verification Code Card */}
               <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
                 <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold block">
                   Hospital Patient Verification Credentials (Instant Donor Search):
@@ -310,7 +333,6 @@ export const EmergencyPostModal: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Verification Feedback Banner */}
                 {verificationFeedback && (
                   <div className={`p-2.5 rounded-xl border text-xs flex items-center gap-2 font-bold ${
                     isVerified
@@ -590,11 +612,110 @@ export const EmergencyPostModal: React.FC = () => {
             </div>
           )}
 
-          {/* STEP 5: REQUESTER INFO */}
+          {/* STEP 5: SEND REQUEST TO (MULTI-CHANNEL SELECTION) */}
           {currentStep === 5 && (
             <div className="space-y-4 animate-in fade-in">
               <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
-                <User className="w-4 h-4 text-red-500" /> Section 5: Requester Information
+                <Share2 className="w-4 h-4 text-amber-400" /> Section 5: Multi-Channel Dispatch Options
+              </h4>
+              <p className="text-slate-400 text-[11px]">Select any combination of channels to dispatch your blood request simultaneously.</p>
+
+              {errors.channels && (
+                <div className="p-3 rounded-xl bg-red-950/80 border border-red-800 text-red-300 font-bold text-xs">
+                  {errors.channels}
+                </div>
+              )}
+
+              <div className="space-y-3">
+                {/* Hospital Channel */}
+                <div
+                  onClick={() => toggleChannel('hospital')}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 ${
+                    selectedChannels.includes('hospital')
+                      ? 'bg-blue-950/70 border-blue-600 text-white ring-1 ring-blue-500'
+                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={selectedChannels.includes('hospital')}
+                      onChange={() => {}}
+                      className="w-4 h-4 rounded accent-blue-600"
+                    />
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-white text-xs flex items-center gap-1.5">
+                      <Building2 className="w-4 h-4 text-blue-400" /> Hospital Review Channel (Default ON)
+                    </span>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      Request goes directly to KIMS hospital medical desk for review and clinical appointment scheduling.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Nearby Donors Channel */}
+                <div
+                  onClick={() => toggleChannel('donors')}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 ${
+                    selectedChannels.includes('donors')
+                      ? 'bg-red-950/70 border-red-600 text-white ring-1 ring-red-500'
+                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={selectedChannels.includes('donors')}
+                      onChange={() => {}}
+                      className="w-4 h-4 rounded accent-red-600"
+                    />
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-white text-xs flex items-center gap-1.5">
+                      <Users className="w-4 h-4 text-red-500" /> Direct Nearby Donors Channel
+                    </span>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      Notifies eligible matching donors in {city} instantly, independent of hospital approval wait times. Donors can Accept/Decline directly.
+                    </p>
+                  </div>
+                </div>
+
+                {/* Blood Banks Channel */}
+                <div
+                  onClick={() => toggleChannel('bloodbank')}
+                  className={`p-4 rounded-2xl border cursor-pointer transition-all flex items-start gap-3 ${
+                    selectedChannels.includes('bloodbank')
+                      ? 'bg-emerald-950/70 border-emerald-600 text-white ring-1 ring-emerald-500'
+                      : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={selectedChannels.includes('bloodbank')}
+                      onChange={() => {}}
+                      className="w-4 h-4 rounded accent-emerald-600"
+                    />
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-white text-xs flex items-center gap-1.5">
+                      <Droplet className="w-4 h-4 text-emerald-400" /> Blood Bank Inventory Reserve Channel
+                    </span>
+                    <p className="text-[11px] text-slate-300 mt-0.5">
+                      Sends direct stock check to regional blood banks in {city} to reserve available {bloodGroup} units instantly.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* STEP 6: REQUESTER INFO */}
+          {currentStep === 6 && (
+            <div className="space-y-4 animate-in fade-in">
+              <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
+                <User className="w-4 h-4 text-red-500" /> Section 6: Requester Information
               </h4>
 
               <div className="grid grid-cols-2 gap-3">
@@ -652,11 +773,11 @@ export const EmergencyPostModal: React.FC = () => {
             </div>
           )}
 
-          {/* STEP 6: LOCATION & GPS */}
-          {currentStep === 6 && (
+          {/* STEP 7: LOCATION & GPS */}
+          {currentStep === 7 && (
             <div className="space-y-4 animate-in fade-in">
               <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-red-500" /> Section 6: Location & GPS Geolocation
+                <MapPin className="w-4 h-4 text-red-500" /> Section 7: Location & GPS Geolocation
               </h4>
 
               <div className="grid grid-cols-2 gap-3">
@@ -733,11 +854,11 @@ export const EmergencyPostModal: React.FC = () => {
             </div>
           )}
 
-          {/* STEP 7: MEDICAL NOTES & PRESCRIPTION */}
-          {currentStep === 7 && (
+          {/* STEP 8: MEDICAL NOTES & PRESCRIPTION */}
+          {currentStep === 8 && (
             <div className="space-y-4 animate-in fade-in">
               <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
-                <FileText className="w-4 h-4 text-red-500" /> Section 7: Additional Medical Notes & Prescription
+                <FileText className="w-4 h-4 text-red-500" /> Section 8: Additional Medical Notes & Prescription
               </h4>
 
               <div className="space-y-3">
@@ -763,7 +884,6 @@ export const EmergencyPostModal: React.FC = () => {
                   />
                 </div>
 
-                {/* Prescription Uploader */}
                 <div>
                   <label className="text-slate-300 font-bold block mb-1">Upload Prescription / Blood Slip (Optional)</label>
                   <div className="p-4 rounded-2xl border-2 border-dashed border-slate-800 bg-slate-950 text-center space-y-2">
@@ -800,16 +920,14 @@ export const EmergencyPostModal: React.FC = () => {
             </div>
           )}
 
-          {/* STEP 8: CONFIRMATION SUMMARY */}
-          {currentStep === 8 && (
+          {/* STEP 9: CONFIRMATION SUMMARY */}
+          {currentStep === 9 && (
             <div className="space-y-4 animate-in fade-in">
               <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-800 flex items-center justify-between">
                 <div>
                   <h4 className="font-extrabold text-sm text-emerald-300">Confirmation Summary Review</h4>
                   <p className="text-[11px] text-slate-400">
-                    {isVerified
-                      ? 'Patient verified! Instant donor matching will be activated upon submission.'
-                      : 'Review details before submitting to hospital.'}
+                    Dispatched channels: <strong>{selectedChannels.map(c => c.toUpperCase()).join(', ')}</strong>
                   </p>
                 </div>
                 <CheckCircle2 className="w-6 h-6 text-emerald-400" />
@@ -837,18 +955,23 @@ export const EmergencyPostModal: React.FC = () => {
                 </div>
 
                 <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-                  <span className="font-bold text-white">5. Requester: {requesterName} ({relationship}, Phone: {requesterPhone})</span>
+                  <span className="font-bold text-amber-400">5. Selected Channels: {selectedChannels.map(c => c.toUpperCase()).join(', ')}</span>
                   <button onClick={() => setCurrentStep(5)} className="text-red-400 font-bold flex items-center gap-1"><Edit2 className="w-3 h-3" /> Edit</button>
                 </div>
 
                 <div className="flex justify-between items-center pb-2 border-b border-slate-800">
-                  <span className="font-bold text-white">6. Location: {city}, {stateName} (Pincode: {pincode})</span>
+                  <span className="font-bold text-white">6. Requester: {requesterName} ({relationship}, Phone: {requesterPhone})</span>
                   <button onClick={() => setCurrentStep(6)} className="text-red-400 font-bold flex items-center gap-1"><Edit2 className="w-3 h-3" /> Edit</button>
                 </div>
 
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-white">7. File Uploaded: {prescriptionFile ? prescriptionFile.name : 'None attached'}</span>
+                <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+                  <span className="font-bold text-white">7. Location: {city}, {stateName} (Pincode: {pincode})</span>
                   <button onClick={() => setCurrentStep(7)} className="text-red-400 font-bold flex items-center gap-1"><Edit2 className="w-3 h-3" /> Edit</button>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-white">8. Prescription Attached: {prescriptionFile ? prescriptionFile.name : 'None'}</span>
+                  <button onClick={() => setCurrentStep(8)} className="text-red-400 font-bold flex items-center gap-1"><Edit2 className="w-3 h-3" /> Edit</button>
                 </div>
               </div>
             </div>
@@ -868,7 +991,7 @@ export const EmergencyPostModal: React.FC = () => {
             </button>
           ) : <div />}
 
-          {currentStep < 8 ? (
+          {currentStep < 9 ? (
             <button
               type="button"
               onClick={handleNextStep}
@@ -882,7 +1005,7 @@ export const EmergencyPostModal: React.FC = () => {
               onClick={handleFinalSubmit}
               className="px-8 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-black text-xs shadow-xl shadow-red-950 flex items-center gap-2"
             >
-              <Send className="w-4 h-4" /> Submit Verified Request
+              <Send className="w-4 h-4" /> Dispatch Multi-Channel Request
             </button>
           )}
         </div>

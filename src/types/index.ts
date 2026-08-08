@@ -6,6 +6,14 @@ export type UserRole = 'donor' | 'requester' | 'hospital' | 'bloodbank' | 'admin
 
 export type AccountVerificationStatus = 'Pending Verification' | 'Verified' | 'Disabled';
 
+export type RequestChannel = 'hospital' | 'donors' | 'bloodbank';
+
+export interface ChannelStatuses {
+  hospitalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'FULFILLED' | 'CANCELLED';
+  donorStatus?: 'SEARCHING' | 'DONOR_ACCEPTED' | 'FULFILLED' | 'CANCELLED';
+  bloodBankStatus?: 'PENDING' | 'RESERVED' | 'REJECTED' | 'FULFILLED' | 'CANCELLED';
+}
+
 export interface PortalAccount {
   id: string;
   email: string;
@@ -86,6 +94,9 @@ export interface EmergencyRequest {
   patientId?: string;
   verificationCode?: string;
   isVerifiedByHospital?: boolean;
+  selectedChannels?: RequestChannel[];
+  channelStatuses?: ChannelStatuses;
+  fulfilledChannel?: RequestChannel;
   bloodGroup: BloodGroup;
   bloodComponent?: string;
   unitsNeeded: number;
