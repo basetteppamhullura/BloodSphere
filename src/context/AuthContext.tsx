@@ -83,12 +83,14 @@ const SEED_PORTAL_ACCOUNTS: PortalAccount[] = [
   }
 ];
 
+const PUBLIC_LOGIN_PAGES: PageTab[] = ['landing', 'login', 'login-donor-requester', 'login-hospital', 'login-bloodbank', 'login-admin', 'register'];
+
 const ROLE_PERMISSIONS: Record<UserRole, PageTab[]> = {
-  donor: ['landing', 'login', 'register', 'dashboard', 'emergency-requests', 'rare-registry', 'group-circles', 'donor-search', 'leaderboard', 'profile'],
-  requester: ['landing', 'login', 'register', 'dashboard', 'emergency-requests', 'rare-registry', 'donor-search', 'blood-banks'],
-  hospital: ['landing', 'login', 'register', 'dashboard', 'emergency-requests', 'blood-bridge', 'blood-banks', 'camps'],
-  bloodbank: ['landing', 'login', 'register', 'dashboard', 'blood-banks', 'blood-bridge'],
-  admin: ['landing', 'login', 'register', 'dashboard', 'emergency-requests', 'rare-registry', 'group-circles', 'blood-bridge', 'donor-search', 'blood-banks', 'camps', 'leaderboard', 'profile']
+  donor: [...PUBLIC_LOGIN_PAGES, 'dashboard', 'emergency-requests', 'rare-registry', 'group-circles', 'donor-search', 'leaderboard', 'profile'],
+  requester: [...PUBLIC_LOGIN_PAGES, 'dashboard', 'emergency-requests', 'rare-registry', 'donor-search', 'blood-banks'],
+  hospital: [...PUBLIC_LOGIN_PAGES, 'dashboard', 'emergency-requests', 'blood-bridge', 'blood-banks', 'camps'],
+  bloodbank: [...PUBLIC_LOGIN_PAGES, 'dashboard', 'blood-banks', 'blood-bridge'],
+  admin: [...PUBLIC_LOGIN_PAGES, 'dashboard', 'emergency-requests', 'rare-registry', 'group-circles', 'blood-bridge', 'donor-search', 'blood-banks', 'camps', 'leaderboard', 'profile']
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -162,14 +164,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       a => a.email.toLowerCase().trim() === email.toLowerCase().trim() && a.role === role
     );
 
-    // Validate Hospital License Number if Hospital Login
-    if (role === 'hospital' && licenseNumber) {
+    // Validate License Number if Hospital or Blood Bank
+    if ((role === 'hospital' || role === 'bloodbank') && licenseNumber) {
       const matchLicense = portalAccounts.find(
-        a => a.role === 'hospital' && a.licenseNumber?.toUpperCase().trim() === licenseNumber.toUpperCase().trim()
+        a => a.role === role && a.licenseNumber?.toUpperCase().trim() === licenseNumber.toUpperCase().trim()
       );
       if (!matchLicense) {
         setFailedAttemptsMap(prev => ({ ...prev, [accountKey]: (prev[accountKey] || 0) + 1 }));
-        return { success: false, message: 'Hospital License Registration Number not recognized. Access denied.' };
+        return { success: false, message: `${role.toUpperCase()} License Registration Number not recognized. Access denied.` };
       }
     }
 
@@ -207,7 +209,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, message: 'No 2FA verification session active.' };
     }
 
-    // Accept valid 6-digit OTP (e.g. 778899 or any 6-digit number)
     if (otp.length === 6 && /^\d+$/.test(otp)) {
       const { email, role, account } = pending2FAUser;
       const accountKey = `${email}_${role}`;

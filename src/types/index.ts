@@ -39,7 +39,11 @@ export type RequestWorkflowStatus =
 
 export type PageTab = 
   | 'landing' 
-  | 'login' 
+  | 'login'
+  | 'login-donor-requester'
+  | 'login-hospital'
+  | 'login-bloodbank'
+  | 'login-admin'
   | 'register' 
   | 'dashboard' 
   | 'donor-search' 
