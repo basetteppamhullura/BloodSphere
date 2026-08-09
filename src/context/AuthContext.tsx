@@ -6,18 +6,26 @@ interface AuthContextType {
   currentUser: User | null;
   currentRole: UserRole;
   switchRole: (role: UserRole) => void;
-  login: (email: string, role: UserRole) => { success: boolean; message: string };
+  login: (email: string, role: UserRole, licenseNumber?: string) => { success: boolean; requires2FA?: boolean; message: string };
+  verifyTwoFactorOtp: (otp: string) => { success: boolean; message: string };
   logout: () => void;
   isPageAllowedForRole: (page: PageTab, role: UserRole) => boolean;
   
+  // Unified Donor/Requester Perspective Toggle
+  unifiedPerspective: 'donor' | 'requester';
+  setUnifiedPerspective: (view: 'donor' | 'requester') => void;
+
   // Portal Registration & Approval System
   portalAccounts: PortalAccount[];
   registerPortalAccount: (acc: Partial<PortalAccount>) => PortalAccount;
   updateAccountStatusByAdmin: (accountId: string, status: AccountVerificationStatus) => void;
+  failedAttemptsMap: Record<string, number>;
+  unlockAccountByAdmin: (accountId: string) => void;
 }
 
 const ROLE_STORAGE_KEY = 'bloodsphere_active_role';
 const ACCOUNTS_STORAGE_KEY = 'bloodsphere_portal_accounts';
+const PERSPECTIVE_STORAGE_KEY = 'bloodsphere_unified_perspective';
 
 const SEED_PORTAL_ACCOUNTS: PortalAccount[] = [
   {
@@ -91,6 +99,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return (saved as UserRole) || 'donor';
   });
 
+  const [unifiedPerspective, setUnifiedPerspectiveState] = useState<'donor' | 'requester'>(() => {
+    const saved = localStorage.getItem(PERSPECTIVE_STORAGE_KEY);
+    return (saved as 'donor' | 'requester') || 'donor';
+  });
+
   const [portalAccounts, setPortalAccounts] = useState<PortalAccount[]>(() => {
     const saved = localStorage.getItem(ACCOUNTS_STORAGE_KEY);
     if (saved) {
@@ -103,6 +116,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return SEED_PORTAL_ACCOUNTS;
   });
 
+  const [failedAttemptsMap, setFailedAttemptsMap] = useState<Record<string, number>>({});
+  const [pending2FAUser, setPending2FAUser] = useState<{ email: string; role: UserRole; account: PortalAccount } | null>(null);
+
   const [currentUser, setCurrentUser] = useState<User | null>(() => ({
     ...MOCK_CURRENT_USER,
     role: (localStorage.getItem(ROLE_STORAGE_KEY) as UserRole) || 'donor'
@@ -113,8 +129,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [currentRole]);
 
   useEffect(() => {
+    localStorage.setItem(PERSPECTIVE_STORAGE_KEY, unifiedPerspective);
+  }, [unifiedPerspective]);
+
+  useEffect(() => {
     localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(portalAccounts));
   }, [portalAccounts]);
+
+  const setUnifiedPerspective = (view: 'donor' | 'requester') => {
+    setUnifiedPerspectiveState(view);
+    localStorage.setItem(PERSPECTIVE_STORAGE_KEY, view);
+    switchRole(view);
+  };
 
   const switchRole = (role: UserRole) => {
     setCurrentRole(role);
@@ -124,12 +150,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = (email: string, role: UserRole): { success: boolean; message: string } => {
+  const login = (email: string, role: UserRole, licenseNumber?: string): { success: boolean; requires2FA?: boolean; message: string } => {
+    const accountKey = `${email}_${role}`;
+    const attempts = failedAttemptsMap[accountKey] || 0;
+
+    if (attempts >= 5) {
+      return { success: false, message: 'Account locked due to 5 failed login attempts. Contact Admin to unlock.' };
+    }
+
     const account = portalAccounts.find(
       a => a.email.toLowerCase().trim() === email.toLowerCase().trim() && a.role === role
     );
 
-    // Dynamic accounts check
+    // Validate Hospital License Number if Hospital Login
+    if (role === 'hospital' && licenseNumber) {
+      const matchLicense = portalAccounts.find(
+        a => a.role === 'hospital' && a.licenseNumber?.toUpperCase().trim() === licenseNumber.toUpperCase().trim()
+      );
+      if (!matchLicense) {
+        setFailedAttemptsMap(prev => ({ ...prev, [accountKey]: (prev[accountKey] || 0) + 1 }));
+        return { success: false, message: 'Hospital License Registration Number not recognized. Access denied.' };
+      }
+    }
+
     if (account) {
       if (account.status === 'Pending Verification') {
         return { success: false, message: 'Your account is waiting for Admin verification.' };
@@ -138,6 +181,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, message: 'Your account has been disabled. Please contact Blood Net support.' };
       }
     }
+
+    // High security 2FA OTP for Hospital / Blood Bank
+    if (role === 'hospital' || role === 'bloodbank') {
+      setPending2FAUser({ email, role, account: account || SEED_PORTAL_ACCOUNTS[1] });
+      return { success: true, requires2FA: true, message: 'Password accepted. 2FA OTP sent to registered phone number.' };
+    }
+
+    // Reset failed attempts on success
+    setFailedAttemptsMap(prev => ({ ...prev, [accountKey]: 0 }));
 
     switchRole(role);
     setCurrentUser({
@@ -148,6 +200,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return { success: true, message: `Logged in successfully as ${role.toUpperCase()}!` };
+  };
+
+  const verifyTwoFactorOtp = (otp: string): { success: boolean; message: string } => {
+    if (!pending2FAUser) {
+      return { success: false, message: 'No 2FA verification session active.' };
+    }
+
+    // Accept valid 6-digit OTP (e.g. 778899 or any 6-digit number)
+    if (otp.length === 6 && /^\d+$/.test(otp)) {
+      const { email, role, account } = pending2FAUser;
+      const accountKey = `${email}_${role}`;
+      setFailedAttemptsMap(prev => ({ ...prev, [accountKey]: 0 }));
+
+      switchRole(role);
+      setCurrentUser({
+        ...MOCK_CURRENT_USER,
+        email,
+        role,
+        name: account.name
+      });
+      setPending2FAUser(null);
+      return { success: true, message: `2FA Verified! Welcome ${account.name}.` };
+    }
+
+    return { success: false, message: 'Invalid 2FA OTP code. Please enter 6-digit code sent to your phone.' };
+  };
+
+  const unlockAccountByAdmin = (accountId: string) => {
+    const account = portalAccounts.find(a => a.id === accountId);
+    if (account) {
+      const accountKey = `${account.email}_${account.role}`;
+      setFailedAttemptsMap(prev => ({ ...prev, [accountKey]: 0 }));
+      updateAccountStatusByAdmin(accountId, 'Verified');
+    }
   };
 
   const registerPortalAccount = (newAcc: Partial<PortalAccount>): PortalAccount => {
@@ -192,11 +278,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentRole,
         switchRole,
         login,
+        verifyTwoFactorOtp,
         logout,
         isPageAllowedForRole,
+        unifiedPerspective,
+        setUnifiedPerspective,
         portalAccounts,
         registerPortalAccount,
-        updateAccountStatusByAdmin
+        updateAccountStatusByAdmin,
+        failedAttemptsMap,
+        unlockAccountByAdmin
       }}
     >
       {children}

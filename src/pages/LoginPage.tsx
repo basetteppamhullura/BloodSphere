@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { UserRole } from '../types';
-import { Heart, LogIn, ShieldCheck, User, Building2, Droplet, Lock, AlertCircle, Building, ShieldAlert } from 'lucide-react';
+import { Heart, LogIn, ShieldCheck, User, Building2, Droplet, Lock, AlertCircle, ShieldAlert, KeyRound, Check } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const { login, portalAccounts } = useAuth();
+  const { login, verifyTwoFactorOtp, failedAttemptsMap } = useAuth();
   const { navigateTo, showToast } = useApp();
 
   const [activePortalTab, setActivePortalTab] = useState<'donor_requester' | 'hospital' | 'bloodbank' | 'admin'>('donor_requester');
@@ -13,12 +13,18 @@ export const LoginPage: React.FC = () => {
 
   const [email, setEmail] = useState('ananya.sharma@example.com');
   const [password, setPassword] = useState('••••••••');
+  const [licenseNumber, setLicenseNumber] = useState('LIC-HUB-4482');
+
+  // 2FA OTP State
+  const [is2FAScreen, setIs2FAScreen] = useState(false);
+  const [otpInput, setOtpInput] = useState('778899');
 
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const handlePortalSwitch = (portal: 'donor_requester' | 'hospital' | 'bloodbank' | 'admin') => {
     setActivePortalTab(portal);
     setLoginError(null);
+    setIs2FAScreen(false);
 
     if (portal === 'donor_requester') {
       setSelectedRole('donor');
@@ -26,9 +32,11 @@ export const LoginPage: React.FC = () => {
     } else if (portal === 'hospital') {
       setSelectedRole('hospital');
       setEmail('admin@kims.edu.in');
+      setLicenseNumber('LIC-HUB-4482');
     } else if (portal === 'bloodbank') {
       setSelectedRole('bloodbank');
       setEmail('contact@rotaryblood.org');
+      setLicenseNumber('LIC-BB-9901');
     } else if (portal === 'admin') {
       setSelectedRole('admin');
       setEmail('admin@bloodnet.gov.in');
@@ -46,7 +54,24 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     setLoginError(null);
 
-    const res = login(email, selectedRole);
+    const res = login(email, selectedRole, activePortalTab === 'hospital' ? licenseNumber : undefined);
+    
+    if (res.requires2FA) {
+      setIs2FAScreen(true);
+      showToast(res.message);
+    } else if (res.success) {
+      showToast(res.message);
+      navigateTo('dashboard');
+    } else {
+      setLoginError(res.message);
+    }
+  };
+
+  const handleVerifyOtpSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError(null);
+
+    const res = verifyTwoFactorOtp(otpInput);
     if (res.success) {
       showToast(res.message);
       navigateTo('dashboard');
@@ -54,6 +79,8 @@ export const LoginPage: React.FC = () => {
       setLoginError(res.message);
     }
   };
+
+  const currentAttempts = failedAttemptsMap[`${email}_${selectedRole}`] || 0;
 
   return (
     <div className="max-w-xl mx-auto my-8 space-y-6 animate-in fade-in">
@@ -146,6 +173,13 @@ export const LoginPage: React.FC = () => {
         </div>
       )}
 
+      {/* Account Lockout Warning */}
+      {currentAttempts > 0 && currentAttempts < 5 && (
+        <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-800 text-amber-300 text-xs font-bold text-center">
+          ⚠️ Warning: {currentAttempts} failed attempt(s). Account locks after 5 failed attempts.
+        </div>
+      )}
+
       {/* Error Message Banner */}
       {loginError && (
         <div className="p-4 rounded-2xl bg-red-950/80 border border-red-800 text-red-300 text-xs flex items-center gap-2 font-bold animate-in fade-in">
@@ -154,83 +188,129 @@ export const LoginPage: React.FC = () => {
         </div>
       )}
 
-      {/* Login Form */}
-      <form onSubmit={handleSubmit} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
-        
-        <div>
-          <label className="text-slate-300 font-bold block mb-1">
-            {activePortalTab === 'hospital' ? 'Official Hospital Email *' : activePortalTab === 'bloodbank' ? 'Official Blood Bank Email *' : activePortalTab === 'admin' ? 'Admin Credential Email *' : 'Email Address or Mobile Number *'}
-          </label>
-          <input
-            type="email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-red-600 focus:outline-none"
-            required
-          />
-        </div>
+      {/* 2FA OTP Step Screen */}
+      {is2FAScreen ? (
+        <form onSubmit={handleVerifyOtpSubmit} className="p-6 rounded-3xl bg-slate-900 border border-blue-600 space-y-4 shadow-xl text-xs animate-in fade-in">
+          <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
+            <KeyRound className="w-5 h-5 text-blue-400" />
+            <div>
+              <h3 className="font-extrabold text-sm text-white">2-Factor Authentication Required</h3>
+              <p className="text-[11px] text-slate-400">Enter 6-digit OTP code sent to registered facility mobile number</p>
+            </div>
+          </div>
 
-        <div>
-          <label className="text-slate-300 font-bold block mb-1">Password *</label>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-red-600 focus:outline-none"
-            required
-          />
-        </div>
+          <div>
+            <label className="text-slate-300 font-bold block mb-1">Enter 6-Digit 2FA OTP *</label>
+            <input
+              type="text"
+              placeholder="778899"
+              value={otpInput}
+              onChange={e => setOtpInput(e.target.value)}
+              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-center text-lg tracking-widest focus:border-blue-600 focus:outline-none"
+              required
+            />
+          </div>
 
-        <button
-          type="submit"
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center justify-center gap-2"
-        >
-          <LogIn className="w-4 h-4" /> Enter Portal as {selectedRole.toUpperCase()}
-        </button>
-
-        {/* Portal Registration Links */}
-        <div className="pt-2 text-center text-slate-400">
+          <button
+            type="submit"
+            className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg flex items-center justify-center gap-2"
+          >
+            <ShieldCheck className="w-4 h-4" /> Verify 2FA OTP & Enter Portal
+          </button>
+        </form>
+      ) : (
+        /* Standard Login Form */
+        <form onSubmit={handleSubmit} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
+          
           {activePortalTab === 'hospital' && (
-            <p>
-              New Hospital Desk?{' '}
-              <button
-                type="button"
-                onClick={() => navigateTo('register')}
-                className="text-blue-400 font-bold underline"
-              >
-                Register Hospital (License Verification)
-              </button>
-            </p>
+            <div>
+              <label className="text-slate-300 font-bold block mb-1">Hospital License Registration Number *</label>
+              <input
+                type="text"
+                placeholder="LIC-HUB-4482"
+                value={licenseNumber}
+                onChange={e => setLicenseNumber(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:border-blue-600 focus:outline-none"
+                required
+              />
+            </div>
           )}
 
-          {activePortalTab === 'bloodbank' && (
-            <p>
-              New Blood Bank?{' '}
-              <button
-                type="button"
-                onClick={() => navigateTo('register')}
-                className="text-emerald-400 font-bold underline"
-              >
-                Register Blood Bank Unit
-              </button>
-            </p>
-          )}
+          <div>
+            <label className="text-slate-300 font-bold block mb-1">
+              {activePortalTab === 'hospital' ? 'Official Hospital Email *' : activePortalTab === 'bloodbank' ? 'Official Blood Bank Email *' : activePortalTab === 'admin' ? 'Admin Credential Email *' : 'Email Address or Mobile Number *'}
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-red-600 focus:outline-none"
+              required
+            />
+          </div>
 
-          {activePortalTab === 'donor_requester' && (
-            <p>
-              Don't have an account?{' '}
-              <button
-                type="button"
-                onClick={() => navigateTo('register')}
-                className="text-red-400 font-bold underline"
-              >
-                Register New Donor/Requester
-              </button>
-            </p>
-          )}
-        </div>
+          <div>
+            <label className="text-slate-300 font-bold block mb-1">Password *</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-red-600 focus:outline-none"
+              required
+            />
+          </div>
 
-      </form>
+          <button
+            type="submit"
+            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center justify-center gap-2"
+          >
+            <LogIn className="w-4 h-4" /> Enter Portal as {selectedRole.toUpperCase()}
+          </button>
+
+          {/* Portal Registration Links */}
+          <div className="pt-2 text-center text-slate-400">
+            {activePortalTab === 'hospital' && (
+              <p>
+                New Hospital Desk?{' '}
+                <button
+                  type="button"
+                  onClick={() => navigateTo('register')}
+                  className="text-blue-400 font-bold underline"
+                >
+                  Register Hospital (License Verification)
+                </button>
+              </p>
+            )}
+
+            {activePortalTab === 'bloodbank' && (
+              <p>
+                New Blood Bank?{' '}
+                <button
+                  type="button"
+                  onClick={() => navigateTo('register')}
+                  className="text-emerald-400 font-bold underline"
+                >
+                  Register Blood Bank Unit
+                </button>
+              </p>
+            )}
+
+            {activePortalTab === 'donor_requester' && (
+              <p>
+                Don't have an account?{' '}
+                <button
+                  type="button"
+                  onClick={() => navigateTo('register')}
+                  className="text-red-400 font-bold underline"
+                >
+                  Register New Donor/Requester
+                </button>
+              </p>
+            )}
+          </div>
+
+        </form>
+      )}
 
     </div>
   );
