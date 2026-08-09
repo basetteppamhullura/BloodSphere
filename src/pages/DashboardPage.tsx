@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { SkeletonCard, SkeletonRow } from '../components/common/Skeleton';
 import { BloodGroup } from '../types';
 import { RequesterActionHub } from '../components/requester/RequesterActionHub';
+import { HospitalMonitorDesk } from '../components/hospital/HospitalMonitorDesk';
 import {
   Activity,
   AlertTriangle,
@@ -77,26 +78,6 @@ export const DashboardPage: React.FC = () => {
   const [schTime, setSchTime] = useState<string>('10:00 AM');
   const [schVenue, setSchVenue] = useState<string>('KIMS Hospital Blood Bank Unit');
 
-  // Hospital Verification Generator Form State
-  const [pvPatientName, setPvPatientName] = useState('Rohan Deshmukh');
-  const [pvBloodGroup, setPvBloodGroup] = useState<BloodGroup>('O-');
-  const [pvHospitalName, setPvHospitalName] = useState('KIMS Teaching Hospital');
-  const [generatedPv, setGeneratedPv] = useState<any | null>(null);
-
-  // Hospital Low Stock Threshold Config State
-  const [lowStockThreshold, setLowStockThreshold] = useState<number>(5);
-  const [hospitalStockMap, setHospitalStockMap] = useState<Record<BloodGroup, number>>({
-    'A+': 14,
-    'A-': 4,
-    'B+': 18,
-    'B-': 6,
-    'AB+': 8,
-    'AB-': 2,
-    'O+': 22,
-    'O-': 3,
-    'Bombay Phenotype (O-h)': 1
-  });
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -115,12 +96,6 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
-  const handleGeneratePvSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const created = createPatientVerification(pvPatientName, pvBloodGroup, pvHospitalName);
-    setGeneratedPv(created);
-  };
-
   const handleReorderRequest = (req: any) => {
     createEmergencyRequest({
       patientName: req.patientName,
@@ -136,19 +111,6 @@ export const DashboardPage: React.FC = () => {
       reason: `REORDERED: ${req.reason}`
     });
     showToast(`Request for ${req.patientName} reordered with 1-click!`);
-  };
-
-  const handleAdjustHospitalStock = (group: BloodGroup, delta: number) => {
-    setHospitalStockMap(prev => {
-      const current = prev[group] || 0;
-      const updated = Math.max(0, current + delta);
-      showToast(`Hospital inventory updated: ${group} stock is now ${updated} units.`);
-      return { ...prev, [group]: updated };
-    });
-  };
-
-  const handleBroadcastEmergencyDrive = (group: BloodGroup) => {
-    showToast(`🚨 Emergency Drive Broadcast Sent! Local ${group} donors alerted via SMS & Push Notifications.`);
   };
 
   const isPublicUser = currentRole === 'donor' || currentRole === 'requester';
@@ -450,222 +412,10 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* ---------------------------------------------------- */}
-      {/* 3. HOSPITAL DASHBOARD VIEW                            */}
+      {/* 3. HOSPITAL DASHBOARD VIEW — DESK MONITOR HUB         */}
       {/* ---------------------------------------------------- */}
       {currentRole === 'hospital' && (
-        <div className="space-y-6">
-          
-          {/* Hospital Blood Inventory & Low-Stock Alert Engine */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl text-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-              <div>
-                <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-                  <Droplet className="w-5 h-5 text-red-500" /> Hospital Blood Inventory & Low-Stock Alert Engine
-                </h3>
-                <p className="text-[11px] text-slate-400">Live unit counts with threshold-based emergency donor broadcasting</p>
-              </div>
-
-              <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-                <Sliders className="w-4 h-4 text-amber-400" />
-                <span className="text-slate-300 font-bold">Low Stock Threshold:</span>
-                <input
-                  type="number"
-                  min={1}
-                  max={20}
-                  value={lowStockThreshold}
-                  onChange={e => setLowStockThreshold(Number(e.target.value))}
-                  className="w-14 p-1 rounded-lg bg-slate-900 border border-slate-700 text-center font-bold text-white"
-                />
-                <span className="text-slate-400">units</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-              {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(group => {
-                const count = hospitalStockMap[group] || 0;
-                const isLow = count < lowStockThreshold;
-
-                return (
-                  <div
-                    key={group}
-                    className={`p-3.5 rounded-2xl border flex flex-col justify-between space-y-2 transition-all ${
-                      isLow ? 'bg-amber-950/40 border-amber-600/80 shadow-md ring-1 ring-amber-500' : 'bg-slate-950 border-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-black text-sm text-white">{group}</span>
-                      {isLow && (
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-500 text-slate-950 animate-pulse">
-                          LOW
-                        </span>
-                      )}
-                    </div>
-
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-black text-white">{count}</span>
-                      <span className="text-[10px] text-slate-400">units</span>
-                    </div>
-
-                    <div className="flex items-center gap-1 pt-1">
-                      <button
-                        onClick={() => handleAdjustHospitalStock(group, 1)}
-                        className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold w-full text-center"
-                      >
-                        +1 Recv
-                      </button>
-                      <button
-                        onClick={() => handleAdjustHospitalStock(group, -1)}
-                        className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold w-full text-center"
-                      >
-                        -1 Used
-                      </button>
-                    </div>
-
-                    {isLow && (
-                      <button
-                        onClick={() => handleBroadcastEmergencyDrive(group)}
-                        className="w-full py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-slate-950 font-black text-[10px] flex items-center justify-center gap-1 shadow"
-                      >
-                        <Radio className="w-3 h-3" /> Alert Donors
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Hospital Patient Verification Generator Tool */}
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-amber-400" />
-                <h3 className="font-extrabold text-base text-white">Generate Patient Verification Record (Pre-Approval Code)</h3>
-              </div>
-              <span className="text-[10px] text-slate-400">Hospital Pre-Verification Desk</span>
-            </div>
-
-            <form onSubmit={handleGeneratePvSubmit} className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-              <div>
-                <label className="text-slate-300 font-bold block mb-1">Patient Full Name</label>
-                <input
-                  type="text"
-                  value={pvPatientName}
-                  onChange={e => setPvPatientName(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-300 font-bold block mb-1">Required Blood Group</label>
-                <select
-                  value={pvBloodGroup}
-                  onChange={e => setPvBloodGroup(e.target.value as BloodGroup)}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                >
-                  {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(bg => (
-                    <option key={bg} value={bg}>{bg}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-slate-300 font-bold block mb-1">Hospital Unit</label>
-                <input
-                  type="text"
-                  value={pvHospitalName}
-                  onChange={e => setPvHospitalName(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-black text-xs shadow-md flex items-center justify-center gap-1.5"
-              >
-                <KeyRound className="w-4 h-4" /> Generate Credentials
-              </button>
-            </form>
-
-            {generatedPv && (
-              <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-800 flex items-center justify-between text-slate-200">
-                <div>
-                  <span className="font-extrabold text-amber-300 block text-sm">Pre-Verification Credentials Generated:</span>
-                  <div className="flex items-center gap-4 mt-1 font-mono text-xs">
-                    <span>Patient ID: <strong className="text-white bg-slate-950 px-2 py-0.5 rounded">{generatedPv.patientId}</strong></span>
-                    <span>Verification Code: <strong className="text-amber-400 bg-slate-950 px-2 py-0.5 rounded">{generatedPv.verificationCode}</strong></span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => {
-                    navigator.clipboard.writeText(`Patient ID: ${generatedPv.patientId}, Verification Code: ${generatedPv.verificationCode}`);
-                    showToast('Credentials copied to clipboard!');
-                  }}
-                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs border border-slate-700 flex items-center gap-1"
-                >
-                  <Copy className="w-4 h-4" /> Copy
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-base text-white flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-blue-400" /> Active Hospital Blood Requests Queue ({requests.length})
-            </h3>
-            <span className="text-xs text-slate-400">KIMS Regional Desk</span>
-          </div>
-
-          <div className="space-y-4">
-            {requests.map(req => (
-              <div key={req.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-                
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-extrabold text-xs">
-                        {req.bloodGroup}
-                      </span>
-                      <h4 className="font-extrabold text-base text-white">{req.patientName}</h4>
-                      <span className="text-xs text-slate-400">({req.unitsNeeded} Units needed)</span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Requester: <strong>{req.contactPerson} ({req.maskedPhone})</strong> • Hospital: <strong>{req.hospitalName}</strong>
-                    </p>
-                  </div>
-
-                  {req.status === 'DONOR_CONFIRMED' && (
-                    <button
-                      onClick={() => setScheduleModalReqId(req.id)}
-                      className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5"
-                    >
-                      <Calendar className="w-4 h-4" /> Schedule Appointment
-                    </button>
-                  )}
-
-                  {req.status === 'APPOINTMENT_SCHEDULED' && (
-                    <button
-                      onClick={() => markDonationCompleted(req.id)}
-                      className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-950 flex items-center gap-1.5"
-                    >
-                      <CheckCircle2 className="w-4 h-4" /> Mark Donation Completed
-                    </button>
-                  )}
-
-                  {req.status === 'COMPLETED' && (
-                    <span className="px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 font-bold text-xs border border-emerald-800 flex items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4" /> Completed & Stocked
-                    </span>
-                  )}
-                </div>
-
-              </div>
-            ))}
-          </div>
-        </div>
+        <HospitalMonitorDesk />
       )}
 
       {/* ---------------------------------------------------- */}
