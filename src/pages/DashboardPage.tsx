@@ -5,6 +5,9 @@ import { SkeletonCard, SkeletonRow } from '../components/common/Skeleton';
 import { BloodGroup } from '../types';
 import { RequesterActionHub } from '../components/requester/RequesterActionHub';
 import { HospitalMonitorDesk } from '../components/hospital/HospitalMonitorDesk';
+import { HospitalEmergencyBoard } from '../components/hospital/HospitalEmergencyBoard';
+import { HospitalInterCitySupply } from '../components/hospital/HospitalInterCitySupply';
+import { HospitalDonationDrives } from '../components/hospital/HospitalDonationDrives';
 import {
   Activity,
   AlertTriangle,
@@ -38,7 +41,8 @@ import {
   RotateCcw,
   Unlock,
   Radio,
-  Sliders
+  Sliders,
+  Truck
 } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
@@ -56,7 +60,6 @@ export const DashboardPage: React.FC = () => {
     bloodBanks,
     updateInventoryStock,
     donors,
-    createPatientVerification,
     setActiveEmergencyPostModal,
     showToast
   } = useApp();
@@ -72,7 +75,9 @@ export const DashboardPage: React.FC = () => {
     failedAttemptsMap
   } = useAuth();
 
-  // Schedule Modal State
+  // Active Sub View Tab for Hospital Perspective
+  const [hospitalSubView, setHospitalSubView] = useState<'overview' | 'emergency_board' | 'inter_city' | 'blood_banks' | 'drives'>('overview');
+
   const [scheduleModalReqId, setScheduleModalReqId] = useState<string | null>(null);
   const [schDate, setSchDate] = useState<string>('2026-08-08');
   const [schTime, setSchTime] = useState<string>('10:00 AM');
@@ -134,7 +139,7 @@ export const DashboardPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Unified Public User Donor/Requester Perspective Switcher */}
+        {/* Perspective Controls / Actions */}
         {isPublicUser ? (
           <div className="p-1 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-1 text-xs">
             <button
@@ -159,14 +164,66 @@ export const DashboardPage: React.FC = () => {
             </button>
           </div>
         ) : (
-          <button
-            onClick={() => setActiveEmergencyPostModal(true)}
-            className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center justify-center gap-2 transition-all hover:scale-105"
-          >
-            <PlusCircle className="w-4 h-4" /> Create Blood Request
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveEmergencyPostModal(true)}
+              className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center justify-center gap-2 transition-all hover:scale-105"
+            >
+              <PlusCircle className="w-4 h-4" /> Create Blood Request
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Hospital Perspective Navigation Bar */}
+      {currentRole === 'hospital' && (
+        <div className="p-1.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-1 overflow-x-auto text-xs font-extrabold">
+          <button
+            onClick={() => setHospitalSubView('overview')}
+            className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 ${
+              hospitalSubView === 'overview' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Activity className="w-4 h-4" /> Dashboard Overview
+          </button>
+          
+          <button
+            onClick={() => setHospitalSubView('emergency_board')}
+            className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 ${
+              hospitalSubView === 'emergency_board' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <ShieldAlert className="w-4 h-4" /> Emergency Board
+          </button>
+
+          <button
+            onClick={() => setHospitalSubView('inter_city')}
+            className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 ${
+              hospitalSubView === 'inter_city' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Truck className="w-4 h-4" /> Inter-City Supply
+          </button>
+
+          <button
+            onClick={() => setHospitalSubView('blood_banks')}
+            className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 ${
+              hospitalSubView === 'blood_banks' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Droplet className="w-4 h-4" /> Blood Banks & Stock
+          </button>
+
+          <button
+            onClick={() => setHospitalSubView('drives')}
+            className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 ${
+              hospitalSubView === 'drives' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Calendar className="w-4 h-4" /> Donation Drives
+          </button>
+        </div>
+      )}
 
       {/* ---------------------------------------------------- */}
       {/* 1. UNIFIED PUBLIC USER VIEW — REQUESTER PERSPECTIVE   */}
@@ -306,20 +363,6 @@ export const DashboardPage: React.FC = () => {
                     </div>
                   </div>
 
-                  {req.appointmentDetails && (
-                    <div className="p-4 rounded-2xl bg-indigo-950/30 border border-indigo-800/80 space-y-2 text-xs">
-                      <span className="font-extrabold text-indigo-300 flex items-center gap-1.5">
-                        <Calendar className="w-4 h-4" /> Confirmed Donation Appointment:
-                      </span>
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-slate-300">
-                        <div>Date: <strong className="text-white">{req.appointmentDetails.date}</strong></div>
-                        <div>Time: <strong className="text-white">{req.appointmentDetails.time}</strong></div>
-                        <div>Venue: <strong className="text-white">{req.appointmentDetails.venue}</strong></div>
-                        <div>Donor: <strong className="text-amber-400">{req.appointmentDetails.assignedDonorName}</strong></div>
-                      </div>
-                    </div>
-                  )}
-
                 </div>
               );
             })}
@@ -364,7 +407,6 @@ export const DashboardPage: React.FC = () => {
 
                 return (
                   <div key={req.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-                    
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">
@@ -375,11 +417,6 @@ export const DashboardPage: React.FC = () => {
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-950 text-emerald-400 border border-slate-800">
                             📍 {distTag}
                           </span>
-                          {isDirectDonorReq && (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-black bg-red-950 text-red-300 border border-red-800 uppercase">
-                              Direct Requester Alert
-                            </span>
-                          )}
                         </div>
                         <p className="text-xs text-slate-400 mt-1">
                           Hospital: <strong>{req.hospitalName}</strong> • Reason: {req.reason}
@@ -393,7 +430,6 @@ export const DashboardPage: React.FC = () => {
                         >
                           <Check className="w-4 h-4" /> Accept & Confirm
                         </button>
-
                         <button
                           onClick={() => donorDeclineRequest(req.id, currentUser?.id || 'usr_donor_001')}
                           className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold text-xs border border-slate-700"
@@ -402,7 +438,6 @@ export const DashboardPage: React.FC = () => {
                         </button>
                       </div>
                     </div>
-
                   </div>
                 );
               })}
@@ -412,10 +447,30 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* ---------------------------------------------------- */}
-      {/* 3. HOSPITAL DASHBOARD VIEW — DESK MONITOR HUB         */}
+      {/* 3. HOSPITAL PERSPECTIVE FULL DASHBOARD SUITE        */}
       {/* ---------------------------------------------------- */}
       {currentRole === 'hospital' && (
-        <HospitalMonitorDesk />
+        <div className="space-y-6">
+          {hospitalSubView === 'overview' && <HospitalMonitorDesk />}
+          {hospitalSubView === 'emergency_board' && <HospitalEmergencyBoard />}
+          {hospitalSubView === 'inter_city' && <HospitalInterCitySupply />}
+          {hospitalSubView === 'drives' && <HospitalDonationDrives />}
+          {hospitalSubView === 'blood_banks' && (
+            <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
+              <h3 className="font-extrabold text-base text-white flex items-center gap-2">
+                <Droplet className="w-5 h-5 text-emerald-400" /> Connected Regional Blood Bank Inventories
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {bloodBanks.map(bank => (
+                  <div key={bank.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
+                    <h4 className="font-extrabold text-white text-sm">{bank.name}</h4>
+                    <p className="text-slate-400">{bank.address}, {bank.city} • Phone: {bank.phone}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
 
       {/* ---------------------------------------------------- */}
@@ -469,38 +524,6 @@ export const DashboardPage: React.FC = () => {
               ))}
             </div>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {bloodBanks.map(bank => (
-              <div key={bank.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-                <h4 className="font-extrabold text-base text-white">{bank.name}</h4>
-                
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  {bank.inventory.map(item => (
-                    <div key={item.group} className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-col justify-between">
-                      <span className="font-extrabold text-red-400 text-sm">{item.group}</span>
-                      <span className="text-lg font-black text-white">{item.units} Units</span>
-                      
-                      <div className="flex items-center gap-1 mt-2">
-                        <button
-                          onClick={() => updateInventoryStock(bank.id, item.group, 1)}
-                          className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold"
-                        >
-                          +1
-                        </button>
-                        <button
-                          onClick={() => updateInventoryStock(bank.id, item.group, -1)}
-                          className="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold"
-                        >
-                          -1
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
         </div>
       )}
 
@@ -536,145 +559,6 @@ export const DashboardPage: React.FC = () => {
                 {portalAccounts.filter(a => a.status === 'Pending Verification').length}
               </span>
             </div>
-          </div>
-
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-            <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-amber-400" /> Hospital & Blood Bank License Verification Queue
-            </h4>
-
-            <div className="space-y-3 text-xs">
-              {portalAccounts.map(acc => {
-                const accountKey = `${acc.email}_${acc.role}`;
-                const attempts = failedAttemptsMap[accountKey] || 0;
-                const isLocked = attempts >= 5;
-
-                return (
-                  <div key={acc.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-extrabold text-white text-sm">{acc.name}</span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-900 text-slate-300 border border-slate-800">
-                          {acc.role}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                          isLocked
-                            ? 'bg-red-950 text-red-300 border-red-800 animate-pulse'
-                            : acc.status === 'Verified'
-                            ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                            : 'bg-amber-950 text-amber-300 border-amber-800'
-                        }`}>
-                          {isLocked ? '5 Failed Attempts - Locked' : acc.status}
-                        </span>
-                      </div>
-
-                      <p className="text-xs text-slate-400 mt-1">
-                        Email: <strong>{acc.email}</strong> • Phone: {acc.phone} • License: <strong className="text-amber-400">{acc.licenseNumber || 'N/A'}</strong>
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      {isLocked && (
-                        <button
-                          onClick={() => {
-                            unlockAccountByAdmin(acc.id);
-                            showToast(`Account unlocked for ${acc.name}!`);
-                          }}
-                          className="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-slate-950 font-black text-xs shadow-md flex items-center gap-1"
-                        >
-                          <Unlock className="w-4 h-4" /> Unlock Account
-                        </button>
-                      )}
-
-                      {acc.status !== 'Verified' && (
-                        <button
-                          onClick={() => {
-                            updateAccountStatusByAdmin(acc.id, 'Verified');
-                            showToast(`Approved ${acc.name}! Account is now Verified.`);
-                          }}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1"
-                        >
-                          <Check className="w-4 h-4" /> Approve License
-                        </button>
-                      )}
-
-                      {acc.status !== 'Disabled' && (
-                        <button
-                          onClick={() => {
-                            updateAccountStatusByAdmin(acc.id, 'Disabled');
-                            showToast(`Disabled ${acc.name}. Account access revoked.`);
-                          }}
-                          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-red-400 font-bold text-xs border border-slate-700 flex items-center gap-1"
-                        >
-                          <Ban className="w-4 h-4" /> Disable
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-        </div>
-      )}
-
-      {/* Schedule Appointment Modal */}
-      {scheduleModalReqId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 text-xs">
-            <h3 className="font-extrabold text-base text-white">Schedule Donation Appointment</h3>
-            
-            <form onSubmit={handleScheduleSubmit} className="space-y-3">
-              <div>
-                <label className="text-slate-400 block mb-1">Appointment Date</label>
-                <input
-                  type="date"
-                  value={schDate}
-                  onChange={e => setSchDate(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-400 block mb-1">Appointment Time</label>
-                <input
-                  type="text"
-                  value={schTime}
-                  onChange={e => setSchTime(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-400 block mb-1">Hospital Venue</label>
-                <input
-                  type="text"
-                  value={schVenue}
-                  onChange={e => setSchVenue(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                  required
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setScheduleModalReqId(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold"
-                >
-                  Confirm Appointment
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}
