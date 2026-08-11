@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { BloodGroup, UrgencyLevel } from '../../types';
+import { HospitalAuditLogViewer, ComprehensiveAuditLogEntry, ChangeType } from './HospitalAuditLogViewer';
 import {
   Activity,
   AlertTriangle,
@@ -26,20 +27,11 @@ import {
   FileCheck,
   ChevronLeft,
   ChevronRight,
-  Info
+  PlusCircle,
+  Trash2
 } from 'lucide-react';
 
 type ComponentType = 'Whole Blood' | 'Plasma' | 'Platelets' | 'Red Blood Cells';
-
-interface AuditLogEntry {
-  id: string;
-  timestamp: string;
-  staffName: string;
-  group: BloodGroup;
-  component: ComponentType;
-  change: number;
-  newCount: number;
-}
 
 interface ExpiryItem {
   id: string;
@@ -49,7 +41,6 @@ interface ExpiryItem {
   expiringInDays: number;
 }
 
-// Calculate relative time ago
 function calculateTimeAgo(timestampStr: string): string {
   const diffMs = Date.now() - new Date(timestampStr).getTime();
   const mins = Math.floor(diffMs / 60000);
@@ -76,6 +67,9 @@ export const HospitalMonitorDesk: React.FC = () => {
   // Configurable Low Stock Threshold
   const [lowThreshold, setLowThreshold] = useState<number>(5);
 
+  // Active Desk Tab: 'monitor' | 'audit_log'
+  const [deskTab, setDeskTab] = useState<'monitor' | 'audit_log'>('monitor');
+
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [filterBloodGroup, setFilterBloodGroup] = useState<string>('ALL');
@@ -86,19 +80,20 @@ export const HospitalMonitorDesk: React.FC = () => {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 5;
 
-  // Approval Modal State (Stock Preview)
+  // Modals State
   const [approvalModalReq, setApprovalModalReq] = useState<any | null>(null);
-
-  // Rejection Modal State (Structured Reason)
   const [rejectionModalReq, setRejectionModalReq] = useState<any | null>(null);
   const [rejectionReason, setRejectionReason] = useState<string>('Insufficient Stock');
-
-  // Ask Info Note Field Popover State
   const [infoReqId, setInfoReqId] = useState<string | null>(null);
   const [infoNoteText, setInfoNoteText] = useState<string>('Please provide attending doctor phone & prescription copy.');
-
-  // View Prescription Modal State
   const [viewAttachmentUrl, setViewAttachmentUrl] = useState<string | null>(null);
+
+  // Trigger 4 Modal: Donation Intake Modal
+  const [showIntakeModal, setShowIntakeModal] = useState<boolean>(false);
+  const [intakeGroup, setIntakeGroup] = useState<BloodGroup>('O+');
+  const [intakeComponent, setIntakeComponent] = useState<ComponentType>('Whole Blood');
+  const [intakeUnits, setIntakeUnits] = useState<number>(4);
+  const [intakeDonorName, setIntakeDonorName] = useState<string>('KIMS Rotary Donation Drive');
 
   // 8 Blood Groups x 4 Components Stock Matrix State
   const [matrixStock, setMatrixStock] = useState<Record<BloodGroup, Record<ComponentType, number>>>({
@@ -113,51 +108,102 @@ export const HospitalMonitorDesk: React.FC = () => {
     'Bombay Phenotype (O-h)': { 'Whole Blood': 1, 'Plasma': 0, 'Platelets': 0, 'Red Blood Cells': 1 }
   });
 
-  // Audit Log State
-  const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([
+  // Comprehensive Immutable Audit Trail Logs State
+  const [comprehensiveAuditLogs, setComprehensiveAuditLogs] = useState<ComprehensiveAuditLogEntry[]>([
     {
-      id: 'log_1',
-      timestamp: 'Today, 09:15 AM',
+      id: 'log_001',
+      timestamp: '2026-08-11, 09:15 AM',
       staffName: 'Dr. Mahesh Kulkarni',
       group: 'O-',
       component: 'Whole Blood',
-      change: 1,
-      newCount: 2
+      changeType: 'Stock Corrected',
+      unitsChanged: 1,
+      resultingStock: 2,
+      reason: 'Manual inventory count verification'
     },
     {
-      id: 'log_2',
-      timestamp: 'Today, 08:30 AM',
+      id: 'log_002',
+      timestamp: '2026-08-11, 08:30 AM',
       staffName: 'Nurse Radhika S',
       group: 'A+',
       component: 'Platelets',
-      change: -2,
-      newCount: 6
+      changeType: 'Stock Used',
+      unitsChanged: -2,
+      resultingStock: 6,
+      reason: 'Fulfilled ICU trauma transfusion',
+      linkedRequestId: 'BN-HUB-2026-00852'
+    },
+    {
+      id: 'log_003',
+      timestamp: '2026-08-10, 04:20 PM',
+      staffName: 'Dr. Mahesh Kulkarni',
+      group: 'B-',
+      component: 'Plasma',
+      changeType: 'Stock Expired/Removed',
+      unitsChanged: -3,
+      resultingStock: 3,
+      reason: 'Discarded due to 30-day storage expiration'
+    },
+    {
+      id: 'log_004',
+      timestamp: '2026-08-10, 02:00 PM',
+      staffName: 'Nurse Radhika S',
+      group: 'O+',
+      component: 'Whole Blood',
+      changeType: 'Stock Added',
+      unitsChanged: 8,
+      resultingStock: 22,
+      reason: 'Rotary Blood Drive intake received'
     }
   ]);
 
   // Expiry Tracking State
-  const [expiringUnits] = useState<ExpiryItem[]>([
+  const [expiringUnits, setExpiringUnits] = useState<ExpiryItem[]>([
     { id: 'exp_1', group: 'O+', component: 'Whole Blood', units: 4, expiringInDays: 2 },
     { id: 'exp_2', group: 'A+', component: 'Platelets', units: 2, expiringInDays: 1 },
     { id: 'exp_3', group: 'B-', component: 'Plasma', units: 3, expiringInDays: 4 }
   ]);
 
-  // Inline Quick Stock Edit Handler
+  // Helper to record a new immutable Audit Entry
+  const recordAuditEntry = (
+    group: BloodGroup,
+    component: ComponentType,
+    changeType: ChangeType,
+    unitsChanged: number,
+    resultingStock: number,
+    reason?: string,
+    linkedRequestId?: string
+  ) => {
+    const entry: ComprehensiveAuditLogEntry = {
+      id: `log_${Date.now()}_${Math.floor(Math.random() * 1000)}`,
+      timestamp: new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' }),
+      staffName,
+      group,
+      component,
+      changeType,
+      unitsChanged,
+      resultingStock,
+      reason,
+      linkedRequestId
+    };
+
+    setComprehensiveAuditLogs(prev => [entry, ...prev]);
+  };
+
+  // TRIGGER 1: Manual inline stock adjust (+ / -)
   const handleCellAdjust = (group: BloodGroup, component: ComponentType, delta: number) => {
     setMatrixStock(prev => {
       const current = prev[group]?.[component] || 0;
       const updated = Math.max(0, current + delta);
 
-      const newLog: AuditLogEntry = {
-        id: `log_${Date.now()}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        staffName,
+      recordAuditEntry(
         group,
         component,
-        change: delta,
-        newCount: updated
-      };
-      setAuditLogs(l => [newLog, ...l]);
+        delta > 0 ? 'Stock Added' : 'Stock Corrected',
+        delta,
+        updated,
+        `Manual stock count adjustment by ${staffName}`
+      );
 
       showToast(`Updated ${group} (${component}) to ${updated} units.`);
       return {
@@ -170,18 +216,90 @@ export const HospitalMonitorDesk: React.FC = () => {
     });
   };
 
-  // Confirm Approval & Deduct Stock
+  // TRIGGER 2: Request approval confirmation (Stock Used linked to Request ID)
   const handleConfirmApproval = () => {
     if (!approvalModalReq) return;
-    const { id, bloodGroup, unitsNeeded } = approvalModalReq;
+    const { id, bloodGroup, unitsNeeded, patientName } = approvalModalReq;
 
-    // Deduct stock from matrix
-    handleCellAdjust(bloodGroup, 'Whole Blood', -unitsNeeded);
+    const currentUnits = matrixStock[bloodGroup as BloodGroup]?.['Whole Blood'] || 0;
+    const updatedUnits = Math.max(0, currentUnits - unitsNeeded);
+
+    setMatrixStock(prev => ({
+      ...prev,
+      [bloodGroup as BloodGroup]: {
+        ...prev[bloodGroup as BloodGroup],
+        'Whole Blood': updatedUnits
+      }
+    }));
+
+    // Record Audit Log with Request ID
+    recordAuditEntry(
+      bloodGroup as BloodGroup,
+      'Whole Blood',
+      'Stock Used',
+      -unitsNeeded,
+      updatedUnits,
+      `Fulfilled approved blood request for patient ${patientName}`,
+      id
+    );
+
     approveRequestByHospital(id);
     setApprovalModalReq(null);
   };
 
-  // Confirm Rejection with Reason
+  // TRIGGER 3: Expiry-related removal
+  const handleDiscardExpiringUnit = (item: ExpiryItem) => {
+    const currentUnits = matrixStock[item.group]?.[item.component] || 0;
+    const updatedUnits = Math.max(0, currentUnits - item.units);
+
+    setMatrixStock(prev => ({
+      ...prev,
+      [item.group]: {
+        ...prev[item.group],
+        [item.component]: updatedUnits
+      }
+    }));
+
+    recordAuditEntry(
+      item.group,
+      item.component,
+      'Stock Expired/Removed',
+      -item.units,
+      updatedUnits,
+      `Discarded ${item.units} units due to storage expiration (${item.expiringInDays} days remaining)`
+    );
+
+    setExpiringUnits(prev => prev.filter(e => e.id !== item.id));
+    showToast(`Logged expiry removal of ${item.units} units of ${item.group} (${item.component}).`);
+  };
+
+  // TRIGGER 4: Hospital donation intake
+  const handleConfirmIntake = (e: React.FormEvent) => {
+    e.preventDefault();
+    const currentUnits = matrixStock[intakeGroup]?.[intakeComponent] || 0;
+    const updatedUnits = currentUnits + intakeUnits;
+
+    setMatrixStock(prev => ({
+      ...prev,
+      [intakeGroup]: {
+        ...prev[intakeGroup],
+        [intakeComponent]: updatedUnits
+      }
+    }));
+
+    recordAuditEntry(
+      intakeGroup,
+      intakeComponent,
+      'Stock Added',
+      intakeUnits,
+      updatedUnits,
+      `Donation intake received from: ${intakeDonorName}`
+    );
+
+    setShowIntakeModal(false);
+    showToast(`Recorded intake of ${intakeUnits} units of ${intakeGroup} (${intakeComponent})!`);
+  };
+
   const handleConfirmRejection = () => {
     if (!rejectionModalReq) return;
     rejectRequestByHospital(rejectionModalReq.id, rejectionReason);
@@ -199,10 +317,9 @@ export const HospitalMonitorDesk: React.FC = () => {
   const approvedTodayCount = requests.filter(r => r.status === 'APPROVED' || r.status === 'DONOR_CONFIRMED' || r.status === 'COMPLETED').length;
   const rejectedTodayCount = requests.filter(r => r.status === 'REJECTED').length;
 
-  // Overdue Critical Requests Alert (Pending > 15 mins)
   const overdueCriticalReq = requests.find(r => r.urgency === 'CRITICAL' && r.status !== 'COMPLETED');
 
-  // Filter & Search Logic
+  // Queue Filter & Sort
   const filteredQueue = requests.filter(r => {
     const matchesSearch =
       r.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -216,471 +333,503 @@ export const HospitalMonitorDesk: React.FC = () => {
     return matchesSearch && matchesGroup && matchesUrgency && matchesStatus;
   });
 
-  // Sorted Queue: Critical first, then by date
   const sortedQueue = [...filteredQueue].sort((a, b) => {
     if (a.urgency === 'CRITICAL' && b.urgency !== 'CRITICAL') return -1;
     if (a.urgency !== 'CRITICAL' && b.urgency === 'CRITICAL') return 1;
     return new Date(b.requestedAt).getTime() - new Date(a.requestedAt).getTime();
   });
 
-  // Pagination Logic
   const totalPages = Math.ceil(sortedQueue.length / itemsPerPage) || 1;
   const paginatedQueue = sortedQueue.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <div className="space-y-6 animate-in fade-in">
       
-      {/* Top Workload Summary Bar & Overdue Critical Alert */}
-      <div className="space-y-3">
-        {overdueCriticalReq && (
-          <div className="p-4 rounded-2xl bg-red-950/90 border-2 border-red-600 text-white flex items-center justify-between shadow-xl shadow-red-950 animate-pulse">
-            <div className="flex items-center gap-3">
-              <ShieldAlert className="w-6 h-6 text-red-400 shrink-0" />
+      {/* Navigation Desk Sub-Tabs */}
+      <div className="flex items-center justify-between bg-slate-900 p-1.5 rounded-2xl border border-slate-800 text-xs">
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setDeskTab('monitor')}
+            className={`px-4 py-2 rounded-xl font-extrabold transition-all flex items-center gap-1.5 ${
+              deskTab === 'monitor' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Activity className="w-4 h-4" /> Live Desk Monitor & Queue
+          </button>
+          
+          <button
+            onClick={() => setDeskTab('audit_log')}
+            className={`px-4 py-2 rounded-xl font-extrabold transition-all flex items-center gap-1.5 ${
+              deskTab === 'audit_log' ? 'bg-blue-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <History className="w-4 h-4" /> Staff Stock Change Audit Log ({comprehensiveAuditLogs.length})
+          </button>
+        </div>
+
+        <button
+          onClick={() => setShowIntakeModal(true)}
+          className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-black text-xs shadow-md flex items-center gap-1.5 transition-all hover:scale-105"
+        >
+          <PlusCircle className="w-4 h-4" /> Record Donation Intake
+        </button>
+      </div>
+
+      {/* VIEW 1: LIVE DESK MONITOR & QUEUE */}
+      {deskTab === 'monitor' && (
+        <div className="space-y-6">
+          
+          {/* Top Workload Summary Bar & Overdue Critical Alert */}
+          <div className="space-y-3">
+            {overdueCriticalReq && (
+              <div className="p-4 rounded-2xl bg-red-950/90 border-2 border-red-600 text-white flex items-center justify-between shadow-xl shadow-red-950 animate-pulse">
+                <div className="flex items-center gap-3">
+                  <ShieldAlert className="w-6 h-6 text-red-400 shrink-0" />
+                  <div>
+                    <h4 className="font-extrabold text-sm text-red-200">⚠️ OVERDUE CRITICAL REQUEST ALERT</h4>
+                    <p className="text-xs text-red-300">
+                      Patient <strong>{overdueCriticalReq.patientName}</strong> ({overdueCriticalReq.bloodGroup}) requires <strong>{overdueCriticalReq.unitsNeeded} units</strong> immediately!
+                    </p>
+                  </div>
+                </div>
+
+                <span className="px-3 py-1 rounded-full bg-red-600 text-white font-black text-xs uppercase">
+                  Action Required Now
+                </span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-extrabold">
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                <span className="text-slate-400">Pending Queue</span>
+                <span className="text-xl font-black text-amber-400">{pendingCount}</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                <span className="text-slate-400">Critical Cases</span>
+                <span className="text-xl font-black text-red-500">{criticalCount}</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                <span className="text-slate-400">Approved Today</span>
+                <span className="text-xl font-black text-emerald-400">{approvedTodayCount}</span>
+              </div>
+              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                <span className="text-slate-400">Rejected Today</span>
+                <span className="text-xl font-black text-slate-500">{rejectedTodayCount}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* BLOOD STOCK MONITOR MATRIX (8 GROUPS x 4 COMPONENTS) */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
               <div>
-                <h4 className="font-extrabold text-sm text-red-200">⚠️ OVERDUE CRITICAL REQUEST ALERT</h4>
-                <p className="text-xs text-red-300">
-                  Patient <strong>{overdueCriticalReq.patientName}</strong> ({overdueCriticalReq.bloodGroup}) requires <strong>{overdueCriticalReq.unitsNeeded} units</strong> immediately!
-                </p>
+                <h3 className="font-extrabold text-base text-white flex items-center gap-2">
+                  <Droplet className="w-5 h-5 text-red-500" /> Hospital Blood Stock Monitor (8 Groups × 4 Components)
+                </h3>
+                <p className="text-[11px] text-slate-400">Inline quick-edit controls with automated audit trail logging</p>
+              </div>
+
+              <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
+                <Sliders className="w-4 h-4 text-amber-400" />
+                <span className="text-slate-300 font-bold">Low Stock Threshold:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={20}
+                  value={lowThreshold}
+                  onChange={e => setLowThreshold(Number(e.target.value))}
+                  className="w-14 p-1 rounded-lg bg-slate-900 border border-slate-700 text-center font-bold text-white"
+                />
+                <span className="text-slate-400">units</span>
               </div>
             </div>
 
-            <span className="px-3 py-1 rounded-full bg-red-600 text-white font-black text-xs uppercase">
-              Action Required Now
-            </span>
-          </div>
-        )}
+            {/* 8x4 Grid Table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
+                    <th className="p-2.5">Blood Group</th>
+                    <th className="p-2.5">Whole Blood</th>
+                    <th className="p-2.5">Plasma (FFP)</th>
+                    <th className="p-2.5">Platelets (PRP)</th>
+                    <th className="p-2.5">Red Cells (PRBC)</th>
+                    <th className="p-2.5 text-right">Group Total</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-mono">
+                  {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(group => {
+                    const rowObj = matrixStock[group] || { 'Whole Blood': 0, 'Plasma': 0, 'Platelets': 0, 'Red Blood Cells': 0 };
+                    const groupTotal = Object.values(rowObj).reduce((a, b) => a + b, 0);
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-extrabold">
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-            <span className="text-slate-400">Pending Queue</span>
-            <span className="text-xl font-black text-amber-400">{pendingCount}</span>
-          </div>
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-            <span className="text-slate-400">Critical Cases</span>
-            <span className="text-xl font-black text-red-500">{criticalCount}</span>
-          </div>
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-            <span className="text-slate-400">Approved Today</span>
-            <span className="text-xl font-black text-emerald-400">{approvedTodayCount}</span>
-          </div>
-          <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-            <span className="text-slate-400">Rejected Today</span>
-            <span className="text-xl font-black text-slate-500">{rejectedTodayCount}</span>
-          </div>
-        </div>
-      </div>
+                    return (
+                      <tr key={group} className="hover:bg-slate-950/40 transition-colors">
+                        <td className="p-2.5 font-sans font-black text-white text-xs">{group}</td>
+                        
+                        {(['Whole Blood', 'Plasma', 'Platelets', 'Red Blood Cells'] as ComponentType[]).map(comp => {
+                          const count = rowObj[comp] || 0;
+                          let bgClass = 'bg-emerald-950/40 text-emerald-300 border-emerald-800/80';
+                          if (count === 0) bgClass = 'bg-red-950/60 text-red-300 border-red-800/80';
+                          else if (count <= lowThreshold) bgClass = 'bg-amber-950/50 text-amber-300 border-amber-800/80';
 
-      {/* ---------------------------------------------------- */}
-      {/* PART 1: BLOOD STOCK MONITOR MATRIX (8 GROUPS x 4 COMPONENTS) */}
-      {/* ---------------------------------------------------- */}
-      <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
-          <div>
-            <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-              <Droplet className="w-5 h-5 text-red-500" /> Hospital Blood Stock Monitor (8 Groups × 4 Components)
-            </h3>
-            <p className="text-[11px] text-slate-400">Inline quick-edit controls with automated threshold alerts</p>
+                          return (
+                            <td key={comp} className="p-2">
+                              <div className={`p-2 rounded-xl border flex items-center justify-between gap-1 font-bold ${bgClass}`}>
+                                <span>{count}u</span>
+                                <div className="flex items-center gap-0.5">
+                                  <button
+                                    onClick={() => handleCellAdjust(group, comp, 1)}
+                                    className="w-5 h-5 rounded bg-slate-900 hover:bg-slate-800 text-white font-black flex items-center justify-center text-xs"
+                                    title="Add 1 Unit (Trigger 1: Manual Edit)"
+                                  >
+                                    +
+                                  </button>
+                                  <button
+                                    onClick={() => handleCellAdjust(group, comp, -1)}
+                                    className="w-5 h-5 rounded bg-slate-900 hover:bg-slate-800 text-white font-black flex items-center justify-center text-xs"
+                                    title="Subtract 1 Unit (Trigger 1: Manual Edit)"
+                                  >
+                                    -
+                                  </button>
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        })}
+
+                        <td className="p-2.5 text-right font-sans font-extrabold text-white text-xs">
+                          {groupTotal} units
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Expiry Tracking Section (Trigger 3: Expiry Removal Action) */}
+            <div className="pt-3 border-t border-slate-800 text-xs">
+              <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+                <span className="font-extrabold text-amber-400 flex items-center gap-1.5">
+                  <Clock className="w-4 h-4" /> Units Nearing Expiry (Action logs Trigger 3: Stock Expired/Removed):
+                </span>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {expiringUnits.map(item => (
+                    <div key={item.id} className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                      <div>
+                        <span className="font-bold text-white block">{item.group} ({item.component})</span>
+                        <span className="text-[10px] text-amber-300 font-bold">{item.units} units • Expiring in {item.expiringInDays} days</span>
+                      </div>
+
+                      <button
+                        onClick={() => handleDiscardExpiringUnit(item)}
+                        className="px-2.5 py-1 rounded-lg bg-red-950 hover:bg-red-900 text-red-300 font-bold text-[10px] border border-red-800 flex items-center gap-1 shrink-0"
+                        title="Discard & Log Expiry Removal"
+                      >
+                        <Trash2 className="w-3 h-3" /> Discard
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
-            <Sliders className="w-4 h-4 text-amber-400" />
-            <span className="text-slate-300 font-bold">Low Stock Threshold:</span>
-            <input
-              type="number"
-              min={1}
-              max={20}
-              value={lowThreshold}
-              onChange={e => setLowThreshold(Number(e.target.value))}
-              className="w-14 p-1 rounded-lg bg-slate-900 border border-slate-700 text-center font-bold text-white"
-            />
-            <span className="text-slate-400">units</span>
-          </div>
-        </div>
+          {/* INCOMING BLOOD REQUESTS QUEUE */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
+            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-blue-400" />
+                <h3 className="font-extrabold text-base text-white">Incoming Blood Requests Queue</h3>
+              </div>
+              <span className="text-[10px] text-slate-400 font-mono">Showing {paginatedQueue.length} of {sortedQueue.length} Requests</span>
+            </div>
 
-        {/* 8x4 Grid Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
-                <th className="p-2.5">Blood Group</th>
-                <th className="p-2.5">Whole Blood</th>
-                <th className="p-2.5">Plasma (FFP)</th>
-                <th className="p-2.5">Platelets (PRP)</th>
-                <th className="p-2.5">Red Cells (PRBC)</th>
-                <th className="p-2.5 text-right">Group Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60 font-mono">
-              {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(group => {
-                const rowObj = matrixStock[group] || { 'Whole Blood': 0, 'Plasma': 0, 'Platelets': 0, 'Red Blood Cells': 0 };
-                const groupTotal = Object.values(rowObj).reduce((a, b) => a + b, 0);
+            {/* Search & Filters */}
+            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+                <input
+                  type="text"
+                  placeholder="Search by Patient Name, Requester Name, or Request ID..."
+                  value={searchQuery}
+                  onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-600 focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Blood Group Filter</label>
+                  <select
+                    value={filterBloodGroup}
+                    onChange={e => { setFilterBloodGroup(e.target.value); setCurrentPage(1); }}
+                    className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold"
+                  >
+                    <option value="ALL">All Blood Groups</option>
+                    {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(bg => (
+                      <option key={bg} value={bg}>{bg}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Emergency Urgency Level</label>
+                  <select
+                    value={filterUrgency}
+                    onChange={e => { setFilterUrgency(e.target.value); setCurrentPage(1); }}
+                    className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold"
+                  >
+                    <option value="ALL">All Emergency Levels</option>
+                    <option value="CRITICAL">Critical (Within 2 Hours)</option>
+                    <option value="HIGH">Urgent (Today)</option>
+                    <option value="MODERATE">Normal (24-48 Hours)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Request Workflow Status</label>
+                  <select
+                    value={filterStatus}
+                    onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+                    className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold"
+                  >
+                    <option value="ALL">All Workflow Statuses</option>
+                    <option value="PENDING_HOSPITAL_APPROVAL">Pending Approval</option>
+                    <option value="VERIFIED_SEARCHING_DONORS">Verified - Searching Donors</option>
+                    <option value="DONOR_CONFIRMED">Donor Confirmed</option>
+                    <option value="APPOINTMENT_SCHEDULED">Appointment Scheduled</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="REJECTED">Rejected</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Cards List */}
+            <div className="space-y-4">
+              {paginatedQueue.map(req => {
+                const stockCount = matrixStock[req.bloodGroup]?.['Whole Blood'] || 0;
+                const hasSufficientStock = stockCount >= req.unitsNeeded;
+                const timeAgoStr = calculateTimeAgo(req.requestedAt);
+                const isCritical = req.urgency === 'CRITICAL';
 
                 return (
-                  <tr key={group} className="hover:bg-slate-950/40 transition-colors">
-                    <td className="p-2.5 font-sans font-black text-white text-xs">{group}</td>
-                    
-                    {(['Whole Blood', 'Plasma', 'Platelets', 'Red Blood Cells'] as ComponentType[]).map(comp => {
-                      const count = rowObj[comp] || 0;
-                      let bgClass = 'bg-emerald-950/40 text-emerald-300 border-emerald-800/80';
-                      if (count === 0) bgClass = 'bg-red-950/60 text-red-300 border-red-800/80';
-                      else if (count <= lowThreshold) bgClass = 'bg-amber-950/50 text-amber-300 border-amber-800/80';
+                  <div
+                    key={req.id}
+                    className={`p-6 rounded-3xl bg-slate-950 border space-y-4 transition-all ${
+                      isCritical
+                        ? 'border-2 border-red-600/90 shadow-xl shadow-red-950/40 ring-1 ring-red-500 animate-pulse'
+                        : 'border-slate-800 hover:border-slate-700'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-900 pb-3">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-black text-sm shadow">
+                            {req.bloodGroup}
+                          </span>
+                          <h4 className="font-extrabold text-base text-white">
+                            {req.patientName} <span className="text-slate-400 font-normal">({req.patientAge || 34} yrs, {req.patientGender || 'Male'})</span>
+                          </h4>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-900 text-amber-400 border border-slate-800">
+                            {req.unitsNeeded} Units ({req.bloodComponent || 'Whole Blood'})
+                          </span>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                            req.urgency === 'CRITICAL'
+                              ? 'bg-red-950 text-red-300 border-red-800'
+                              : req.urgency === 'HIGH'
+                              ? 'bg-amber-950 text-amber-300 border-amber-800'
+                              : 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                          }`}>
+                            Urgency: {req.urgency}
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-400 mt-1">
+                          Request ID: <span className="font-mono text-slate-300">{req.id}</span> • Required: <strong>{req.requiredDate} at {req.requiredTime || '10:00 AM'}</strong>
+                        </p>
+                      </div>
 
-                      return (
-                        <td key={comp} className="p-2">
-                          <div className={`p-2 rounded-xl border flex items-center justify-between gap-1 font-bold ${bgClass}`}>
-                            <span>{count}u</span>
-                            <div className="flex items-center gap-0.5">
-                              <button
-                                onClick={() => handleCellAdjust(group, comp, 1)}
-                                className="w-5 h-5 rounded bg-slate-900 hover:bg-slate-800 text-white font-black flex items-center justify-center text-xs"
-                                title="Add 1 Unit"
-                              >
-                                +
-                              </button>
-                              <button
-                                onClick={() => handleCellAdjust(group, comp, -1)}
-                                className="w-5 h-5 rounded bg-slate-900 hover:bg-slate-800 text-white font-black flex items-center justify-center text-xs"
-                                title="Subtract 1 Unit"
-                              >
-                                -
-                              </button>
-                            </div>
-                          </div>
-                        </td>
-                      );
-                    })}
+                      <div className="text-right shrink-0">
+                        <span className="text-[10px] font-bold text-slate-400 block">Submitted {timeAgoStr}</span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border mt-1 inline-block ${
+                          hasSufficientStock
+                            ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                            : 'bg-amber-950 text-amber-300 border-amber-800'
+                        }`}>
+                          {hasSufficientStock ? `✅ In Stock (${stockCount}u avail)` : `⚠️ Insufficient (${stockCount}u avail)`}
+                        </span>
+                      </div>
+                    </div>
 
-                    <td className="p-2.5 text-right font-sans font-extrabold text-white text-xs">
-                      {groupTotal} units
-                    </td>
-                  </tr>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="space-y-1">
+                        <p className="text-slate-300">
+                          Requester: <strong>{req.contactPerson}</strong> ({req.relationship || 'Family'})
+                        </p>
+                        <div className="flex items-center gap-3">
+                          <a href={`tel:${req.contactPhone}`} className="text-emerald-400 font-bold hover:underline flex items-center gap-1">
+                            <Phone className="w-3.5 h-3.5" /> Call ({req.contactPhone})
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setViewAttachmentUrl(req.patientName)}
+                            className="text-blue-400 font-bold hover:underline flex items-center gap-1"
+                          >
+                            <FileCheck className="w-3.5 h-3.5" /> View Prescription Slip
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        {(req.status === 'PENDING_HOSPITAL_APPROVAL' || req.status === 'VERIFIED_SEARCHING_DONORS') && (
+                          <>
+                            <button
+                              onClick={() => setApprovalModalReq(req)}
+                              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1"
+                            >
+                              <Check className="w-4 h-4" /> Approve
+                            </button>
+                            <button
+                              onClick={() => setInfoReqId(req.id)}
+                              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs border border-slate-800 flex items-center gap-1"
+                            >
+                              <MessageSquare className="w-3.5 h-3.5 text-blue-400" /> Ask Info
+                            </button>
+                            <button
+                              onClick={() => setRejectionModalReq(req)}
+                              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-red-400 font-bold text-xs border border-slate-800 flex items-center gap-1"
+                            >
+                              <XCircle className="w-3.5 h-3.5" /> Reject
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
+            </div>
 
-        {/* Expiry Tracking & Audit Logs Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-800 text-xs">
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-            <span className="font-extrabold text-amber-400 flex items-center gap-1.5">
-              <Clock className="w-4 h-4" /> Units Nearing Expiry (Prioritize Transfusion/Transfer):
-            </span>
-            <div className="space-y-1.5">
-              {expiringUnits.map(item => (
-                <div key={item.id} className="p-2 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between text-[11px]">
-                  <span className="font-bold text-white">{item.group} ({item.component}) — {item.units} Units</span>
-                  <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 font-bold border border-amber-800">
-                    Expiring in {item.expiringInDays} days
-                  </span>
+            {/* Pagination Bar */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between pt-4 border-t border-slate-800 text-xs">
+                <span className="text-slate-400 font-bold">
+                  Page {currentPage} of {totalPages} ({sortedQueue.length} total items)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold disabled:opacity-40 flex items-center gap-1"
+                  >
+                    <ChevronLeft className="w-4 h-4" /> Previous
+                  </button>
+                  <button
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold disabled:opacity-40 flex items-center gap-1"
+                  >
+                    Next <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
+
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-            <span className="font-extrabold text-blue-400 flex items-center gap-1.5">
-              <History className="w-4 h-4" /> Staff Stock Change Audit Log:
-            </span>
-            <div className="space-y-1.5 max-h-28 overflow-y-auto font-mono text-[10px]">
-              {auditLogs.map(log => (
-                <div key={log.id} className="p-1.5 rounded bg-slate-900 border border-slate-800 flex items-center justify-between text-slate-300">
-                  <span>[{log.timestamp}] {log.staffName}: {log.group} ({log.component}) {log.change > 0 ? `+${log.change}` : log.change} → {log.newCount}u</span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
+      )}
 
-      </div>
+      {/* VIEW 2: DEDICATED AUDIT LOG TAB */}
+      {deskTab === 'audit_log' && (
+        <HospitalAuditLogViewer logs={comprehensiveAuditLogs} />
+      )}
 
-      {/* ---------------------------------------------------- */}
-      {/* PART 2: INCOMING BLOOD REQUESTS QUEUE (TRIAGE HUB)    */}
-      {/* ---------------------------------------------------- */}
-      <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
-        
-        {/* Title Bar & Queue Info */}
-        <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-          <div className="flex items-center gap-2">
-            <Building2 className="w-5 h-5 text-blue-400" />
-            <h3 className="font-extrabold text-base text-white">Incoming Blood Requests Queue</h3>
-          </div>
-          <span className="text-[10px] text-slate-400 font-mono">Showing {paginatedQueue.length} of {sortedQueue.length} Requests</span>
-        </div>
-
-        {/* Search & Filters Controls Bar */}
-        <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-3">
-          
-          {/* Search Box */}
-          <div className="relative">
-            <Search className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-            <input
-              type="text"
-              placeholder="Search by Patient Name, Requester Name, or Request ID..."
-              value={searchQuery}
-              onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white text-xs focus:border-blue-600 focus:outline-none"
-            />
-          </div>
-
-          {/* Filter Dropdowns & Live Distribution Badges */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            
-            <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Blood Group Filter</label>
-              <select
-                value={filterBloodGroup}
-                onChange={e => { setFilterBloodGroup(e.target.value); setCurrentPage(1); }}
-                className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold"
-              >
-                <option value="ALL">All Blood Groups</option>
-                {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(bg => (
-                  <option key={bg} value={bg}>{bg}</option>
-                ))}
-              </select>
+      {/* TRIGGER 4 MODAL: RECORD DONATION INTAKE FORM */}
+      {showIntakeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-md bg-slate-900 border border-emerald-600/80 rounded-3xl p-6 space-y-4 text-xs">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <h3 className="font-extrabold text-base text-white flex items-center gap-2">
+                <PlusCircle className="w-5 h-5 text-emerald-400" /> Record Donation Intake (Logs Trigger 4)
+              </h3>
+              <span className="text-[10px] text-emerald-400 font-bold">Stock Added</span>
             </div>
 
-            <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Emergency Urgency Level</label>
-              <select
-                value={filterUrgency}
-                onChange={e => { setFilterUrgency(e.target.value); setCurrentPage(1); }}
-                className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold"
-              >
-                <option value="ALL">All Emergency Levels</option>
-                <option value="CRITICAL">Critical (Within 2 Hours)</option>
-                <option value="HIGH">Urgent (Today)</option>
-                <option value="MODERATE">Normal (24-48 Hours)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Request Workflow Status</label>
-              <select
-                value={filterStatus}
-                onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-                className="w-full p-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold"
-              >
-                <option value="ALL">All Workflow Statuses</option>
-                <option value="PENDING_HOSPITAL_APPROVAL">Pending Approval</option>
-                <option value="VERIFIED_SEARCHING_DONORS">Verified - Searching Donors</option>
-                <option value="DONOR_CONFIRMED">Donor Confirmed</option>
-                <option value="APPOINTMENT_SCHEDULED">Appointment Scheduled</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Richer Request Cards List */}
-        <div className="space-y-4">
-          {paginatedQueue.length === 0 ? (
-            <div className="text-center py-12 text-slate-400 space-y-2 bg-slate-950 rounded-2xl border border-slate-800">
-              <FileText className="w-8 h-8 text-slate-600 mx-auto" />
-              <p className="font-bold">No requests match current search or filter criteria.</p>
-              <button
-                onClick={() => { setSearchQuery(''); setFilterBloodGroup('ALL'); setFilterUrgency('ALL'); setFilterStatus('ALL'); }}
-                className="text-blue-400 font-bold underline"
-              >
-                Reset All Filters
-              </button>
-            </div>
-          ) : (
-            paginatedQueue.map(req => {
-              const stockCount = matrixStock[req.bloodGroup]?.['Whole Blood'] || 0;
-              const hasSufficientStock = stockCount >= req.unitsNeeded;
-              const timeAgoStr = calculateTimeAgo(req.requestedAt);
-              const isCritical = req.urgency === 'CRITICAL';
-
-              return (
-                <div
-                  key={req.id}
-                  className={`p-6 rounded-3xl bg-slate-950 border space-y-4 transition-all ${
-                    isCritical
-                      ? 'border-2 border-red-600/90 shadow-xl shadow-red-950/40 ring-1 ring-red-500 animate-pulse'
-                      : 'border-slate-800 hover:border-slate-700'
-                  }`}
+            <form onSubmit={handleConfirmIntake} className="space-y-3">
+              <div>
+                <label className="text-slate-300 font-bold block mb-1">Blood Group *</label>
+                <select
+                  value={intakeGroup}
+                  onChange={e => setIntakeGroup(e.target.value as BloodGroup)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold"
                 >
-                  {/* Card Top Row: Patient Info & Urgency Badges */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-900 pb-3">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-black text-sm shadow">
-                          {req.bloodGroup}
-                        </span>
-                        
-                        <h4 className="font-extrabold text-base text-white">
-                          {req.patientName} <span className="text-slate-400 font-normal">({req.patientAge || 34} yrs, {req.patientGender || 'Male'})</span>
-                        </h4>
+                  {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(bg => (
+                    <option key={bg} value={bg}>{bg}</option>
+                  ))}
+                </select>
+              </div>
 
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-900 text-amber-400 border border-slate-800">
-                          {req.unitsNeeded} Units ({req.bloodComponent || 'Whole Blood'})
-                        </span>
+              <div>
+                <label className="text-slate-300 font-bold block mb-1">Blood Component *</label>
+                <select
+                  value={intakeComponent}
+                  onChange={e => setIntakeComponent(e.target.value as ComponentType)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold"
+                >
+                  <option value="Whole Blood">Whole Blood</option>
+                  <option value="Plasma">Plasma (FFP)</option>
+                  <option value="Platelets">Platelets (PRP)</option>
+                  <option value="Red Blood Cells">Red Blood Cells (PRBC)</option>
+                </select>
+              </div>
 
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border ${
-                          req.urgency === 'CRITICAL'
-                            ? 'bg-red-950 text-red-300 border-red-800'
-                            : req.urgency === 'HIGH'
-                            ? 'bg-amber-950 text-amber-300 border-amber-800'
-                            : 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                        }`}>
-                          Urgency: {req.urgency}
-                        </span>
-                      </div>
+              <div>
+                <label className="text-slate-300 font-bold block mb-1">Intake Unit Count *</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={50}
+                  value={intakeUnits}
+                  onChange={e => setIntakeUnits(Number(e.target.value))}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold"
+                  required
+                />
+              </div>
 
-                      <p className="text-xs text-slate-400 mt-1">
-                        Request ID: <span className="font-mono text-slate-300">{req.id}</span> • Required: <strong>{req.requiredDate} at {req.requiredTime || '10:00 AM'}</strong>
-                      </p>
-                    </div>
+              <div>
+                <label className="text-slate-300 font-bold block mb-1">Donation Source / Drive Name *</label>
+                <input
+                  type="text"
+                  value={intakeDonorName}
+                  onChange={e => setIntakeDonorName(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold"
+                  required
+                />
+              </div>
 
-                    <div className="text-right shrink-0">
-                      <span className="text-[10px] font-bold text-slate-400 block">Submitted {timeAgoStr}</span>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border mt-1 inline-block ${
-                        hasSufficientStock
-                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                          : 'bg-amber-950 text-amber-300 border-amber-800'
-                      }`}>
-                        {hasSufficientStock ? `✅ In Stock (${stockCount}u avail)` : `⚠️ Insufficient (${stockCount}u avail)`}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Card Middle Row: Requester Info & Actions */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                    <div className="space-y-1">
-                      <p className="text-slate-300">
-                        Requester: <strong>{req.contactPerson}</strong> ({req.relationship || 'Family'})
-                      </p>
-                      
-                      <div className="flex items-center gap-3">
-                        <a
-                          href={`tel:${req.contactPhone}`}
-                          className="text-emerald-400 font-bold hover:underline flex items-center gap-1"
-                        >
-                          <Phone className="w-3.5 h-3.5" /> Call ({req.contactPhone})
-                        </a>
-
-                        <button
-                          type="button"
-                          onClick={() => setViewAttachmentUrl(req.patientName)}
-                          className="text-blue-400 font-bold hover:underline flex items-center gap-1"
-                        >
-                          <FileCheck className="w-3.5 h-3.5" /> View Prescription Slip
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Direct Action Buttons */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {(req.status === 'PENDING_HOSPITAL_APPROVAL' || req.status === 'VERIFIED_SEARCHING_DONORS') && (
-                        <>
-                          <button
-                            onClick={() => setApprovalModalReq(req)}
-                            className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1"
-                          >
-                            <Check className="w-4 h-4" /> Approve
-                          </button>
-
-                          <button
-                            onClick={() => setInfoReqId(req.id)}
-                            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 font-bold text-xs border border-slate-800 flex items-center gap-1"
-                          >
-                            <MessageSquare className="w-3.5 h-3.5 text-blue-400" /> Ask Info
-                          </button>
-
-                          <button
-                            onClick={() => setRejectionModalReq(req)}
-                            className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-red-400 font-bold text-xs border border-slate-800 flex items-center gap-1"
-                          >
-                            <XCircle className="w-3.5 h-3.5" /> Reject
-                          </button>
-                        </>
-                      )}
-
-                      {req.status === 'DONOR_CONFIRMED' && (
-                        <button
-                          onClick={() => scheduleDonationAppointment(req.id, '2026-08-11', '10:00 AM', 'KIMS Blood Unit')}
-                          className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1"
-                        >
-                          <Calendar className="w-4 h-4" /> Schedule Appt
-                        </button>
-                      )}
-
-                      {req.status === 'APPOINTMENT_SCHEDULED' && (
-                        <button
-                          onClick={() => markDonationCompleted(req.id)}
-                          className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow-md flex items-center gap-1"
-                        >
-                          <CheckCircle2 className="w-4 h-4" /> Mark Completed
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Ask Info Note Popover */}
-                  {infoReqId === req.id && (
-                    <div className="p-4 rounded-2xl bg-slate-900 border border-slate-700 space-y-3 text-xs">
-                      <label className="font-bold text-slate-300 block">Send Note to Requester:</label>
-                      <input
-                        type="text"
-                        value={infoNoteText}
-                        onChange={e => setInfoNoteText(e.target.value)}
-                        className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white"
-                      />
-                      <div className="flex justify-end gap-2">
-                        <button onClick={() => setInfoReqId(null)} className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-400 font-bold">
-                          Cancel
-                        </button>
-                        <button onClick={() => handleSendInfoRequest(req.id)} className="px-4 py-1.5 rounded-lg bg-blue-600 text-white font-bold">
-                          Send Note
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                </div>
-              );
-            })
-          )}
-        </div>
-
-        {/* Queue Pagination Bar */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-between pt-4 border-t border-slate-800 text-xs">
-            <span className="text-slate-400 font-bold">
-              Page {currentPage} of {totalPages} ({sortedQueue.length} total items)
-            </span>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold disabled:opacity-40 flex items-center gap-1"
-              >
-                <ChevronLeft className="w-4 h-4" /> Previous
-              </button>
-
-              <button
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 font-bold disabled:opacity-40 flex items-center gap-1"
-              >
-                Next <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setShowIntakeModal(false)} className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold">
+                  Cancel
+                </button>
+                <button type="submit" className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black">
+                  Record Intake & Log Audit
+                </button>
+              </div>
+            </form>
           </div>
-        )}
+        </div>
+      )}
 
-      </div>
-
-      {/* Approval Confirmation Stock Preview Modal */}
+      {/* APPROVAL MODAL (TRIGGER 2: Stock Used Linked to Request ID) */}
       {approvalModalReq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
           <div className="w-full max-w-md bg-slate-900 border border-emerald-600/80 rounded-3xl p-6 space-y-4 text-xs">
             <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-              <Check className="w-5 h-5 text-emerald-400" /> Confirm Stock Reservation & Approval
+              <Check className="w-5 h-5 text-emerald-400" /> Confirm Stock Reservation & Log Audit (Trigger 2)
             </h3>
 
             <div className="p-4 rounded-2xl bg-emerald-950/50 border border-emerald-800 text-slate-200 space-y-2">
@@ -691,7 +840,8 @@ export const HospitalMonitorDesk: React.FC = () => {
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 font-mono space-y-1 text-xs">
                 <div>Blood Group: <strong className="text-red-400">{approvalModalReq.bloodGroup}</strong></div>
                 <div>Units Needed: <strong className="text-white">{approvalModalReq.unitsNeeded} units</strong></div>
-                <div>Current Hospital Stock: <strong>{matrixStock[approvalModalReq.bloodGroup as BloodGroup]?.['Whole Blood'] || 0} units</strong></div>
+                <div>Linked Request ID: <strong className="text-blue-400">{approvalModalReq.id}</strong></div>
+                <div>Change Type: <strong className="text-emerald-300">Stock Used</strong></div>
                 <div className="text-emerald-300 pt-1 border-t border-slate-900">
                   Stock After Approval: <strong>{Math.max(0, (matrixStock[approvalModalReq.bloodGroup as BloodGroup]?.['Whole Blood'] || 0) - approvalModalReq.unitsNeeded)} units</strong>
                 </div>
@@ -703,14 +853,14 @@ export const HospitalMonitorDesk: React.FC = () => {
                 Cancel
               </button>
               <button onClick={handleConfirmApproval} className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black">
-                Confirm Approval & Reserve
+                Confirm Approval & Log Audit
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Rejection Reason Form Modal */}
+      {/* REJECTION MODAL */}
       {rejectionModalReq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
           <div className="w-full max-w-md bg-slate-900 border border-red-600/80 rounded-3xl p-6 space-y-4 text-xs">
@@ -740,20 +890,6 @@ export const HospitalMonitorDesk: React.FC = () => {
                 Confirm Rejection
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* Prescription View Modal */}
-      {viewAttachmentUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-in fade-in">
-          <div className="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-6 space-y-4 text-xs text-center">
-            <FileCheck className="w-12 h-12 text-emerald-400 mx-auto" />
-            <h3 className="font-extrabold text-base text-white">Prescription Slip Verified</h3>
-            <p className="text-slate-300">Prescription document verified for patient <strong>{viewAttachmentUrl}</strong>.</p>
-            <button onClick={() => setViewAttachmentUrl(null)} className="px-6 py-2 rounded-xl bg-slate-800 text-white font-bold">
-              Close Preview
-            </button>
           </div>
         </div>
       )}
