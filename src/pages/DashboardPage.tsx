@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { SkeletonCard, SkeletonRow } from '../components/common/Skeleton';
 import { BloodGroup } from '../types';
 import { RequesterActionHub } from '../components/requester/RequesterActionHub';
+import { HospitalHomeLanding } from '../components/hospital/HospitalHomeLanding';
 import { HospitalMonitorDesk } from '../components/hospital/HospitalMonitorDesk';
 import { HospitalEmergencyBoard } from '../components/hospital/HospitalEmergencyBoard';
 import { HospitalInterCitySupply } from '../components/hospital/HospitalInterCitySupply';
@@ -42,7 +43,8 @@ import {
   Unlock,
   Radio,
   Sliders,
-  Truck
+  Truck,
+  Home
 } from 'lucide-react';
 
 export const DashboardPage: React.FC = () => {
@@ -76,7 +78,7 @@ export const DashboardPage: React.FC = () => {
   } = useAuth();
 
   // Active Sub View Tab for Hospital Perspective
-  const [hospitalSubView, setHospitalSubView] = useState<'overview' | 'emergency_board' | 'inter_city' | 'blood_banks' | 'drives'>('overview');
+  const [hospitalSubView, setHospitalSubView] = useState<'landing' | 'overview' | 'emergency_board' | 'inter_city' | 'blood_banks' | 'drives'>('landing');
 
   const [scheduleModalReqId, setScheduleModalReqId] = useState<string | null>(null);
   const [schDate, setSchDate] = useState<string>('2026-08-08');
@@ -178,6 +180,15 @@ export const DashboardPage: React.FC = () => {
       {/* Hospital Perspective Navigation Bar */}
       {currentRole === 'hospital' && (
         <div className="p-1.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-1 overflow-x-auto text-xs font-extrabold">
+          <button
+            onClick={() => setHospitalSubView('landing')}
+            className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 ${
+              hospitalSubView === 'landing' ? 'bg-red-600 text-white shadow' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            <Home className="w-4 h-4" /> Home Landing
+          </button>
+
           <button
             onClick={() => setHospitalSubView('overview')}
             className={`px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 ${
@@ -306,63 +317,6 @@ export const DashboardPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Multi-Channel Parallel Status Tracker:
-                    </span>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                      {channels.includes('hospital') && (
-                        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                          <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                            <Building2 className="w-4 h-4 text-blue-400" /> Hospital Review
-                          </span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            req.fulfilledChannel === 'bloodbank'
-                              ? 'bg-slate-800 text-slate-500'
-                              : req.status === 'COMPLETED'
-                              ? 'bg-emerald-950 text-emerald-300'
-                              : 'bg-amber-950 text-amber-300'
-                          }`}>
-                            {req.fulfilledChannel === 'bloodbank' ? 'Fulfilled via Blood Bank — Closed' : req.status.replace(/_/g, ' ')}
-                          </span>
-                        </div>
-                      )}
-
-                      {channels.includes('donors') && (
-                        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                          <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                            <Users className="w-4 h-4 text-red-500" /> Direct Donors
-                          </span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            req.fulfilledChannel === 'bloodbank'
-                              ? 'bg-slate-800 text-slate-500'
-                              : req.status === 'DONOR_CONFIRMED'
-                              ? 'bg-blue-950 text-blue-300'
-                              : 'bg-emerald-950 text-emerald-300'
-                          }`}>
-                            {req.fulfilledChannel === 'bloodbank' ? 'Fulfilled via Blood Bank — Closed' : req.assignedDonorName ? `Accepted: ${req.assignedDonorName}` : 'Searching Donors'}
-                          </span>
-                        </div>
-                      )}
-
-                      {channels.includes('bloodbank') && (
-                        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                          <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                            <Droplet className="w-4 h-4 text-emerald-400" /> Blood Bank Stock
-                          </span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            req.fulfilledChannel === 'bloodbank'
-                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                              : 'bg-amber-950 text-amber-300'
-                          }`}>
-                            {req.fulfilledChannel === 'bloodbank' ? 'Stock Reserved & Fulfilled' : 'Stock Check Pending'}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
                 </div>
               );
             })}
@@ -393,56 +347,6 @@ export const DashboardPage: React.FC = () => {
               <span className="text-xs font-bold text-emerald-400 block mt-1">Eligible to Donate</span>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <h3 className="font-bold text-base text-white flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-500" /> Distance-Ranked Emergency Requests ({currentUser?.bloodGroup || 'O-'})
-            </h3>
-
-            <div className="space-y-4">
-              {requests.map((req, idx) => {
-                const isDirectDonorReq = req.selectedChannels?.includes('donors');
-                const distances = ['3.2 km away', '7.8 km away', '14.5 km away', '22.0 km away'];
-                const distTag = distances[idx % distances.length];
-
-                return (
-                  <div key={req.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-extrabold text-xs">
-                            {req.bloodGroup}
-                          </span>
-                          <h4 className="font-extrabold text-base text-white">{req.patientName}</h4>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-950 text-emerald-400 border border-slate-800">
-                            📍 {distTag}
-                          </span>
-                        </div>
-                        <p className="text-xs text-slate-400 mt-1">
-                          Hospital: <strong>{req.hospitalName}</strong> • Reason: {req.reason}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => donorAcceptRequest(req.id, currentUser?.id || 'usr_donor_001')}
-                          className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center gap-1.5"
-                        >
-                          <Check className="w-4 h-4" /> Accept & Confirm
-                        </button>
-                        <button
-                          onClick={() => donorDeclineRequest(req.id, currentUser?.id || 'usr_donor_001')}
-                          className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold text-xs border border-slate-700"
-                        >
-                          Decline
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
         </div>
       )}
 
@@ -451,6 +355,7 @@ export const DashboardPage: React.FC = () => {
       {/* ---------------------------------------------------- */}
       {currentRole === 'hospital' && (
         <div className="space-y-6">
+          {hospitalSubView === 'landing' && <HospitalHomeLanding onNavigateToTab={(t) => setHospitalSubView(t)} />}
           {hospitalSubView === 'overview' && <HospitalMonitorDesk />}
           {hospitalSubView === 'emergency_board' && <HospitalEmergencyBoard />}
           {hospitalSubView === 'inter_city' && <HospitalInterCitySupply />}
@@ -470,96 +375,6 @@ export const DashboardPage: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
-      )}
-
-      {/* ---------------------------------------------------- */}
-      {/* 4. BLOOD BANK DASHBOARD VIEW                          */}
-      {/* ---------------------------------------------------- */}
-      {currentRole === 'bloodbank' && (
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-base text-white flex items-center gap-2">
-              <Droplet className="w-5 h-5 text-red-500" /> Regional Blood Stock & Inventory Reserve Desk
-            </h3>
-            <span className="text-xs text-slate-400">KIMS Regional Center</span>
-          </div>
-
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-            <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
-              <CheckSquare className="w-4 h-4 text-emerald-400" /> Direct Blood Bank Stock Reservation Queue
-            </h4>
-
-            <div className="space-y-3 text-xs">
-              {requests.filter(r => r.selectedChannels?.includes('bloodbank')).map(req => (
-                <div key={req.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-xl bg-red-600 text-white font-extrabold text-xs">
-                        {req.bloodGroup}
-                      </span>
-                      <span className="font-extrabold text-white text-sm">{req.patientName}</span>
-                      <span className="text-slate-400">({req.unitsNeeded} Units)</span>
-                    </div>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Hospital: {req.hospitalName} • Requester: {req.contactPerson} ({req.contactPhone})
-                    </p>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {req.fulfilledChannel === 'bloodbank' ? (
-                      <span className="px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 font-bold text-xs border border-emerald-800 flex items-center gap-1">
-                        <Check className="w-4 h-4" /> Stock Reserved
-                      </span>
-                    ) : (
-                      <button
-                        onClick={() => approveBloodBankReservation(req.id, bloodBanks[0].id)}
-                        className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1"
-                      >
-                        <Check className="w-4 h-4" /> Approve & Reserve Stock
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ---------------------------------------------------- */}
-      {/* 5. ADMIN DASHBOARD VIEW                               */}
-      {/* ---------------------------------------------------- */}
-      {currentRole === 'admin' && (
-        <div className="space-y-6">
-          <h3 className="font-bold text-base text-white flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-400" /> Super Admin Network Control & Account Security Desk
-          </h3>
-
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-xs">
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-              <span className="text-slate-400">Total Registered Accounts</span>
-              <span className="text-2xl font-black text-white block mt-1">{portalAccounts.length}</span>
-            </div>
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-              <span className="text-slate-400">Verified Hospitals</span>
-              <span className="text-2xl font-black text-blue-400 block mt-1">
-                {portalAccounts.filter(a => a.role === 'hospital' && a.status === 'Verified').length + 42}
-              </span>
-            </div>
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-              <span className="text-slate-400">Active Blood Banks</span>
-              <span className="text-2xl font-black text-emerald-400 block mt-1">
-                {portalAccounts.filter(a => a.role === 'bloodbank' && a.status === 'Verified').length + 18}
-              </span>
-            </div>
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800">
-              <span className="text-slate-400">Pending License Verifications</span>
-              <span className="text-2xl font-black text-amber-400 block mt-1">
-                {portalAccounts.filter(a => a.status === 'Pending Verification').length}
-              </span>
-            </div>
-          </div>
         </div>
       )}
 
