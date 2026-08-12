@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { BloodGroup } from '../../types';
-import { Truck, Building2, MapPin, ArrowRight, CheckCircle2, Clock, PlusCircle } from 'lucide-react';
+import { calculateDistanceKm } from '../../utils/distanceCalculator';
+import { Truck, Building2, MapPin, ArrowRight, CheckCircle2, Clock, PlusCircle, Navigation, Filter } from 'lucide-react';
 
 interface NetworkHospitalStock {
   id: string;
   hospitalName: string;
   city: string;
-  distanceKm: number;
+  lat: number;
+  lng: number;
   phone: string;
   stockMap: Record<BloodGroup, number>;
 }
@@ -30,7 +32,8 @@ const NETWORK_HOSPITALS: NetworkHospitalStock[] = [
     id: 'hosp_sdm',
     hospitalName: 'SDM College of Medical Sciences',
     city: 'Dharwad',
-    distanceKm: 18.5,
+    lat: 15.4589,
+    lng: 75.0078,
     phone: '+91 836 2477777',
     stockMap: { 'A+': 14, 'A-': 4, 'B+': 18, 'B-': 6, 'AB+': 8, 'AB-': 2, 'O+': 25, 'O-': 6, 'Bombay Phenotype (O-h)': 1 }
   },
@@ -38,7 +41,8 @@ const NETWORK_HOSPITALS: NetworkHospitalStock[] = [
     id: 'hosp_kle',
     hospitalName: 'KLE Prabhakar Kore Hospital',
     city: 'Belagavi',
-    distanceKm: 92.0,
+    lat: 15.8497,
+    lng: 74.4977,
     phone: '+91 831 2473777',
     stockMap: { 'A+': 20, 'A-': 6, 'B+': 24, 'B-': 8, 'AB+': 12, 'AB-': 4, 'O+': 35, 'O-': 10, 'Bombay Phenotype (O-h)': 2 }
   },
@@ -46,7 +50,8 @@ const NETWORK_HOSPITALS: NetworkHospitalStock[] = [
     id: 'hosp_manipal',
     hospitalName: 'Manipal Hospital',
     city: 'Bengaluru',
-    distanceKm: 410.0,
+    lat: 12.9716,
+    lng: 77.5946,
     phone: '+91 80 25024444',
     stockMap: { 'A+': 40, 'A-': 12, 'B+': 50, 'B-': 15, 'AB+': 20, 'AB-': 8, 'O+': 60, 'O-': 18, 'Bombay Phenotype (O-h)': 3 }
   }
@@ -55,7 +60,15 @@ const NETWORK_HOSPITALS: NetworkHospitalStock[] = [
 export const HospitalInterCitySupply: React.FC = () => {
   const { showToast } = useApp();
 
+  // Current Hospital Location State (Default: Hubballi KIMS Hospital)
+  const [hospitalLocation, setHospitalLocation] = useState<{ lat: number; lng: number }>({
+    lat: 15.3647,
+    lng: 75.124
+  });
+
   const [selectedGroup, setSelectedGroup] = useState<BloodGroup>('O-');
+  const [radiusFilter, setRadiusFilter] = useState<number>(1000); // Default 1000km (Any)
+
   const [transferList, setTransferList] = useState<TransferRequest[]>([
     {
       id: 'TRF_001',
@@ -74,9 +87,30 @@ export const HospitalInterCitySupply: React.FC = () => {
   const [requestModalHosp, setRequestModalHosp] = useState<NetworkHospitalStock | null>(null);
   const [requestUnits, setRequestUnits] = useState<number>(2);
 
+  const handleSetCurrentGPS = () => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          setHospitalLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          showToast(`Hospital GPS location updated: [${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}]`);
+        },
+        () => showToast('Using Hubballi regional center coordinates.')
+      );
+    }
+  };
+
+  // Calculate Distance & Filter by Radius & Sort Nearest-First
+  const hospitalsWithDistance = NETWORK_HOSPITALS.map(h => {
+    const distanceKm = calculateDistanceKm(hospitalLocation.lat, hospitalLocation.lng, h.lat, h.lng);
+    return { ...h, distanceKm };
+  })
+    .filter(h => h.distanceKm <= radiusFilter)
+    .sort((a, b) => a.distanceKm - b.distanceKm);
+
   const handleCreateTransfer = () => {
     if (!requestModalHosp) return;
 
+    const dist = calculateDistanceKm(hospitalLocation.lat, hospitalLocation.lng, requestModalHosp.lat, requestModalHosp.lng);
     const newTransfer: TransferRequest = {
       id: `TRF_${Date.now().toString().slice(-4)}`,
       sourceHospital: requestModalHosp.hospitalName,
@@ -86,7 +120,7 @@ export const HospitalInterCitySupply: React.FC = () => {
       component: 'Whole Blood',
       units: requestUnits,
       status: 'In Transit',
-      courierEtaMins: Math.round(requestModalHosp.distanceKm * 1.5),
+      courierEtaMins: Math.round(dist * 1.5),
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     };
 
@@ -105,39 +139,66 @@ export const HospitalInterCitySupply: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in text-xs">
       
-      {/* Header Banner */}
+      {/* Header Banner & GPS Button */}
       <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-2">
             <Truck className="w-5 h-5 text-blue-400" /> Inter-Hospital & Inter-City Supply Transfer Engine
           </h2>
           <p className="text-xs text-slate-400 mt-1">
-            Locate regional hospital surpluses and request trackable cold-chain stock transfers
+            Distance-ranked regional hospital surpluses with trackable cold-chain stock transfers
           </p>
         </div>
 
+        <button
+          onClick={handleSetCurrentGPS}
+          className="px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-bold hover:bg-slate-800 flex items-center gap-1.5 shrink-0"
+        >
+          <Navigation className="w-4 h-4" /> Use Current Hospital GPS
+        </button>
+      </div>
+
+      {/* Filters Bar: Blood Group + Distance Radius Filter */}
+      <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <label className="text-slate-400 font-bold">Select Group:</label>
           <select
             value={selectedGroup}
             onChange={e => setSelectedGroup(e.target.value as BloodGroup)}
-            className="p-2 rounded-xl bg-slate-950 border border-slate-800 text-white font-black text-xs"
+            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-black text-xs"
           >
             {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(bg => (
               <option key={bg} value={bg}>{bg}</option>
             ))}
           </select>
         </div>
+
+        <div className="flex items-center gap-2">
+          <label className="text-slate-400 font-bold flex items-center gap-1">
+            <MapPin className="w-3.5 h-3.5 text-red-500" /> Distance Radius:
+          </label>
+          <select
+            value={radiusFilter}
+            onChange={e => setRadiusFilter(Number(e.target.value))}
+            className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold text-xs"
+          >
+            <option value={5}>Within 5 km</option>
+            <option value={10}>Within 10 km</option>
+            <option value={25}>Within 25 km</option>
+            <option value={50}>Within 50 km</option>
+            <option value={1000}>Any Distance</option>
+          </select>
+        </div>
       </div>
 
-      {/* Network Hospitals Stock Cards */}
+      {/* Distance-Ranked Network Hospitals Stock Cards */}
       <div className="space-y-4">
         <h3 className="font-bold text-sm text-white flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-emerald-400" /> Regional Network Hospital Inventories ({selectedGroup})
+          <Building2 className="w-4 h-4 text-emerald-400" /> Regional Network Hospitals (Sorted Nearest-First)
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {NETWORK_HOSPITALS.map(hosp => {
+          {hospitalsWithDistance.map(hosp => {
             const unitsAvail = hosp.stockMap[selectedGroup] || 0;
 
             return (
@@ -145,10 +206,12 @@ export const HospitalInterCitySupply: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between">
                     <h4 className="font-extrabold text-sm text-white">{hosp.hospitalName}</h4>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-950 text-blue-300 border border-blue-800">
-                      📍 {hosp.distanceKm} km ({hosp.city})
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-950 text-blue-300 border border-blue-800 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-red-400" /> {hosp.distanceKm} km away
                     </span>
                   </div>
+
+                  <p className="text-[11px] text-slate-400 mt-1">{hosp.city} • {hosp.phone}</p>
 
                   <div className="mt-3 p-3 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between font-mono">
                     <span className="text-slate-400 font-sans font-bold">{selectedGroup} Availability:</span>

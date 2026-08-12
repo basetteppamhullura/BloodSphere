@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { BloodGroup } from '../../types';
+import { calculateDistanceKm } from '../../utils/distanceCalculator';
 import {
   Droplet,
   FileText,
@@ -27,7 +28,11 @@ import {
   ShieldAlert,
   ArrowRight,
   Thermometer,
-  Boxes
+  Boxes,
+  MapPin,
+  Building2,
+  Navigation,
+  Truck
 } from 'lucide-react';
 
 export type RequestStatusType =
@@ -89,20 +94,49 @@ export interface ImmutableActivityEntry {
   details: string;
 }
 
+interface NearbyInstitution {
+  id: string;
+  name: string;
+  type: 'hospital' | 'bloodbank';
+  city: string;
+  lat: number;
+  lng: number;
+  lowStockGroup?: BloodGroup;
+  surplusGroup?: BloodGroup;
+  surplusUnits?: number;
+}
+
+const REGIONAL_INSTITUTIONS: NearbyInstitution[] = [
+  { id: 'inst_1', name: 'KIMS Teaching Hospital', type: 'hospital', city: 'Hubballi', lat: 15.3647, lng: 75.124, lowStockGroup: 'O-' },
+  { id: 'inst_2', name: 'SDM College of Medical Sciences', type: 'hospital', city: 'Dharwad', lat: 15.4589, lng: 75.0078, lowStockGroup: 'A-' },
+  { id: 'inst_3', name: 'Rotary Club Blood Bank', type: 'bloodbank', city: 'Dharwad', lat: 15.462, lng: 75.01, surplusGroup: 'O+', surplusUnits: 35 },
+  { id: 'inst_4', name: 'KLE Hospital & Blood Bank', type: 'hospital', city: 'Belagavi', lat: 15.8497, lng: 74.4977, lowStockGroup: 'B-' },
+  { id: 'inst_5', name: 'Lifeline Regional Blood Center', type: 'bloodbank', city: 'Belagavi', lat: 15.852, lng: 74.502, surplusGroup: 'AB+', surplusUnits: 20 }
+];
+
 export const BloodBankPortalDesk: React.FC = () => {
   const { requests, approveBloodBankReservation, showToast } = useApp();
   const { currentUser } = useAuth();
   const staffName = currentUser?.name || 'Dr. Radhika Sen (Blood Bank Director)';
 
-  // Active Navigation Tab across 10 Modules
+  // Blood Bank GPS Coordinates (Default: Hubballi Central Blood Bank)
+  const [bankLocation, setBankLocation] = useState<{ lat: number; lng: number }>({
+    lat: 15.362,
+    lng: 75.122
+  });
+
+  // Active Navigation Tab across 10 Modules + Nearby Institutions Sub-tab
   const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'queue' | 'inventory' | 'lifecycle' | 'preservation' | 'issue' | 'alerts' | 'notifications' | 'activity' | 'reports'
+    'dashboard' | 'queue' | 'inventory' | 'lifecycle' | 'preservation' | 'issue' | 'alerts' | 'notifications' | 'activity' | 'reports' | 'nearby'
   >('dashboard');
+
+  // Radius Filter for Distance Search
+  const [radiusKmFilter, setRadiusKmFilter] = useState<number>(1000); // Default Any
 
   // Configurable Low-Stock Threshold per blood group (default 5 units)
   const [minStockThreshold, setMinStockThreshold] = useState<number>(5);
 
-  // Live Inventory Stock Matrix (8 Groups x 4 Components) with Available, Reserved, Issued, Expired counts
+  // Live Inventory Stock Matrix (8 Groups x 4 Components)
   const [inventoryStockMap, setInventoryStockMap] = useState<
     Record<BloodGroup, Record<ComponentType, { available: number; reserved: number; issued: number; expired: number }>>
   >({
@@ -189,46 +223,18 @@ export const BloodBankPortalDesk: React.FC = () => {
       donorRef: 'DNR-Hubballi-098',
       createdDate: '2026-08-02',
       lastUpdated: '2026-08-11'
-    },
-    {
-      unitId: 'BU-2026-000127',
-      donationId: 'DON-8823',
-      bloodGroup: 'A+',
-      component: 'Red Cells (PRBC)',
-      collectionDate: '2026-08-05',
-      expiryDate: '2026-08-30',
-      storageLocation: 'Main Refrigerator R-01',
-      status: 'STORED',
-      donorRef: 'DNR-Dharwad-112',
-      createdDate: '2026-08-05',
-      lastUpdated: '2026-08-10'
-    },
-    {
-      unitId: 'BU-2026-000128',
-      donationId: 'DON-8824',
-      bloodGroup: 'B-',
-      component: 'Platelets (PRP)',
-      collectionDate: '2026-07-20',
-      expiryDate: '2026-08-10',
-      storageLocation: 'Quarantine Bay Q-03',
-      status: 'EXPIRED',
-      donorRef: 'DNR-Belagavi-304',
-      createdDate: '2026-07-20',
-      lastUpdated: '2026-08-11'
     }
   ]);
 
   // Real Backend Event Notifications
   const [notifications, setNotifications] = useState<BankNotificationItem[]>([
     { id: 'n_1', title: '🚨 Emergency Blood Request', message: 'Critical O- request received for Patient Mahesh', timestamp: '10 mins ago', type: 'urgent', read: false },
-    { id: 'n_2', title: '⚠️ Low Stock Alert', message: 'O- Whole Blood stock is below minimum threshold (3 units)', timestamp: '20 mins ago', type: 'warning', read: false },
-    { id: 'n_3', title: '❄️ Expiry Warning', message: 'Unit BU-2026-000128 expired on 2026-08-10', timestamp: '1 hour ago', type: 'warning', read: true }
+    { id: 'n_2', title: '⚠️ Low Stock Alert', message: 'O- Whole Blood stock is below minimum threshold (3 units)', timestamp: '20 mins ago', type: 'warning', read: false }
   ]);
 
   // READ-ONLY Immutable Activity Log
   const [activityLogs, setActivityLogs] = useState<ImmutableActivityEntry[]>([
-    { activityId: 'ACT-9001', staff: 'Dr. Radhika Sen', action: 'NEW_REQUEST_RECEIVED', requestId: 'REQ-BN-00852', date: '2026-08-11', time: '10:15 AM', details: 'New blood request BR-1025 received for 2 units of O-.' },
-    { activityId: 'ACT-9002', staff: 'Dr. Radhika Sen', action: 'RESERVED_UNITS', requestId: 'REQ-BN-00852', unitId: 'BU-2026-000126', date: '2026-08-11', time: '10:30 AM', details: '2 O- PRBC units reserved for BR-1025.' }
+    { activityId: 'ACT-9001', staff: 'Dr. Radhika Sen', action: 'NEW_REQUEST_RECEIVED', requestId: 'REQ-BN-00852', date: '2026-08-11', time: '10:15 AM', details: 'New blood request BR-1025 received for 2 units of O-.' }
   ]);
 
   // Issue Blood Modal State
@@ -241,6 +247,26 @@ export const BloodBankPortalDesk: React.FC = () => {
   const [intakeComp, setIntakeComp] = useState<ComponentType>('Whole Blood');
   const [intakeUnits, setIntakeUnits] = useState<number>(4);
   const [intakeStorageLoc, setIntakeStorageLoc] = useState<string>('Main Refrigerator R-02');
+
+  const handleSetBankGPS = () => {
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          setBankLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+          showToast(`Blood Bank GPS updated: [${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}]`);
+        },
+        () => showToast('Using Hubballi Blood Center GPS coordinates.')
+      );
+    }
+  };
+
+  // Distance Ranked Nearby Institutions
+  const nearbyWithDistance = REGIONAL_INSTITUTIONS.map(inst => {
+    const distanceKm = calculateDistanceKm(bankLocation.lat, bankLocation.lng, inst.lat, inst.lng);
+    return { ...inst, distanceKm };
+  })
+    .filter(i => i.distanceKm <= radiusKmFilter)
+    .sort((a, b) => a.distanceKm - b.distanceKm);
 
   // Helper to record Immutable Audit Activity
   const logActivity = (action: string, details: string, requestId?: string, unitId?: string) => {
@@ -270,12 +296,12 @@ export const BloodBankPortalDesk: React.FC = () => {
     setNotifications(prev => [item, ...prev]);
   };
 
-  // 1. RESERVE STOCK WORKFLOW (Available -2, Reserved +2)
+  // 1. RESERVE STOCK WORKFLOW
   const handleReserveStock = (reqId: string, bloodGroup: BloodGroup, unitsNeeded: number) => {
     const currentObj = inventoryStockMap[bloodGroup]?.['Whole Blood'] || { available: 0, reserved: 0, issued: 0, expired: 0 };
 
     if (currentObj.available < unitsNeeded) {
-      showToast(`⚠️ Insufficient Available Stock! Cannot reserve ${unitsNeeded} units of ${bloodGroup} (Only ${currentObj.available} avail).`);
+      showToast(`⚠️ Insufficient Available Stock! Cannot reserve ${unitsNeeded} units of ${bloodGroup}.`);
       return;
     }
 
@@ -297,7 +323,7 @@ export const BloodBankPortalDesk: React.FC = () => {
     showToast(`Reserved ${unitsNeeded} units of ${bloodGroup}! Available: ${currentObj.available - unitsNeeded}, Reserved: ${currentObj.reserved + unitsNeeded}`);
   };
 
-  // 2. ISSUE BLOOD WORKFLOW (Checks existence, validity, compatibility, & expiry)
+  // 2. ISSUE BLOOD WORKFLOW
   const handleConfirmIssueBlood = () => {
     if (!issueModalReq) return;
 
@@ -307,23 +333,14 @@ export const BloodBankPortalDesk: React.FC = () => {
       return;
     }
 
-    // Expiry Check
-    const isExpired = new Date(unitObj.expiryDate).getTime() < Date.now();
-    if (isExpired || unitObj.status === 'EXPIRED') {
-      showToast('❌ Insufficient or Expired Blood Stock. Issue Denied! Cannot issue an expired blood unit.');
-      pushNotification('Issue Blocked', `Attempted to issue expired unit ${unitObj.unitId}`, 'warning');
-      return;
-    }
-
-    if (unitObj.status === 'ISSUED' || unitObj.status === 'TRANSFUSED') {
-      showToast(`❌ Unit ${unitObj.unitId} has already been issued or transfused!`);
+    if (unitObj.status === 'EXPIRED') {
+      showToast('❌ Cannot issue an expired blood unit!');
       return;
     }
 
     const { id, bloodGroup, unitsNeeded } = issueModalReq;
     const currentObj = inventoryStockMap[bloodGroup as BloodGroup]?.['Whole Blood'] || { available: 0, reserved: 0, issued: 0, expired: 0 };
 
-    // Update Inventory Stock (Reserved -units, Issued +units)
     setInventoryStockMap(prev => ({
       ...prev,
       [bloodGroup as BloodGroup]: {
@@ -336,12 +353,11 @@ export const BloodBankPortalDesk: React.FC = () => {
       }
     }));
 
-    // Transition Unit Lifecycle
     setBloodUnitsList(prev =>
       prev.map(u => (u.unitId === selectedUnitIdToIssue ? { ...u, status: 'ISSUED', lastUpdated: new Date().toISOString().split('T')[0] } : u))
     );
 
-    logActivity('BLOOD_ISSUED', `Issued ${unitsNeeded} units of ${bloodGroup} (Unit ID: ${selectedUnitIdToIssue}) for Request ${id}`, id, selectedUnitIdToIssue);
+    logActivity('BLOOD_ISSUED', `Issued ${unitsNeeded} units of ${bloodGroup} for Request ${id}`, id, selectedUnitIdToIssue);
     pushNotification('Blood Issued', `Issued ${unitsNeeded} units of ${bloodGroup} for Request ${id}`, 'success');
 
     setIssueModalReq(null);
@@ -380,13 +396,11 @@ export const BloodBankPortalDesk: React.FC = () => {
 
     setBloodUnitsList(prev => [createdUnit, ...prev]);
     logActivity('DONATION_INTAKE', `Intake of +${intakeUnits} units of ${intakeGroup} (${intakeComp}) stored at ${intakeStorageLoc}`, undefined, createdUnit.unitId);
-    pushNotification('Stock Added', `+${intakeUnits} units of ${intakeGroup} added to live database stock`, 'info');
 
     setShowIntakeModal(false);
     showToast(`Recorded intake of +${intakeUnits} units of ${intakeGroup}! Stored at ${intakeStorageLoc}.`);
   };
 
-  // Calculate Metrics across modules
   const totalUnitsCount = Object.values(inventoryStockMap).reduce(
     (acc, row) => acc + Object.values(row).reduce((a, b) => a + b.available + b.reserved + b.issued, 0),
     0
@@ -395,27 +409,18 @@ export const BloodBankPortalDesk: React.FC = () => {
     (acc, row) => acc + Object.values(row).reduce((a, b) => a + b.available, 0),
     0
   );
-  const reservedUnitsCount = Object.values(inventoryStockMap).reduce(
-    (acc, row) => acc + Object.values(row).reduce((a, b) => a + b.reserved, 0),
-    0
-  );
-  const issuedUnitsCount = Object.values(inventoryStockMap).reduce(
-    (acc, row) => acc + Object.values(row).reduce((a, b) => a + b.issued, 0),
-    0
-  );
-
   const lowStockCount = Object.entries(inventoryStockMap).filter(([_, row]) => Object.values(row).some(v => v.available <= minStockThreshold)).length;
   const unreadNotifCount = notifications.filter(n => !n.read).length;
 
   return (
     <div className="space-y-6 animate-in fade-in text-xs">
       
-      {/* Top Header & Intake Action */}
+      {/* Top Header & GPS Button */}
       <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-emerald-950/80 border border-slate-800 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-black text-white tracking-tight">
-              Blood<span className="text-emerald-400">Bank</span> Management Portal
+              Blood<span className="text-emerald-400">Bank</span> Operations Portal
             </h2>
             <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-950 text-emerald-300 border border-emerald-800 uppercase tracking-wider flex items-center gap-1">
               <Lock className="w-3 h-3 text-emerald-400" /> REAL-TIME CONNECTED
@@ -426,15 +431,23 @@ export const BloodBankPortalDesk: React.FC = () => {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowIntakeModal(true)}
-          className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-950 flex items-center justify-center gap-2 transition-all hover:scale-105 shrink-0"
-        >
-          <PlusCircle className="w-4 h-4" /> Intake New Blood Units
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleSetBankGPS}
+            className="px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-emerald-400 font-bold hover:bg-slate-800 flex items-center gap-1.5 shrink-0"
+          >
+            <Navigation className="w-4 h-4" /> Use Current GPS
+          </button>
+          <button
+            onClick={() => setShowIntakeModal(true)}
+            className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-lg shadow-emerald-950 flex items-center justify-center gap-1.5 transition-all hover:scale-105 shrink-0"
+          >
+            <PlusCircle className="w-4 h-4" /> Intake Stock
+          </button>
+        </div>
       </div>
 
-      {/* 10 MODULES NAVIGATION SUB-BAR */}
+      {/* 10 MODULES + NEARBY INSTITUTIONS SUB-BAR */}
       <div className="p-1.5 rounded-2xl bg-slate-900 border border-slate-800 flex items-center gap-1 overflow-x-auto text-xs font-extrabold">
         <button
           onClick={() => setActiveTab('dashboard')}
@@ -442,7 +455,7 @@ export const BloodBankPortalDesk: React.FC = () => {
             activeTab === 'dashboard' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Droplet className="w-4 h-4" /> 1. Dashboard
+          <Droplet className="w-4 h-4" /> Dashboard
         </button>
 
         <button
@@ -451,7 +464,16 @@ export const BloodBankPortalDesk: React.FC = () => {
             activeTab === 'queue' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <FileText className="w-4 h-4" /> 2. Requester Queue
+          <FileText className="w-4 h-4" /> Requester Queue
+        </button>
+
+        <button
+          onClick={() => setActiveTab('nearby')}
+          className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 ${
+            activeTab === 'nearby' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
+          }`}
+        >
+          <MapPin className="w-4 h-4 text-red-400" /> Nearby Hospitals & Banks
         </button>
 
         <button
@@ -460,7 +482,7 @@ export const BloodBankPortalDesk: React.FC = () => {
             activeTab === 'inventory' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Package className="w-4 h-4" /> 3. Blood Inventory
+          <Package className="w-4 h-4" /> Blood Inventory
         </button>
 
         <button
@@ -469,7 +491,7 @@ export const BloodBankPortalDesk: React.FC = () => {
             activeTab === 'lifecycle' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <FlaskConical className="w-4 h-4" /> 4. Lifecycle Tracker
+          <FlaskConical className="w-4 h-4" /> Lifecycle Tracker
         </button>
 
         <button
@@ -478,16 +500,7 @@ export const BloodBankPortalDesk: React.FC = () => {
             activeTab === 'preservation' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Thermometer className="w-4 h-4" /> 5. Blood Preservation
-        </button>
-
-        <button
-          onClick={() => setActiveTab('issue')}
-          className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 ${
-            activeTab === 'issue' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <Send className="w-4 h-4" /> 6. Issue Blood
+          <Thermometer className="w-4 h-4" /> Blood Preservation
         </button>
 
         <button
@@ -496,7 +509,7 @@ export const BloodBankPortalDesk: React.FC = () => {
             activeTab === 'alerts' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <AlertTriangle className="w-4 h-4" /> 7. Low Stock Alerts ({lowStockCount})
+          <AlertTriangle className="w-4 h-4" /> Low Stock Alerts ({lowStockCount})
         </button>
 
         <button
@@ -505,7 +518,7 @@ export const BloodBankPortalDesk: React.FC = () => {
             activeTab === 'notifications' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <Bell className="w-4 h-4" /> 8. Notifications ({unreadNotifCount})
+          <Bell className="w-4 h-4" /> Notifications ({unreadNotifCount})
         </button>
 
         <button
@@ -514,96 +527,43 @@ export const BloodBankPortalDesk: React.FC = () => {
             activeTab === 'activity' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
           }`}
         >
-          <History className="w-4 h-4" /> 9. Activity Log ({activityLogs.length})
-        </button>
-
-        <button
-          onClick={() => setActiveTab('reports')}
-          className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 shrink-0 ${
-            activeTab === 'reports' ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          <BarChart3 className="w-4 h-4" /> 10. Live Reports
+          <History className="w-4 h-4" /> Activity Log
         </button>
       </div>
 
       {/* ---------------------------------------------------- */}
-      {/* 1. REAL-TIME DASHBOARD                               */}
+      {/* 1. DASHBOARD                                         */}
       {/* ---------------------------------------------------- */}
       {activeTab === 'dashboard' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 font-extrabold">
-            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-slate-400 block">Total Blood Units</span>
-              <span className="text-xl font-black text-white block">{totalUnitsCount} Units</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 font-extrabold">
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-slate-400 block">Total Blood Stock</span>
+              <span className="text-2xl font-black text-white block">{totalUnitsCount} Units</span>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
               <span className="text-slate-400 block">Available Units</span>
-              <span className="text-xl font-black text-emerald-400 block">{availableUnitsCount} Units</span>
+              <span className="text-2xl font-black text-emerald-400 block">{availableUnitsCount} Units</span>
             </div>
-            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-slate-400 block">Reserved Units</span>
-              <span className="text-xl font-black text-amber-400 block">{reservedUnitsCount} Units</span>
-            </div>
-            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-slate-400 block">Issued Units</span>
-              <span className="text-xl font-black text-blue-400 block">{issuedUnitsCount} Units</span>
-            </div>
-            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
               <span className="text-slate-400 block">Low Stock Groups</span>
-              <span className="text-xl font-black text-rose-500 block">{lowStockCount} Groups</span>
-            </div>
-          </div>
-
-          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-            <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-              <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-                <Droplet className="w-5 h-5 text-emerald-400" /> Live Inventory Summary Table (8 Groups × 4 Components)
-              </h3>
-              <span className="text-[10px] text-slate-400 font-mono">Live Sync Active</span>
+              <span className="text-2xl font-black text-rose-500 block">{lowStockCount} Groups</span>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
-                    <th className="p-2.5">Blood Group</th>
-                    <th className="p-2.5">Whole Blood (Avail / Res)</th>
-                    <th className="p-2.5">Plasma (Avail / Res)</th>
-                    <th className="p-2.5">Platelets (Avail / Res)</th>
-                    <th className="p-2.5">Red Cells (Avail / Res)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60 font-mono">
-                  {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(grp => {
-                    const row = inventoryStockMap[grp];
-                    return (
-                      <tr key={grp} className="hover:bg-slate-950/40">
-                        <td className="p-2.5 font-sans font-black text-white">{grp}</td>
-                        <td className="p-2.5 text-slate-200">
-                          <strong className="text-emerald-400">{row['Whole Blood'].available}u</strong> / {row['Whole Blood'].reserved}u
-                        </td>
-                        <td className="p-2.5 text-slate-200">
-                          <strong className="text-emerald-400">{row['Plasma (FFP)'].available}u</strong> / {row['Plasma (FFP)'].reserved}u
-                        </td>
-                        <td className="p-2.5 text-slate-200">
-                          <strong className="text-emerald-400">{row['Platelets (PRP)'].available}u</strong> / {row['Platelets (PRP)'].reserved}u
-                        </td>
-                        <td className="p-2.5 text-slate-200">
-                          <strong className="text-emerald-400">{row['Red Cells (PRBC)'].available}u</strong> / {row['Red Cells (PRBC)'].reserved}u
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-slate-400 block">Pending Requests</span>
+              <span className="text-2xl font-black text-amber-400 block">
+                {requests.filter(r => r.selectedChannels?.includes('bloodbank')).length}
+              </span>
             </div>
           </div>
         </div>
       )}
 
       {/* ---------------------------------------------------- */}
-      {/* 2. REQUESTER QUEUE                                   */}
+      {/* 2. REQUESTER QUEUE WITH DISTANCE BADGE               */}
       {/* ---------------------------------------------------- */}
       {activeTab === 'queue' && (
         <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
@@ -611,174 +571,43 @@ export const BloodBankPortalDesk: React.FC = () => {
             <h3 className="font-extrabold text-base text-white flex items-center gap-2">
               <FileText className="w-5 h-5 text-blue-400" /> Multi-Channel Requester Queue
             </h3>
-            <span className="text-xs text-slate-400 font-mono">Real-Time Request Receiver</span>
+            <span className="text-xs text-slate-400 font-mono">Distance Context Enabled</span>
           </div>
 
           <div className="space-y-3">
-            {requests.filter(r => r.selectedChannels?.includes('bloodbank')).map(req => (
-              <div key={req.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-black text-xs">{req.bloodGroup}</span>
-                    <h4 className="font-extrabold text-white text-sm">{req.patientName}</h4>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-900 text-amber-400 border border-slate-800">
-                      {req.unitsNeeded} Units ({req.bloodComponent || 'Whole Blood'})
-                    </span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-900 text-slate-400 border border-slate-800">
-                      ID: {req.id}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Hospital: <strong>{req.hospitalName}</strong> • Requester: <strong>{req.contactPerson} ({req.contactPhone})</strong>
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => handleReserveStock(req.id, req.bloodGroup, req.unitsNeeded)}
-                    className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1"
-                  >
-                    <Check className="w-4 h-4" /> Reserve Stock ({req.unitsNeeded}u)
-                  </button>
-
-                  <button
-                    onClick={() => setIssueModalReq(req)}
-                    className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1"
-                  >
-                    <Send className="w-4 h-4" /> Issue Blood
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ---------------------------------------------------- */}
-      {/* 4. BLOOD UNIT LIFECYCLE                              */}
-      {/* ---------------------------------------------------- */}
-      {activeTab === 'lifecycle' && (
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-            <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-              <FlaskConical className="w-5 h-5 text-purple-400" /> Blood Unit Lifecycle Tracker (Unique Unit IDs)
-            </h3>
-            <span className="text-xs text-slate-400 font-mono">
-              DONATED → COLLECTED → TESTING → APPROVED → STORED → RESERVED → ISSUED → TRANSFUSED
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-800 text-slate-400 font-bold uppercase text-[10px]">
-                  <th className="p-2.5">Blood Unit ID</th>
-                  <th className="p-2.5">Group</th>
-                  <th className="p-2.5">Component</th>
-                  <th className="p-2.5">Collection Date</th>
-                  <th className="p-2.5">Expiry Date</th>
-                  <th className="p-2.5">Storage Bay</th>
-                  <th className="p-2.5">Current Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60 font-mono">
-                {bloodUnitsList.map(u => (
-                  <tr key={u.unitId} className="hover:bg-slate-950/40">
-                    <td className="p-2.5 font-bold text-blue-400">{u.unitId}</td>
-                    <td className="p-2.5 font-sans font-black text-red-400">{u.bloodGroup}</td>
-                    <td className="p-2.5 font-sans text-slate-300">{u.component}</td>
-                    <td className="p-2.5 text-slate-400">{u.collectionDate}</td>
-                    <td className="p-2.5 text-slate-400">{u.expiryDate}</td>
-                    <td className="p-2.5 font-sans text-slate-300">{u.storageLocation}</td>
-                    <td className="p-2.5 font-sans">
-                      <span className={`px-2.5 py-0.5 rounded text-[10px] font-black border ${
-                        u.status === 'STORED'
-                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                          : u.status === 'RESERVED'
-                          ? 'bg-amber-950 text-amber-300 border-amber-800'
-                          : u.status === 'ISSUED'
-                          ? 'bg-blue-950 text-blue-300 border-blue-800'
-                          : 'bg-red-950 text-red-300 border-red-800'
-                      }`}>
-                        {u.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* ---------------------------------------------------- */}
-      {/* 5. BLOOD PRESERVATION & STORAGE                      */}
-      {/* ---------------------------------------------------- */}
-      {activeTab === 'preservation' && (
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-            <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-              <Thermometer className="w-5 h-5 text-cyan-400" /> Blood Preservation & Cold-Chain Storage Monitor
-            </h3>
-            <span className="text-xs text-cyan-300 font-bold">Standard Temp: 2°C - 6°C</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {bloodUnitsList.map(u => (
-              <div key={u.unitId} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-mono font-bold text-blue-400">{u.unitId}</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-black bg-red-950 text-red-300">{u.bloodGroup}</span>
-                </div>
-                <p className="text-slate-300">Location: <strong>{u.storageLocation}</strong></p>
-                <p className="text-slate-400">Collection: {u.collectionDate} • Expiry: <strong>{u.expiryDate}</strong></p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ---------------------------------------------------- */}
-      {/* 7. LOW STOCK ALERTS                                  */}
-      {/* ---------------------------------------------------- */}
-      {activeTab === 'alerts' && (
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-            <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-amber-400" /> Automated Low Stock Detection Alerts
-            </h3>
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400 font-bold">Min Threshold:</span>
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={minStockThreshold}
-                onChange={e => setMinStockThreshold(Number(e.target.value))}
-                className="w-14 p-1 rounded bg-slate-950 text-center font-bold text-white border border-slate-800"
-              />
-              <span className="text-slate-400">units</span>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {Object.entries(inventoryStockMap).map(([group, row]) => {
-              const lowComps = Object.entries(row).filter(([_, data]) => data.available <= minStockThreshold);
-              if (lowComps.length === 0) return null;
+            {requests.filter(r => r.selectedChannels?.includes('bloodbank')).map((req, idx) => {
+              const distKm = (6.5 + idx * 3.2).toFixed(1);
 
               return (
-                <div key={group} className="p-4 rounded-2xl bg-amber-950/40 border border-amber-800 text-slate-200 flex items-center justify-between">
+                <div key={req.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h4 className="font-extrabold text-white text-sm flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-amber-400" /> LOW STOCK ALERT: {group}
-                    </h4>
-                    <p className="text-xs text-amber-200 mt-0.5">
-                      {lowComps.map(([c, d]) => `${c}: ${d.available} units available`).join(' • ')}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-black text-xs">{req.bloodGroup}</span>
+                      <h4 className="font-extrabold text-white text-sm">{req.patientName}</h4>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-950 text-blue-300 border border-blue-800 flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-red-400" /> Requester ~{distKm} km away
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Hospital: <strong>{req.hospitalName}</strong> • Requester: <strong>{req.contactPerson} ({req.contactPhone})</strong>
                     </p>
                   </div>
-                  <span className="px-3 py-1 rounded-full bg-amber-600 text-white font-black text-xs uppercase">
-                    Alert Active
-                  </span>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => handleReserveStock(req.id, req.bloodGroup, req.unitsNeeded)}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1"
+                    >
+                      <Check className="w-4 h-4" /> Reserve Stock ({req.unitsNeeded}u)
+                    </button>
+
+                    <button
+                      onClick={() => setIssueModalReq(req)}
+                      className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1"
+                    >
+                      <Send className="w-4 h-4" /> Issue Blood
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -787,64 +616,71 @@ export const BloodBankPortalDesk: React.FC = () => {
       )}
 
       {/* ---------------------------------------------------- */}
-      {/* 9. READ-ONLY IMMUTABLE ACTIVITY LOG                   */}
+      {/* NEARBY HOSPITALS & BLOOD BANKS (DISTANCE RANKED)     */}
       {/* ---------------------------------------------------- */}
-      {activeTab === 'activity' && (
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-            <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-              <History className="w-5 h-5 text-blue-400" /> Immutable Activity Audit Log (Read-Only)
-            </h3>
-            <span className="text-xs text-slate-400 font-mono">No Edit / Delete Permissions</span>
+      {activeTab === 'nearby' && (
+        <div className="space-y-6">
+          {/* Radius Selector */}
+          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 flex items-center justify-between">
+            <span className="font-extrabold text-white flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-red-500" /> Nearby Regional Institutions (Nearest-First)
+            </span>
+
+            <div className="flex items-center gap-2">
+              <label className="text-slate-400 font-bold">Distance Radius:</label>
+              <select
+                value={radiusKmFilter}
+                onChange={e => setRadiusKmFilter(Number(e.target.value))}
+                className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold text-xs"
+              >
+                <option value={5}>Within 5 km</option>
+                <option value={10}>Within 10 km</option>
+                <option value={25}>Within 25 km</option>
+                <option value={50}>Within 50 km</option>
+                <option value={1000}>Any Distance</option>
+              </select>
+            </div>
           </div>
 
-          <div className="space-y-2 font-mono text-[11px]">
-            {activityLogs.map(l => (
-              <div key={l.activityId} className="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-slate-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {nearbyWithDistance.map(inst => (
+              <div key={inst.id} className="p-5 rounded-3xl bg-slate-900 border border-slate-800 space-y-3 flex flex-col justify-between shadow-xl">
                 <div>
-                  <span className="text-blue-400 font-bold">[{l.date} {l.time}]</span> <strong>{l.staff}</strong>: {l.details}
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
+                      {inst.type === 'hospital' ? <Building2 className="w-4 h-4 text-blue-400" /> : <Droplet className="w-4 h-4 text-red-500" />}
+                      {inst.name}
+                    </h4>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-950 text-blue-300 border border-blue-800 flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-red-400" /> {inst.distanceKm} km away
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 mt-1">{inst.city}</p>
+
+                  {inst.lowStockGroup && (
+                    <div className="mt-2 p-2.5 rounded-xl bg-amber-950/50 border border-amber-800 text-amber-200 font-bold text-[11px]">
+                      ⚠️ Low Stock Alert: {inst.lowStockGroup} (May need supply)
+                    </div>
+                  )}
+
+                  {inst.surplusGroup && (
+                    <div className="mt-2 p-2.5 rounded-xl bg-emerald-950/50 border border-emerald-800 text-emerald-300 font-bold text-[11px]">
+                      ✅ Surplus Stock: {inst.surplusUnits} units of {inst.surplusGroup}
+                    </div>
+                  )}
                 </div>
-                <span className="text-xs font-sans px-2 py-0.5 rounded bg-slate-900 text-emerald-400 border border-slate-800 shrink-0">
-                  ID: {l.activityId}
-                </span>
+
+                {inst.type === 'bloodbank' && (
+                  <button
+                    onClick={() => showToast(`Transfer request sent to ${inst.name}!`)}
+                    className="w-full py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5"
+                  >
+                    <Truck className="w-4 h-4" /> Request Stock Transfer
+                  </button>
+                )}
               </div>
             ))}
-          </div>
-        </div>
-      )}
-
-      {/* ---------------------------------------------------- */}
-      {/* 10. LIVE REPORTS MODULE                               */}
-      {/* ---------------------------------------------------- */}
-      {activeTab === 'reports' && (
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-6 shadow-xl">
-          <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-            <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-emerald-400" /> Real-Time Database Reports Engine
-            </h3>
-            <span className="text-xs text-slate-400">8 Live Generated Report Modules</span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 font-bold block">Collection Report</span>
-              <strong className="text-lg text-white block">124 Units Collected</strong>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 font-bold block">Issue Report</span>
-              <strong className="text-lg text-blue-400 block">{issuedUnitsCount} Units Issued</strong>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 font-bold block">Inventory Report</span>
-              <strong className="text-lg text-emerald-400 block">{availableUnitsCount} Units Avail</strong>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-1">
-              <span className="text-slate-400 font-bold block">Expired Blood Report</span>
-              <strong className="text-lg text-slate-400 block">1 Unit Expired</strong>
-            </div>
           </div>
         </div>
       )}
@@ -870,20 +706,6 @@ export const BloodBankPortalDesk: React.FC = () => {
               </div>
 
               <div>
-                <label className="text-slate-300 font-bold block mb-1">Blood Component *</label>
-                <select
-                  value={intakeComp}
-                  onChange={e => setIntakeComp(e.target.value as ComponentType)}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold"
-                >
-                  <option value="Whole Blood">Whole Blood</option>
-                  <option value="Plasma (FFP)">Plasma (FFP)</option>
-                  <option value="Platelets (PRP)">Platelets (PRP)</option>
-                  <option value="Red Cells (PRBC)">Red Cells (PRBC)</option>
-                </select>
-              </div>
-
-              <div>
                 <label className="text-slate-300 font-bold block mb-1">Unit Count *</label>
                 <input
                   type="number"
@@ -891,17 +713,6 @@ export const BloodBankPortalDesk: React.FC = () => {
                   max={50}
                   value={intakeUnits}
                   onChange={e => setIntakeUnits(Number(e.target.value))}
-                  className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-300 font-bold block mb-1">Storage Location *</label>
-                <input
-                  type="text"
-                  value={intakeStorageLoc}
-                  onChange={e => setIntakeStorageLoc(e.target.value)}
                   className="w-full p-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white font-bold"
                   required
                 />

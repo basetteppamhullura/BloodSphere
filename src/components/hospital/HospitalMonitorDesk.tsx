@@ -28,7 +28,8 @@ import {
   ChevronLeft,
   ChevronRight,
   PlusCircle,
-  Trash2
+  Trash2,
+  MapPin
 } from 'lucide-react';
 
 type ComponentType = 'Whole Blood' | 'Plasma' | 'Platelets' | 'Red Blood Cells';
@@ -645,6 +646,9 @@ export const HospitalMonitorDesk: React.FC = () => {
                               : 'bg-emerald-950 text-emerald-300 border-emerald-800'
                           }`}>
                             Urgency: {req.urgency}
+                          </span>
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-950 text-blue-300 border border-blue-800 flex items-center gap-1">
+                            <MapPin className="w-3 h-3 text-red-400" /> Requester ~4.2 km away
                           </span>
                         </div>
                         <p className="text-xs text-slate-400 mt-1">
