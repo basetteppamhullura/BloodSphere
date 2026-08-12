@@ -9,6 +9,7 @@ import { HospitalMonitorDesk } from '../components/hospital/HospitalMonitorDesk'
 import { HospitalEmergencyBoard } from '../components/hospital/HospitalEmergencyBoard';
 import { HospitalInterCitySupply } from '../components/hospital/HospitalInterCitySupply';
 import { HospitalDonationDrives } from '../components/hospital/HospitalDonationDrives';
+import { BloodBankPortalDesk } from '../components/bloodbank/BloodBankPortalDesk';
 import {
   Activity,
   AlertTriangle,
@@ -80,11 +81,6 @@ export const DashboardPage: React.FC = () => {
   // Active Sub View Tab for Hospital Perspective
   const [hospitalSubView, setHospitalSubView] = useState<'landing' | 'overview' | 'emergency_board' | 'inter_city' | 'blood_banks' | 'drives'>('landing');
 
-  const [scheduleModalReqId, setScheduleModalReqId] = useState<string | null>(null);
-  const [schDate, setSchDate] = useState<string>('2026-08-08');
-  const [schTime, setSchTime] = useState<string>('10:00 AM');
-  const [schVenue, setSchVenue] = useState<string>('KIMS Hospital Blood Bank Unit');
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -94,14 +90,6 @@ export const DashboardPage: React.FC = () => {
       </div>
     );
   }
-
-  const handleScheduleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (scheduleModalReqId) {
-      scheduleDonationAppointment(scheduleModalReqId, schDate, schTime, schVenue);
-      setScheduleModalReqId(null);
-    }
-  };
 
   const handleReorderRequest = (req: any) => {
     createEmergencyRequest({
@@ -256,7 +244,6 @@ export const DashboardPage: React.FC = () => {
 
               return (
                 <div key={req.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl">
-                  
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
@@ -267,56 +254,12 @@ export const DashboardPage: React.FC = () => {
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-amber-400 border border-slate-700">
                           {req.unitsNeeded} Units Required
                         </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-950 text-slate-400 border border-slate-800">
-                          ID: {req.patientId || 'BN-HUB-2026-00852'}
-                        </span>
                       </div>
-
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <span className="text-[11px] font-bold text-slate-400">Sent to:</span>
-                        {channels.map(ch => (
-                          <span
-                            key={ch}
-                            className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border ${
-                              ch === 'hospital'
-                                ? 'bg-blue-950 text-blue-300 border-blue-800'
-                                : ch === 'donors'
-                                ? 'bg-red-950 text-red-300 border-red-800'
-                                : 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                            }`}
-                          >
-                            {ch}
-                          </span>
-                        ))}
-                      </div>
-
                       <p className="text-xs text-slate-400 mt-1">
-                        Hospital: <strong>{req.hospitalName}</strong>, {req.city} • Required Date: <strong>{req.requiredDate || 'Immediate'}</strong>
+                        Hospital: <strong>{req.hospitalName}</strong>, {req.city}
                       </p>
                     </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleReorderRequest(req)}
-                        className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-xs border border-slate-700 flex items-center gap-1"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5 text-amber-400" /> Reorder Request
-                      </button>
-
-                      <span className={`px-3 py-1 rounded-full text-xs font-extrabold border shrink-0 ${
-                        req.status === 'COMPLETED'
-                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                          : req.status === 'APPOINTMENT_SCHEDULED'
-                          ? 'bg-indigo-950 text-indigo-300 border-indigo-800'
-                          : req.status === 'DONOR_CONFIRMED'
-                          ? 'bg-blue-950 text-blue-300 border-blue-800'
-                          : 'bg-amber-950 text-amber-300 border-amber-800'
-                      }`}>
-                        Overall: {req.status.replace(/_/g, ' ')}
-                      </span>
-                    </div>
                   </div>
-
                 </div>
               );
             })}
@@ -360,21 +303,24 @@ export const DashboardPage: React.FC = () => {
           {hospitalSubView === 'emergency_board' && <HospitalEmergencyBoard />}
           {hospitalSubView === 'inter_city' && <HospitalInterCitySupply />}
           {hospitalSubView === 'drives' && <HospitalDonationDrives />}
-          {hospitalSubView === 'blood_banks' && (
-            <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
-              <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-                <Droplet className="w-5 h-5 text-emerald-400" /> Connected Regional Blood Bank Inventories
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {bloodBanks.map(bank => (
-                  <div key={bank.id} className="p-4 rounded-2xl bg-slate-950 border border-slate-800 space-y-2">
-                    <h4 className="font-extrabold text-white text-sm">{bank.name}</h4>
-                    <p className="text-slate-400">{bank.address}, {bank.city} • Phone: {bank.phone}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+        </div>
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* 4. BLOOD BANK DASHBOARD VIEW                          */}
+      {/* ---------------------------------------------------- */}
+      {currentRole === 'bloodbank' && (
+        <BloodBankPortalDesk />
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* 5. ADMIN DASHBOARD VIEW                               */}
+      {/* ---------------------------------------------------- */}
+      {currentRole === 'admin' && (
+        <div className="space-y-6">
+          <h3 className="font-bold text-base text-white flex items-center gap-2">
+            <ShieldCheck className="w-5 h-5 text-emerald-400" /> Super Admin Network Control & Account Security Desk
+          </h3>
         </div>
       )}
 
