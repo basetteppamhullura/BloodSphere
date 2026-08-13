@@ -10,6 +10,7 @@ import { HospitalEmergencyBoard } from '../components/hospital/HospitalEmergency
 import { HospitalInterCitySupply } from '../components/hospital/HospitalInterCitySupply';
 import { HospitalDonationDrives } from '../components/hospital/HospitalDonationDrives';
 import { BloodBankPortalDesk } from '../components/bloodbank/BloodBankPortalDesk';
+import { AdminControlCenterDesk } from '../components/admin/AdminControlCenterDesk';
 import {
   Activity,
   AlertTriangle,
@@ -255,31 +256,9 @@ export const DashboardPage: React.FC = () => {
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-amber-400 border border-slate-700">
                           {req.unitsNeeded} Units Required
                         </span>
-                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-950 text-slate-400 border border-slate-800">
-                          ID: {req.id}
-                        </span>
                       </div>
-
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <span className="text-[11px] font-bold text-slate-400">Channels Dispatched:</span>
-                        {channels.map(ch => (
-                          <span
-                            key={ch}
-                            className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border ${
-                              ch === 'hospital'
-                                ? 'bg-blue-950 text-blue-300 border-blue-800'
-                                : ch === 'donors'
-                                ? 'bg-red-950 text-red-300 border-red-800'
-                                : 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                            }`}
-                          >
-                            {ch}
-                          </span>
-                        ))}
-                      </div>
-
                       <p className="text-xs text-slate-400 mt-1">
-                        Hospital: <strong>{req.hospitalName}</strong>, {req.city} • Required Date: <strong>{req.requiredDate || 'Immediate'}</strong>
+                        Hospital: <strong>{req.hospitalName}</strong>, {req.city}
                       </p>
                     </div>
 
@@ -302,64 +281,6 @@ export const DashboardPage: React.FC = () => {
                       }`}>
                         Overall: {req.status.replace(/_/g, ' ')}
                       </span>
-                    </div>
-                  </div>
-
-                  {/* Multi-Channel Status Cards */}
-                  <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                      Multi-Channel Parallel Status Tracker:
-                    </span>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                      {channels.includes('hospital') && (
-                        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                          <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                            <Building2 className="w-4 h-4 text-blue-400" /> Hospital Review
-                          </span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            req.fulfilledChannel === 'bloodbank'
-                              ? 'bg-slate-800 text-slate-500'
-                              : req.status === 'COMPLETED'
-                              ? 'bg-emerald-950 text-emerald-300'
-                              : 'bg-amber-950 text-amber-300'
-                          }`}>
-                            {req.fulfilledChannel === 'bloodbank' ? 'Fulfilled via Blood Bank — Closed' : req.status.replace(/_/g, ' ')}
-                          </span>
-                        </div>
-                      )}
-
-                      {channels.includes('donors') && (
-                        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                          <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                            <Users className="w-4 h-4 text-red-500" /> Direct Donors
-                          </span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            req.fulfilledChannel === 'bloodbank'
-                              ? 'bg-slate-800 text-slate-500'
-                              : req.status === 'DONOR_CONFIRMED'
-                              ? 'bg-blue-950 text-blue-300'
-                              : 'bg-emerald-950 text-emerald-300'
-                          }`}>
-                            {req.fulfilledChannel === 'bloodbank' ? 'Fulfilled via Blood Bank — Closed' : req.assignedDonorName ? `Accepted: ${req.assignedDonorName}` : 'Searching Donors'}
-                          </span>
-                        </div>
-                      )}
-
-                      {channels.includes('bloodbank') && (
-                        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
-                          <span className="font-bold text-slate-300 flex items-center gap-1.5">
-                            <Droplet className="w-4 h-4 text-emerald-400" /> Blood Bank Stock
-                          </span>
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                            req.fulfilledChannel === 'bloodbank'
-                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                              : 'bg-amber-950 text-amber-300'
-                          }`}>
-                            {req.fulfilledChannel === 'bloodbank' ? 'Stock Reserved & Fulfilled' : 'Stock Check Pending'}
-                          </span>
-                        </div>
-                      )}
                     </div>
                   </div>
 
@@ -414,6 +335,13 @@ export const DashboardPage: React.FC = () => {
       {/* ---------------------------------------------------- */}
       {currentRole === 'bloodbank' && (
         <BloodBankPortalDesk />
+      )}
+
+      {/* ---------------------------------------------------- */}
+      {/* 5. SUPER ADMIN CONTROL & MONITORING PORTAL           */}
+      {/* ---------------------------------------------------- */}
+      {currentRole === 'admin' && (
+        <AdminControlCenterDesk />
       )}
 
     </div>
