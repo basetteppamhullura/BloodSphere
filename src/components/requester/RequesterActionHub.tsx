@@ -123,8 +123,13 @@ export const RequesterActionHub: React.FC = () => {
     lng: 75.124
   });
 
-  const [searchGroup, setSearchGroup] = useState<BloodGroup>('O-');
-  const [radiusFilter, setRadiusFilter] = useState<number>(1000); // Default Any distance
+  // Filter Selection State
+  const [selectedGroup, setSelectedGroup] = useState<BloodGroup>('O-');
+  const [selectedRadius, setSelectedRadius] = useState<number>(1000); // Default Any distance
+
+  // Applied Active Filter State (Updated on Search click)
+  const [appliedGroup, setAppliedGroup] = useState<BloodGroup>('O-');
+  const [appliedRadius, setAppliedRadius] = useState<number>(1000);
 
   // Emergency Express Form Modal State
   const [showExpressModal, setShowExpressModal] = useState<boolean>(false);
@@ -144,6 +149,12 @@ export const RequesterActionHub: React.FC = () => {
         () => showToast('Using Hubballi regional location.')
       );
     }
+  };
+
+  const handleExecuteSearch = () => {
+    setAppliedGroup(selectedGroup);
+    setAppliedRadius(selectedRadius);
+    showToast(`Executing Search for ${selectedGroup} stock within ${selectedRadius === 1000 ? 'Any distance' : selectedRadius + ' km'}...`);
   };
 
   const handleEmergencyExpressSubmit = (e: React.FormEvent) => {
@@ -166,12 +177,12 @@ export const RequesterActionHub: React.FC = () => {
     showToast(`🚨 CRITICAL EMERGENCY REQUEST SUBMITTED FOR ${expPatientName}! Dispatched to Hospital + Donors + Blood Banks.`);
   };
 
-  // Calculate distance, filter by radius, and sort nearest-first
+  // Calculate distance, filter by applied radius, and sort nearest-first
   const facilitiesWithDistance = REGIONAL_FACILITIES.map(fac => {
     const distanceKm = calculateDistanceKm(requesterLoc.lat, requesterLoc.lng, fac.lat, fac.lng);
     return { ...fac, distanceKm };
   })
-    .filter(fac => fac.distanceKm <= radiusFilter)
+    .filter(fac => fac.distanceKm <= appliedRadius)
     .sort((a, b) => a.distanceKm - b.distanceKm);
 
   return (
@@ -204,7 +215,7 @@ export const RequesterActionHub: React.FC = () => {
           </button>
         </div>
 
-        {/* CARD 2: FIND BLOOD NEAR YOU (BLUE/GREEN HIGHLIGHTED) */}
+        {/* CARD 2: FIND BLOOD NEAR YOU */}
         <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl space-y-4 flex flex-col justify-between hover:border-slate-700 transition-all">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -246,13 +257,13 @@ export const RequesterActionHub: React.FC = () => {
             <p className="text-slate-400 text-[11px]">Real-Time Stock Transparency • Distance Ranked</p>
           </div>
 
-          {/* Search Controls: Blood Group & Radius Selector */}
+          {/* FILTER BAR WITH SEARCH BUTTON */}
           <div className="flex items-center gap-2 flex-wrap">
             <div className="flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800">
               <label className="text-slate-400 font-bold">Group:</label>
               <select
-                value={searchGroup}
-                onChange={e => setSearchGroup(e.target.value as BloodGroup)}
+                value={selectedGroup}
+                onChange={e => setSelectedGroup(e.target.value as BloodGroup)}
                 className="bg-transparent text-white font-black focus:outline-none"
               >
                 {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(bg => (
@@ -265,8 +276,8 @@ export const RequesterActionHub: React.FC = () => {
               <MapPin className="w-3.5 h-3.5 text-red-500" />
               <label className="text-slate-400 font-bold">Radius:</label>
               <select
-                value={radiusFilter}
-                onChange={e => setRadiusFilter(Number(e.target.value))}
+                value={selectedRadius}
+                onChange={e => setSelectedRadius(Number(e.target.value))}
                 className="bg-transparent text-white font-bold focus:outline-none"
               >
                 <option value={5} className="bg-slate-900 text-white">Within 5 km</option>
@@ -276,13 +287,20 @@ export const RequesterActionHub: React.FC = () => {
                 <option value={1000} className="bg-slate-900 text-white">Any Distance</option>
               </select>
             </div>
+
+            <button
+              onClick={handleExecuteSearch}
+              className="px-4 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-black text-xs shadow-md flex items-center gap-1.5 transition-all hover:scale-105"
+            >
+              <Search className="w-3.5 h-3.5" /> Search Facilities
+            </button>
           </div>
         </div>
 
         {/* Distance-Ranked Facilities Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {facilitiesWithDistance.map(fac => {
-            const stockData = fac.stock[searchGroup] || { available: 0, reserved: 0 };
+            const stockData = fac.stock[appliedGroup] || { available: 0, reserved: 0 };
             const hasStock = stockData.available > 0;
 
             return (
@@ -301,7 +319,7 @@ export const RequesterActionHub: React.FC = () => {
                   <p className="text-xs text-slate-400 mt-1">{fac.city} • Contact: {fac.phone}</p>
 
                   <div className="mt-3 p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between font-mono">
-                    <span className="text-slate-300 font-sans font-bold">{searchGroup} Availability:</span>
+                    <span className="text-slate-300 font-sans font-bold">{appliedGroup} Availability:</span>
                     <div className="text-right">
                       <strong className={`text-base block ${hasStock ? 'text-emerald-400' : 'text-red-400'}`}>
                         {stockData.available} Units Available
