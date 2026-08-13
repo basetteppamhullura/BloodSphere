@@ -240,26 +240,129 @@ export const DashboardPage: React.FC = () => {
 
           <div className="space-y-6">
             {requests.map(req => {
-              const channels = req.selectedChannels || ['hospital', 'donors'];
+              const channels = req.selectedChannels || ['hospital', 'donors', 'bloodbank'];
 
               return (
                 <div key={req.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl">
+                  
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
                     <div>
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="w-8 h-8 rounded-xl bg-red-600 text-white font-extrabold text-xs flex items-center justify-center">
+                        <span className="w-8 h-8 rounded-xl bg-red-600 text-white font-extrabold text-xs flex items-center justify-center shadow">
                           {req.bloodGroup}
                         </span>
                         <h4 className="font-extrabold text-base text-white">{req.patientName}</h4>
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-amber-400 border border-slate-700">
                           {req.unitsNeeded} Units Required
                         </span>
+                        <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-slate-950 text-slate-400 border border-slate-800">
+                          ID: {req.id}
+                        </span>
                       </div>
+
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <span className="text-[11px] font-bold text-slate-400">Channels Dispatched:</span>
+                        {channels.map(ch => (
+                          <span
+                            key={ch}
+                            className={`px-2 py-0.5 rounded text-[10px] font-extrabold uppercase border ${
+                              ch === 'hospital'
+                                ? 'bg-blue-950 text-blue-300 border-blue-800'
+                                : ch === 'donors'
+                                ? 'bg-red-950 text-red-300 border-red-800'
+                                : 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                            }`}
+                          >
+                            {ch}
+                          </span>
+                        ))}
+                      </div>
+
                       <p className="text-xs text-slate-400 mt-1">
-                        Hospital: <strong>{req.hospitalName}</strong>, {req.city}
+                        Hospital: <strong>{req.hospitalName}</strong>, {req.city} • Required Date: <strong>{req.requiredDate || 'Immediate'}</strong>
                       </p>
                     </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleReorderRequest(req)}
+                        className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-xs border border-slate-700 flex items-center gap-1"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5 text-amber-400" /> Reorder Request
+                      </button>
+
+                      <span className={`px-3 py-1 rounded-full text-xs font-extrabold border shrink-0 ${
+                        req.status === 'COMPLETED'
+                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                          : req.status === 'APPOINTMENT_SCHEDULED'
+                          ? 'bg-indigo-950 text-indigo-300 border-indigo-800'
+                          : req.status === 'DONOR_CONFIRMED'
+                          ? 'bg-blue-950 text-blue-300 border-blue-800'
+                          : 'bg-amber-950 text-amber-300 border-amber-800'
+                      }`}>
+                        Overall: {req.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
                   </div>
+
+                  {/* Multi-Channel Status Cards */}
+                  <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                      Multi-Channel Parallel Status Tracker:
+                    </span>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                      {channels.includes('hospital') && (
+                        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                          <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                            <Building2 className="w-4 h-4 text-blue-400" /> Hospital Review
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            req.fulfilledChannel === 'bloodbank'
+                              ? 'bg-slate-800 text-slate-500'
+                              : req.status === 'COMPLETED'
+                              ? 'bg-emerald-950 text-emerald-300'
+                              : 'bg-amber-950 text-amber-300'
+                          }`}>
+                            {req.fulfilledChannel === 'bloodbank' ? 'Fulfilled via Blood Bank — Closed' : req.status.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                      )}
+
+                      {channels.includes('donors') && (
+                        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                          <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                            <Users className="w-4 h-4 text-red-500" /> Direct Donors
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            req.fulfilledChannel === 'bloodbank'
+                              ? 'bg-slate-800 text-slate-500'
+                              : req.status === 'DONOR_CONFIRMED'
+                              ? 'bg-blue-950 text-blue-300'
+                              : 'bg-emerald-950 text-emerald-300'
+                          }`}>
+                            {req.fulfilledChannel === 'bloodbank' ? 'Fulfilled via Blood Bank — Closed' : req.assignedDonorName ? `Accepted: ${req.assignedDonorName}` : 'Searching Donors'}
+                          </span>
+                        </div>
+                      )}
+
+                      {channels.includes('bloodbank') && (
+                        <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-between">
+                          <span className="font-bold text-slate-300 flex items-center gap-1.5">
+                            <Droplet className="w-4 h-4 text-emerald-400" /> Blood Bank Stock
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            req.fulfilledChannel === 'bloodbank'
+                              ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                              : 'bg-amber-950 text-amber-300'
+                          }`}>
+                            {req.fulfilledChannel === 'bloodbank' ? 'Stock Reserved & Fulfilled' : 'Stock Check Pending'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                 </div>
               );
             })}
@@ -311,17 +414,6 @@ export const DashboardPage: React.FC = () => {
       {/* ---------------------------------------------------- */}
       {currentRole === 'bloodbank' && (
         <BloodBankPortalDesk />
-      )}
-
-      {/* ---------------------------------------------------- */}
-      {/* 5. ADMIN DASHBOARD VIEW                               */}
-      {/* ---------------------------------------------------- */}
-      {currentRole === 'admin' && (
-        <div className="space-y-6">
-          <h3 className="font-bold text-base text-white flex items-center gap-2">
-            <ShieldCheck className="w-5 h-5 text-emerald-400" /> Super Admin Network Control & Account Security Desk
-          </h3>
-        </div>
       )}
 
     </div>
