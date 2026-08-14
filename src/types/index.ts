@@ -90,6 +90,23 @@ export interface AppointmentDetails {
   assignedDonorName: string;
 }
 
+export interface DonorResponse {
+  donorId: string;
+  donorName: string;
+  status: 'ACCEPTED' | 'DECLINED';
+  distanceKm: number;
+  respondedAt: string;
+  unitsCommitted: number;
+}
+
+export interface TimelineStep {
+  id: string;
+  label: string;
+  timestamp?: string;
+  status: 'completed' | 'current' | 'pending';
+  description?: string;
+}
+
 export interface EmergencyRequest {
   id: string;
   patientName: string;
@@ -105,6 +122,7 @@ export interface EmergencyRequest {
   bloodComponent?: string;
   unitsNeeded: number;
   unitsFulfilled: number;
+  confirmedUnits?: number;
   urgency: UrgencyLevel;
   hospitalName: string;
   hospitalAddress?: string;
@@ -125,7 +143,7 @@ export interface EmergencyRequest {
   additionalNotes: string;
   doctorName?: string;
   prescriptionFileName?: string;
-  status: RequestWorkflowStatus;
+  status: RequestWorkflowStatus | 'SEARCHING_FOR_BLOOD' | 'BLOOD_SECURED' | 'EXPIRED' | 'CANCELLED';
   aiUrgencyScore: number;
   decayScore: number;
   trendingReason: string;
@@ -136,6 +154,14 @@ export interface EmergencyRequest {
   appointmentDetails?: AppointmentDetails;
   lat: number;
   lng: number;
+  
+  // Real-time tracking fields
+  donorResponses?: DonorResponse[];
+  requestTimeline?: TimelineStep[];
+  searchRadiusKm?: number;
+  isExpired?: boolean;
+  matchScores?: Record<string, number>;
+  requestedDonorsList?: string[]; // IDs of donors explicitly notified
 }
 
 export interface Donor {
@@ -155,6 +181,17 @@ export interface Donor {
   isRareGroup: boolean;
   lat: number;
   lng: number;
+
+  // Real-time donor portal fields
+  availabilityStatus?: 'AVAILABLE' | 'NOT AVAILABLE' | 'TEMPORARILY UNAVAILABLE';
+  emergencyAlertsEnabled?: boolean;
+  nextEligibleDate?: string;
+  eligibilityStatus?: 'ELIGIBLE' | 'TEMPORARILY_INELIGIBLE' | 'PERMANENTLY_INELIGIBLE';
+  eligibilityReason?: string;
+  acceptedRequests?: string[];
+  reliabilityScore?: number;
+  state?: string;
+  escalationTier?: number;
 }
 
 export interface InventoryItem {
