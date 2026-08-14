@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import {
   PageTab,
   EmergencyRequest,
@@ -11,7 +11,10 @@ import {
   InterCityTransfer,
   PatientVerification,
   RequestChannel,
-  ChannelStatuses
+  ChannelStatuses,
+  DonorResponse,
+  TimelineStep,
+  BloodGroup
 } from '../types';
 import {
   MOCK_EMERGENCY_REQUESTS,
@@ -24,6 +27,7 @@ import {
   MOCK_INTERCITY_TRANSFERS,
   MOCK_PATIENT_VERIFICATIONS
 } from '../data/mockData.ts';
+import { calculateSmartDonorMatches } from '../utils/matchingEngine';
 
 interface AppContextType {
   activePage: PageTab;
@@ -31,6 +35,10 @@ interface AppContextType {
   isLoading: boolean;
   requests: EmergencyRequest[];
   createEmergencyRequest: (req: Partial<EmergencyRequest>) => void;
+  cancelEmergencyRequest: (requestId: string, reason?: string) => void;
+  sendDirectRequestToDonor: (requestId: string, donorId: string) => void;
+  donorRespondToRequest: (requestId: string, donorId: string, status: 'ACCEPTED' | 'DECLINED') => void;
+  toggleDonorAvailability: (donorId: string, status: 'AVAILABLE' | 'NOT AVAILABLE' | 'TEMPORARILY UNAVAILABLE', emergencyAlerts?: boolean) => void;
   
   // Patient Verification API
   patientVerifications: PatientVerification[];
@@ -46,9 +54,10 @@ interface AppContextType {
   donorAcceptRequest: (requestId: string, donorId: string) => void;
   donorDeclineRequest: (requestId: string, donorId: string) => void;
   scheduleDonationAppointment: (requestId: string, date: string, time: string, venue: string) => void;
-  markDonationCompleted: (requestId: string) => void;
+  markDonationCompleted: (requestId: string, donorId?: string) => void;
 
   donors: Donor[];
+  setDonors: React.Dispatch<React.SetStateAction<Donor[]>>;
   bloodBanks: BloodBank[];
   updateInventoryStock: (bankId: string, group: string, change: number) => void;
   camps: DonationCamp[];
@@ -77,7 +86,21 @@ interface AppContextType {
 }
 
 const REQUESTS_STORAGE_KEY = 'bloodsphere_requests_data';
+const DONORS_STORAGE_KEY = 'bloodsphere_donors_data';
+const BLOODBANKS_STORAGE_KEY = 'bloodsphere_bloodbanks_data';
 const VERIFICATIONS_STORAGE_KEY = 'bloodsphere_verifications_data';
+const NOTIFS_STORAGE_KEY = 'bloodsphere_notifications_data';
+
+const DEFAULT_TIMELINE: TimelineStep[] = [
+  { id: 'step_created', label: 'Request Created', status: 'completed', description: 'Request registered in system' },
+  { id: 'step_searching', label: 'Searching', status: 'current', description: 'Searching eligible donors, hospitals & blood banks' },
+  { id: 'step_donors_notified', label: 'Donors Notified', status: 'pending', description: 'Emergency alerts sent to matching donors' },
+  { id: 'step_hospital_notified', label: 'Hospital/Blood Bank Notified', status: 'pending', description: 'Inventory availability checked' },
+  { id: 'step_response_received', label: 'Response Received', status: 'pending', description: 'Donor or facility responded' },
+  { id: 'step_blood_reserved', label: 'Blood Reserved', status: 'pending', description: 'Required units confirmed & reserved' },
+  { id: 'step_blood_issued', label: 'Blood Collected / Issued', status: 'pending', description: 'Transfusion coordination active' },
+  { id: 'step_completed', label: 'Completed', status: 'pending', description: 'Workflow fully completed' }
+];
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -85,16 +108,57 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activePage, setActivePage] = useState<PageTab>('landing');
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  // Initialize requests with enriched real-time data
   const [requests, setRequests] = useState<EmergencyRequest[]>(() => {
     const saved = localStorage.getItem(REQUESTS_STORAGE_KEY);
     if (saved) {
       try {
         return JSON.parse(saved);
       } catch (e) {
-        return MOCK_EMERGENCY_REQUESTS;
+        // Fallback
       }
     }
-    return MOCK_EMERGENCY_REQUESTS;
+    return MOCK_EMERGENCY_REQUESTS.map(req => ({
+      ...req,
+      bloodComponent: req.bloodComponent || 'PRBC',
+      confirmedUnits: req.unitsFulfilled || 0,
+      donorResponses: req.donorResponses || [],
+      requestTimeline: req.requestTimeline || DEFAULT_TIMELINE,
+      searchRadiusKm: req.searchRadiusKm || 25,
+      isExpired: false
+    }));
+  });
+
+  // Initialize donors with real-time portal attributes
+  const [donors, setDonors] = useState<Donor[]>(() => {
+    const saved = localStorage.getItem(DONORS_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return MOCK_DONORS.map(d => ({
+      ...d,
+      availabilityStatus: d.availabilityStatus || 'AVAILABLE',
+      emergencyAlertsEnabled: d.emergencyAlertsEnabled ?? true,
+      eligibilityStatus: d.eligibilityStatus || (d.isEligible ? 'ELIGIBLE' : 'TEMPORARILY_INELIGIBLE'),
+      nextEligibleDate: d.nextEligibleDate || '2026-06-10',
+      acceptedRequests: d.acceptedRequests || []
+    }));
+  });
+
+  const [bloodBanks, setBloodBanks] = useState<BloodBank[]>(() => {
+    const saved = localStorage.getItem(BLOODBANKS_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return MOCK_BLOOD_BANKS;
   });
 
   const [patientVerifications, setPatientVerifications] = useState<PatientVerification[]>(() => {
@@ -103,19 +167,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       try {
         return JSON.parse(saved);
       } catch (e) {
-        return MOCK_PATIENT_VERIFICATIONS;
+        // Fallback
       }
     }
     return MOCK_PATIENT_VERIFICATIONS;
   });
 
-  const [donors] = useState<Donor[]>(MOCK_DONORS);
-  const [bloodBanks, setBloodBanks] = useState<BloodBank[]>(MOCK_BLOOD_BANKS);
   const [camps, setCamps] = useState<DonationCamp[]>(MOCK_CAMPS);
   const [groupCircles, setGroupCircles] = useState<GroupCircle[]>(MOCK_GROUP_CIRCLES);
   const [interCityTransfers] = useState<InterCityTransfer[]>(MOCK_INTERCITY_TRANSFERS);
   const [leaderboard] = useState(MOCK_LEADERBOARD);
-  const [notifications, setNotifications] = useState<NotificationItem[]>(MOCK_NOTIFICATIONS);
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
+    const saved = localStorage.getItem(NOTIFS_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return MOCK_NOTIFICATIONS;
+  });
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -127,13 +200,69 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeHealthPassportModal, setActiveHealthPassportModal] = useState<boolean>(false);
   const [activeCorporateImpactModal, setActiveCorporateImpactModal] = useState<boolean>(false);
 
+  // Native BroadcastChannel for real-time multi-tab state sync
+  const channelRef = useRef<BroadcastChannel | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      const channel = new BroadcastChannel('bloodsphere_realtime');
+      channelRef.current = channel;
+
+      channel.onmessage = (event) => {
+        const { type, payload } = event.data;
+        if (type === 'SYNC_REQUESTS' && payload) {
+          setRequests(payload);
+        } else if (type === 'SYNC_DONORS' && payload) {
+          setDonors(payload);
+        } else if (type === 'SYNC_BLOODBANKS' && payload) {
+          setBloodBanks(payload);
+        } else if (type === 'SYNC_NOTIFICATIONS' && payload) {
+          setNotifications(payload);
+        } else if (type === 'REALTIME_TOAST' && payload) {
+          setToastMessage(payload);
+          setTimeout(() => setToastMessage(null), 3500);
+        }
+      };
+
+      return () => {
+        channel.close();
+      };
+    }
+  }, []);
+
+  const broadcastSync = (type: string, payload: any) => {
+    if (channelRef.current) {
+      try {
+        channelRef.current.postMessage({ type, payload });
+      } catch (err) {
+        console.error('Broadcast error:', err);
+      }
+    }
+  };
+
   useEffect(() => {
     localStorage.setItem(REQUESTS_STORAGE_KEY, JSON.stringify(requests));
+    broadcastSync('SYNC_REQUESTS', requests);
   }, [requests]);
+
+  useEffect(() => {
+    localStorage.setItem(DONORS_STORAGE_KEY, JSON.stringify(donors));
+    broadcastSync('SYNC_DONORS', donors);
+  }, [donors]);
+
+  useEffect(() => {
+    localStorage.setItem(BLOODBANKS_STORAGE_KEY, JSON.stringify(bloodBanks));
+    broadcastSync('SYNC_BLOODBANKS', bloodBanks);
+  }, [bloodBanks]);
 
   useEffect(() => {
     localStorage.setItem(VERIFICATIONS_STORAGE_KEY, JSON.stringify(patientVerifications));
   }, [patientVerifications]);
+
+  useEffect(() => {
+    localStorage.setItem(NOTIFS_STORAGE_KEY, JSON.stringify(notifications));
+    broadcastSync('SYNC_NOTIFICATIONS', notifications);
+  }, [notifications]);
 
   const navigateTo = (tab: PageTab) => {
     setIsLoading(true);
@@ -146,6 +275,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
+    broadcastSync('REALTIME_TOAST', msg);
     setTimeout(() => {
       setToastMessage(null);
     }, 3500);
@@ -189,10 +319,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return { isValid: true, message: "Patient verified successfully.", record };
   };
 
-  // Requester creates Multi-Channel Request
+  // Create Emergency Request with real-time matching & notifications
   const createEmergencyRequest = (newReq: Partial<EmergencyRequest>) => {
     const isPreVerified = newReq.isVerifiedByHospital ?? true;
-    const channels: RequestChannel[] = newReq.selectedChannels?.length ? newReq.selectedChannels : ['hospital', 'donors'];
+    const channels: RequestChannel[] = newReq.selectedChannels?.length ? newReq.selectedChannels : ['hospital', 'donors', 'bloodbank'];
+
+    const reqId = `BR-${Math.floor(1000 + Math.random() * 9000)}`;
+    const reqLat = newReq.lat || 15.3647;
+    const reqLng = newReq.lng || 75.124;
+
+    // Run backend smart donor matching algorithm to identify eligible donors
+    const matchedDonorResults = calculateSmartDonorMatches(
+      donors,
+      (newReq.bloodGroup as BloodGroup) || 'O+',
+      reqLat,
+      reqLng,
+      50,
+      newReq.urgency || 'CRITICAL'
+    );
+
+    const matchScoresMap: Record<string, number> = {};
+    matchedDonorResults.forEach(res => {
+      matchScoresMap[res.donor.id] = res.matchScore;
+    });
+
+    const initialTimeline: TimelineStep[] = [
+      { id: 'step_created', label: 'Request Created', status: 'completed', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), description: 'Emergency request registered' },
+      { id: 'step_searching', label: 'Searching', status: 'completed', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), description: `Matching ${matchedDonorResults.length} eligible donors & nearby facilities` },
+      { id: 'step_donors_notified', label: 'Donors Notified', status: 'current', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), description: `Alert dispatched to ${matchedDonorResults.length} eligible donors` },
+      { id: 'step_hospital_notified', label: 'Hospital/Blood Bank Notified', status: 'current', timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), description: 'Live inventory stock checked' },
+      { id: 'step_response_received', label: 'Response Received', status: 'pending', description: 'Awaiting donor / facility acceptances' },
+      { id: 'step_blood_reserved', label: 'Blood Reserved', status: 'pending', description: 'Units allocation confirmation' },
+      { id: 'step_blood_issued', label: 'Blood Collected / Issued', status: 'pending', description: 'Transfusion coordination active' },
+      { id: 'step_completed', label: 'Completed', status: 'pending', description: 'Request fully fulfilled' }
+    ];
 
     const initialChannelStatuses: ChannelStatuses = {
       hospitalStatus: channels.includes('hospital') ? 'PENDING' : undefined,
@@ -201,19 +361,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     const created: EmergencyRequest = {
-      id: `req_${Date.now()}`,
+      id: reqId,
       patientName: newReq.patientName || "Emergency Patient",
-      patientAge: newReq.patientAge,
-      patientGender: newReq.patientGender,
-      patientId: newReq.patientId || "BN-HUB-2026-00852",
-      verificationCode: newReq.verificationCode || "739241",
+      patientAge: newReq.patientAge || 35,
+      patientGender: newReq.patientGender || "Male",
+      patientId: newReq.patientId || `BN-HUB-2026-${Math.floor(10000 + Math.random() * 90000)}`,
+      verificationCode: newReq.verificationCode || `${Math.floor(100000 + Math.random() * 900000)}`,
       isVerifiedByHospital: isPreVerified,
       selectedChannels: channels,
       channelStatuses: initialChannelStatuses,
-      bloodGroup: newReq.bloodGroup || "O-",
-      bloodComponent: newReq.bloodComponent || "Whole Blood",
-      unitsNeeded: newReq.unitsNeeded || 1,
+      bloodGroup: (newReq.bloodGroup as BloodGroup) || "O+",
+      bloodComponent: newReq.bloodComponent || "PRBC",
+      unitsNeeded: newReq.unitsNeeded || 2,
       unitsFulfilled: 0,
+      confirmedUnits: 0,
       urgency: newReq.urgency || "CRITICAL",
       hospitalName: newReq.hospitalName || "KIMS Teaching Hospital",
       city: newReq.city || "Hubballi",
@@ -222,38 +383,240 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       maskedPhone: "+91 98*** **412",
       contactPhone: newReq.contactPhone || "+91 98765 43210",
       requestedAt: new Date().toISOString(),
-      deadline: new Date(Date.now() + 24 * 3600 * 1000).toISOString(),
+      deadline: new Date(Date.now() + 6 * 3600 * 1000).toISOString(),
       requiredDate: newReq.requiredDate || new Date().toISOString().split('T')[0],
-      requiredTime: newReq.requiredTime || "10:00 AM",
-      reason: newReq.reason || "Urgent medical transfusion requirement",
-      additionalNotes: newReq.additionalNotes || "Patient requires urgent blood assistance.",
-      status: isPreVerified ? "VERIFIED_SEARCHING_DONORS" : "PENDING_HOSPITAL_APPROVAL",
-      aiUrgencyScore: newReq.urgency === "CRITICAL" ? 98 : 84,
+      requiredTime: newReq.requiredTime || "Within 2 Hours",
+      reason: newReq.reason || "Urgent transfusion requirement",
+      additionalNotes: newReq.additionalNotes || "Patient in urgent need of blood.",
+      status: "SEARCHING_FOR_BLOOD",
+      aiUrgencyScore: newReq.urgency === "CRITICAL" ? 98 : 85,
       decayScore: 95,
-      trendingReason: `Dispatched to: ${channels.map(c => c.toUpperCase()).join(', ')}`,
+      trendingReason: `Real-time search active across ${matchedDonorResults.length} eligible donors`,
       sharesCount: 1,
-      matchedDonorsCount: 4,
-      lat: 15.3688,
-      lng: 75.1274
+      matchedDonorsCount: matchedDonorResults.length,
+      lat: reqLat,
+      lng: reqLng,
+      donorResponses: [],
+      requestTimeline: initialTimeline,
+      searchRadiusKm: 25,
+      isExpired: false,
+      matchScores: matchScoresMap,
+      requestedDonorsList: matchedDonorResults.map(r => r.donor.id)
     };
 
     setRequests(prev => [created, ...prev]);
 
-    // Dispatch real multi-channel notifications
-    const channelNames = channels.map(c => c === 'donors' ? 'Nearby Donors' : c === 'bloodbank' ? 'Blood Banks' : 'Hospital').join(', ');
-    showToast(`Multi-Channel Request dispatched to: ${channelNames}!`);
+    // Send notifications to eligible matched donors
+    const newNotifications: NotificationItem[] = matchedDonorResults.map(res => ({
+      id: `notif_donor_${res.donor.id}_${Date.now()}`,
+      title: `🚨 BLOOD REQUEST: ${created.bloodGroup} ${created.bloodComponent}`,
+      message: `${created.unitsNeeded} Units needed for ${created.patientName} at ${created.hospitalName} (${res.distanceKm} km away). Required ${created.requiredTime}.`,
+      time: "Just now",
+      type: "urgent",
+      read: false,
+      requestId: created.id
+    }));
 
+    // Add requester notification
+    newNotifications.unshift({
+      id: `notif_req_${Date.now()}`,
+      title: `Request ${created.id} Created`,
+      message: `Searching for ${created.bloodGroup} ${created.bloodComponent} (${created.unitsNeeded} Units). ${matchedDonorResults.length} eligible donors notified.`,
+      time: "Just now",
+      type: "info",
+      read: false,
+      requestId: created.id
+    });
+
+    setNotifications(prev => [...newNotifications, ...prev]);
+    showToast(`Blood Request ${created.id} created! Real-time search dispatched to ${matchedDonorResults.length} eligible donors.`);
+  };
+
+  // Requester sends direct emergency alert to a specific donor
+  const sendDirectRequestToDonor = (requestId: string, donorId: string) => {
+    const req = requests.find(r => r.id === requestId);
+    const donorObj = donors.find(d => d.id === donorId);
+    if (!req || !donorObj) return;
+
+    // Push notification to donor
     setNotifications(prev => [
       {
-        id: `notif_${Date.now()}`,
-        title: `🚨 Multi-Channel Alert: ${created.bloodGroup} Needed`,
-        message: `Request sent via [${channelNames}] for ${created.patientName} at ${created.hospitalName}.`,
+        id: `notif_direct_${Date.now()}`,
+        title: `🚨 DIRECT BLOOD REQUEST: ${req.bloodGroup} ${req.bloodComponent || 'PRBC'}`,
+        message: `Requester sent you an emergency blood alert! ${req.unitsNeeded} Units needed at ${req.hospitalName}.`,
         time: "Just now",
         type: "urgent",
-        read: false
+        read: false,
+        requestId: req.id
       },
       ...prev
     ]);
+
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          const list = r.requestedDonorsList || [];
+          return {
+            ...r,
+            requestedDonorsList: list.includes(donorId) ? list : [...list, donorId]
+          };
+        }
+        return r;
+      })
+    );
+
+    showToast(`Real-time emergency notification dispatched to ${donorObj.name}!`);
+  };
+
+  // Donor accepts or declines a request in real time
+  const donorRespondToRequest = (requestId: string, donorId: string, responseStatus: 'ACCEPTED' | 'DECLINED') => {
+    const donorObj = donors.find(d => d.id === donorId) || donors[0];
+
+    setRequests(prev =>
+      prev.map(req => {
+        if (req.id === requestId) {
+          const existingResponses = req.donorResponses || [];
+          // Avoid duplicate responses from same donor
+          const filtered = existingResponses.filter(res => res.donorId !== donorId);
+          
+          const newResponse: DonorResponse = {
+            donorId,
+            donorName: donorObj.name,
+            status: responseStatus,
+            distanceKm: donorObj.distanceKm || 2.5,
+            respondedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            unitsCommitted: responseStatus === 'ACCEPTED' ? 1 : 0
+          };
+
+          const updatedResponses = [...filtered, newResponse];
+          const acceptedCount = updatedResponses.filter(r => r.status === 'ACCEPTED').length;
+          const isFullySecured = acceptedCount >= req.unitsNeeded;
+
+          // Update timeline
+          const updatedTimeline = (req.requestTimeline || DEFAULT_TIMELINE).map(step => {
+            if (step.id === 'step_response_received') {
+              return { ...step, status: 'completed' as const, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), description: `${acceptedCount} donor(s) responded` };
+            }
+            if (step.id === 'step_blood_reserved' && isFullySecured) {
+              return { ...step, status: 'completed' as const, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), description: `Required ${req.unitsNeeded} units confirmed & secured!` };
+            }
+            return step;
+          });
+
+          const nextStatus = isFullySecured ? 'BLOOD_SECURED' : (acceptedCount > 0 ? 'DONOR_CONFIRMED' : req.status);
+
+          return {
+            ...req,
+            donorResponses: updatedResponses,
+            confirmedUnits: acceptedCount,
+            unitsFulfilled: acceptedCount,
+            status: nextStatus,
+            assignedDonorId: isFullySecured ? donorId : req.assignedDonorId,
+            assignedDonorName: isFullySecured ? donorObj.name : req.assignedDonorName,
+            requestTimeline: updatedTimeline,
+            trendingReason: isFullySecured ? `Blood Secured (${acceptedCount}/${req.unitsNeeded} Units Confirmed)` : `${acceptedCount} Donor Accepted`
+          };
+        }
+        return req;
+      })
+    );
+
+    // Update donor accepted requests list
+    if (responseStatus === 'ACCEPTED') {
+      setDonors(prev =>
+        prev.map(d => {
+          if (d.id === donorId) {
+            const list = d.acceptedRequests || [];
+            return {
+              ...d,
+              acceptedRequests: list.includes(requestId) ? list : [...list, requestId]
+            };
+          }
+          return d;
+        })
+      );
+    }
+
+    // Push Notification to Requester
+    const notifTitle = responseStatus === 'ACCEPTED' ? "✅ Donor Accepted Your Request!" : "ℹ️ Donor Declined Request";
+    const notifMsg = responseStatus === 'ACCEPTED'
+      ? `${donorObj.name} has accepted your blood request for ${requestId}. Coordination active.`
+      : `${donorObj.name} declined request ${requestId}. System searching next closest donor.`;
+
+    setNotifications(prev => [
+      {
+        id: `notif_resp_${Date.now()}`,
+        title: notifTitle,
+        message: notifMsg,
+        time: "Just now",
+        type: responseStatus === 'ACCEPTED' ? "success" : "info",
+        read: false,
+        requestId
+      },
+      ...prev
+    ]);
+
+    showToast(responseStatus === 'ACCEPTED' ? `You accepted request ${requestId}! Requester notified automatically.` : `Declined request ${requestId}.`);
+  };
+
+  // Toggle donor availability
+  const toggleDonorAvailability = (
+    donorId: string,
+    status: 'AVAILABLE' | 'NOT AVAILABLE' | 'TEMPORARILY UNAVAILABLE',
+    emergencyAlerts?: boolean
+  ) => {
+    setDonors(prev =>
+      prev.map(d => {
+        if (d.id === donorId) {
+          const isAvail = status === 'AVAILABLE';
+          return {
+            ...d,
+            availabilityStatus: status,
+            isAvailable: isAvail,
+            emergencyAlertsEnabled: emergencyAlerts !== undefined ? emergencyAlerts : d.emergencyAlertsEnabled
+          };
+        }
+        return d;
+      })
+    );
+    showToast(`Donor availability updated to ${status}.`);
+  };
+
+  // Cancel Emergency Request
+  const cancelEmergencyRequest = (requestId: string, reason?: string) => {
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          const updatedTimeline = (r.requestTimeline || DEFAULT_TIMELINE).map(s => ({
+            ...s,
+            status: s.id === 'step_completed' ? ('pending' as const) : s.status
+          }));
+
+          return {
+            ...r,
+            status: 'CANCELLED',
+            trendingReason: `Cancelled: ${reason || 'Cancelled by requester'}`,
+            requestTimeline: updatedTimeline
+          };
+        }
+        return r;
+      })
+    );
+
+    setNotifications(prev => [
+      {
+        id: `notif_cancel_${Date.now()}`,
+        title: `Request ${requestId} Cancelled`,
+        message: `Blood request ${requestId} was cancelled.`,
+        time: "Just now",
+        type: "info",
+        read: false,
+        requestId
+      },
+      ...prev
+    ]);
+
+    showToast(`Request ${requestId} cancelled.`);
   };
 
   // Blood Bank Approves Stock Reservation
@@ -297,7 +660,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // Step 2: Hospital Approves Request
   const approveRequestByHospital = (requestId: string, notes?: string) => {
     setRequests(prev =>
       prev.map(r => {
@@ -319,7 +681,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // Step 2: Hospital Rejects Request
   const rejectRequestByHospital = (requestId: string, reason?: string) => {
     setRequests(prev =>
       prev.map(r => {
@@ -340,59 +701,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // Step 4/5: Donor Accepts Request
   const donorAcceptRequest = (requestId: string, donorId: string) => {
-    const donorObj = donors.find(d => d.id === donorId) || donors[0];
-    setRequests(prev =>
-      prev.map(r => {
-        if (r.id === requestId) {
-          showToast(`Donor ${donorObj.name} accepted! Requester and Hospital notified.`);
-          return {
-            ...r,
-            status: "DONOR_CONFIRMED",
-            channelStatuses: {
-              ...r.channelStatuses,
-              donorStatus: 'DONOR_ACCEPTED'
-            },
-            assignedDonorId: donorObj.id,
-            assignedDonorName: donorObj.name
-          };
-        }
-        return r;
-      })
-    );
-
-    // Push Notification
-    setNotifications(prev => [
-      {
-        id: `notif_${Date.now()}`,
-        title: "✅ Donor Confirmed!",
-        message: `${donorObj.name} accepted request for patient. Hospital scheduling appointment.`,
-        time: "Just now",
-        type: "success",
-        read: false
-      },
-      ...prev
-    ]);
+    donorRespondToRequest(requestId, donorId, 'ACCEPTED');
   };
 
-  // Step 4/5: Donor Declines Request (Radius Auto-Escalation)
   const donorDeclineRequest = (requestId: string, donorId: string) => {
-    showToast(`Donor declined. Radius escalated (5km → 10km → 25km → 50km) searching next closest donor...`);
-    setRequests(prev =>
-      prev.map(r => {
-        if (r.id === requestId) {
-          return {
-            ...r,
-            aiUrgencyScore: Math.min(r.aiUrgencyScore + 5, 99)
-          };
-        }
-        return r;
-      })
-    );
+    donorRespondToRequest(requestId, donorId, 'DECLINED');
   };
 
-  // Step 6: Hospital Schedules Appointment
   const scheduleDonationAppointment = (requestId: string, date: string, time: string, venue: string) => {
     setRequests(prev =>
       prev.map(r => {
@@ -414,50 +730,82 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
-  // Step 7: Mark Donation Completed
-  const markDonationCompleted = (requestId: string) => {
+  const markDonationCompleted = (requestId: string, donorId?: string) => {
+    const targetDonorId = donorId || "usr_donor_001";
+    
     setRequests(prev =>
       prev.map(r => {
         if (r.id === requestId) {
-          showToast(`Donation completed! +250 reward points awarded to donor & stock updated.`);
+          const completedTimeline = (r.requestTimeline || DEFAULT_TIMELINE).map(s => ({ ...s, status: 'completed' as const }));
           return {
             ...r,
             status: "COMPLETED",
             fulfilledChannel: 'donors',
             unitsFulfilled: r.unitsNeeded,
-            channelStatuses: {
-              hospitalStatus: r.channelStatuses?.hospitalStatus ? 'FULFILLED' : undefined,
-              donorStatus: 'FULFILLED',
-              bloodBankStatus: r.channelStatuses?.bloodBankStatus ? 'CANCELLED' : undefined
-            }
+            confirmedUnits: r.unitsNeeded,
+            requestTimeline: completedTimeline,
+            trendingReason: "Donation Completed • Verified by Hospital"
           };
         }
         return r;
       })
     );
 
-    // Auto-update regional blood bank inventory stock
-    setBloodBanks(prev =>
-      prev.map(bank => ({
-        ...bank,
-        inventory: bank.inventory.map(item =>
-          item.group === "O-" ? { ...item, units: item.units + 1 } : item
-        )
-      }))
+    // Update Donor Profile Stats
+    setDonors(prev =>
+      prev.map(d => {
+        if (d.id === targetDonorId) {
+          const todayStr = new Date().toISOString().split('T')[0];
+          const nextEligible = new Date(Date.now() + 90 * 24 * 3600 * 1000).toISOString().split('T')[0];
+          return {
+            ...d,
+            totalDonations: d.totalDonations + 1,
+            lastDonationDate: todayStr,
+            nextEligibleDate: nextEligible,
+            points: d.points + 250,
+            eligibilityStatus: 'TEMPORARILY_INELIGIBLE',
+            eligibilityReason: `Donated on ${todayStr}. Next eligible date is ${nextEligible}.`
+          };
+        }
+        return d;
+      })
     );
+
+    // Push notification to requester and donor
+    setNotifications(prev => [
+      {
+        id: `notif_comp_${Date.now()}`,
+        title: "🎉 Donation Completed!",
+        message: `Blood donation completed for request ${requestId}. Verified by Hospital Blood Desk. +250 Points awarded!`,
+        time: "Just now",
+        type: "success",
+        read: false,
+        requestId
+      },
+      ...prev
+    ]);
+
+    showToast(`Donation completed & verified by hospital! Donor awarded +250 pts.`);
   };
 
   const updateInventoryStock = (bankId: string, group: string, change: number) => {
+    let newlyAvailable = false;
+    let bankName = "";
+
     setBloodBanks(prev =>
       prev.map(bank => {
         if (bank.id === bankId) {
+          bankName = bank.name;
           return {
             ...bank,
             inventory: bank.inventory.map(item => {
               if (item.group === group) {
+                const prevUnits = item.units;
                 const updated = Math.max(0, item.units + change);
-                showToast(`Inventory updated: ${group} stock is now ${updated} units.`);
-                return { ...item, units: updated };
+                if (prevUnits === 0 && updated > 0) {
+                  newlyAvailable = true;
+                }
+                return { ...item, units: updated, lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
               }
               return item;
             })
@@ -466,6 +814,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return bank;
       })
     );
+
+    // If stock became available, notify active requesters searching for this blood group
+    if (newlyAvailable || change > 0) {
+      const activeMatchingReqs = requests.filter(r => r.bloodGroup === group && r.status !== 'COMPLETED' && r.status !== 'CANCELLED');
+      
+      if (activeMatchingReqs.length > 0) {
+        setNotifications(prev => [
+          {
+            id: `notif_stock_${Date.now()}`,
+            title: `🔔 NEW BLOOD AVAILABLE: ${group}`,
+            message: `${group} stock updated at ${bankName}. Live stock available for immediate reservation!`,
+            time: "Just now",
+            type: "success",
+            read: false
+          },
+          ...prev
+        ]);
+        showToast(`🔔 NEW BLOOD AVAILABLE: ${group} stock updated at ${bankName}! Requesters notified in real time.`);
+      } else {
+        showToast(`Inventory updated: ${group} stock at ${bankName} changed by ${change > 0 ? '+' : ''}${change}.`);
+      }
+    }
   };
 
   const toggleCampRSVP = (campId: string) => {
@@ -510,6 +880,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         isLoading,
         requests,
         createEmergencyRequest,
+        cancelEmergencyRequest,
+        sendDirectRequestToDonor,
+        donorRespondToRequest,
+        toggleDonorAvailability,
         patientVerifications,
         createPatientVerification,
         verifyPatientCredentials,
@@ -521,6 +895,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         scheduleDonationAppointment,
         markDonationCompleted,
         donors,
+        setDonors,
         bloodBanks,
         updateInventoryStock,
         camps,

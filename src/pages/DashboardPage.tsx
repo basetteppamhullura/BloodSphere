@@ -3,6 +3,8 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { SkeletonCard, SkeletonRow } from '../components/common/Skeleton';
 import { BloodGroup } from '../types';
+import { RealtimeRequesterPortal } from '../components/requester/RealtimeRequesterPortal';
+import { RealtimeDonorPortal } from '../components/donor/RealtimeDonorPortal';
 import { RequesterActionHub } from '../components/requester/RequesterActionHub';
 import { HospitalHomeLanding } from '../components/hospital/HospitalHomeLanding';
 import { HospitalMonitorDesk } from '../components/hospital/HospitalMonitorDesk';
@@ -230,64 +232,8 @@ export const DashboardPage: React.FC = () => {
       {/* ---------------------------------------------------- */}
       {isPublicUser && unifiedPerspective === 'requester' && (
         <div className="space-y-8">
+          <RealtimeRequesterPortal />
           <RequesterActionHub />
-
-          <div className="flex justify-between items-center">
-            <h3 className="font-bold text-base text-white flex items-center gap-2">
-              <FileText className="w-5 h-5 text-red-500" /> My Multi-Channel Requests & Pipeline Tracker
-            </h3>
-            <span className="text-xs text-slate-400">Total Requests: {requests.length}</span>
-          </div>
-
-          <div className="space-y-6">
-            {requests.map(req => {
-              const channels = req.selectedChannels || ['hospital', 'donors', 'bloodbank'];
-
-              return (
-                <div key={req.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl">
-                  
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="w-8 h-8 rounded-xl bg-red-600 text-white font-extrabold text-xs flex items-center justify-center shadow">
-                          {req.bloodGroup}
-                        </span>
-                        <h4 className="font-extrabold text-base text-white">{req.patientName}</h4>
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-slate-800 text-amber-400 border border-slate-700">
-                          {req.unitsNeeded} Units Required
-                        </span>
-                      </div>
-                      <p className="text-xs text-slate-400 mt-1">
-                        Hospital: <strong>{req.hospitalName}</strong>, {req.city}
-                      </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleReorderRequest(req)}
-                        className="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-extrabold text-xs border border-slate-700 flex items-center gap-1"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5 text-amber-400" /> Reorder Request
-                      </button>
-
-                      <span className={`px-3 py-1 rounded-full text-xs font-extrabold border shrink-0 ${
-                        req.status === 'COMPLETED'
-                          ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
-                          : req.status === 'APPOINTMENT_SCHEDULED'
-                          ? 'bg-indigo-950 text-indigo-300 border-indigo-800'
-                          : req.status === 'DONOR_CONFIRMED'
-                          ? 'bg-blue-950 text-blue-300 border-blue-800'
-                          : 'bg-amber-950 text-amber-300 border-amber-800'
-                      }`}>
-                        Overall: {req.status.replace(/_/g, ' ')}
-                      </span>
-                    </div>
-                  </div>
-
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
 
@@ -296,24 +242,7 @@ export const DashboardPage: React.FC = () => {
       {/* ---------------------------------------------------- */}
       {isPublicUser && unifiedPerspective === 'donor' && (
         <div className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-xs text-slate-400">Total Donations</span>
-              <span className="text-2xl font-black text-white block">{currentUser?.totalDonations || 7}</span>
-            </div>
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-xs text-slate-400">Reward Points</span>
-              <span className="text-2xl font-black text-amber-400 block">{currentUser?.points || 1250} pts</span>
-            </div>
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-xs text-slate-400">Donation Streak</span>
-              <span className="text-2xl font-black text-rose-500 block">🔥 {currentUser?.streak || 4}x</span>
-            </div>
-            <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-              <span className="text-xs text-slate-400">Eligibility Status</span>
-              <span className="text-xs font-bold text-emerald-400 block mt-1">Eligible to Donate</span>
-            </div>
-          </div>
+          <RealtimeDonorPortal />
         </div>
       )}
 
