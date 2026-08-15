@@ -17,6 +17,15 @@ import { BloodBankLoginPage } from './pages/BloodBankLoginPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { DashboardPage } from './pages/DashboardPage';
+import { EmergencyRequestsPage } from './pages/EmergencyRequestsPage';
+import { RareRegistryPage } from './pages/RareRegistryPage';
+import { GroupCirclesPage } from './pages/GroupCirclesPage';
+import { DonorSearchPage } from './pages/DonorSearchPage';
+import { BloodBridgePage } from './pages/BloodBridgePage';
+import { BloodBanksPage } from './pages/BloodBanksPage';
+import { DonationCampsPage } from './pages/DonationCampsPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
+import { ProfilePage } from './pages/ProfilePage';
 
 // Modals
 import { EmergencyPostModal } from './components/modals/EmergencyPostModal';
@@ -51,6 +60,24 @@ const MainLayout: React.FC = () => {
         return <RegisterPage />;
       case 'dashboard':
         return <DashboardPage />;
+      case 'emergency-requests':
+        return <EmergencyRequestsPage />;
+      case 'rare-registry':
+        return <RareRegistryPage />;
+      case 'group-circles':
+        return <GroupCirclesPage />;
+      case 'blood-bridge':
+        return <BloodBridgePage />;
+      case 'donor-search':
+        return <DonorSearchPage />;
+      case 'blood-banks':
+        return <BloodBanksPage />;
+      case 'camps':
+        return <DonationCampsPage />;
+      case 'leaderboard':
+        return <LeaderboardPage />;
+      case 'profile':
+        return <ProfilePage />;
       default:
         return <DashboardPage />;
     }
