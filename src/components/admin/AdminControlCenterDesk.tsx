@@ -53,7 +53,7 @@ export interface AdminAuditEntry {
 }
 
 export const AdminControlCenterDesk: React.FC = () => {
-  const { requests, showToast } = useApp();
+  const { requests, inventoryStockMap, bloodUnitsList, showToast } = useApp();
   const { portalAccounts, updateAccountStatusByAdmin, currentUser } = useAuth();
   const adminName = currentUser?.name || 'Super Admin (System Control)';
 
@@ -274,52 +274,45 @@ export const AdminControlCenterDesk: React.FC = () => {
       {/* ---------------------------------------------------- */}
       {/* SUB-VIEW 1: REAL-TIME DASHBOARD                      */}
       {/* ---------------------------------------------------- */}
-      {activeTab === 'dashboard' && (() => {
-        const totalAvailUnits = Object.values(inventoryStockMap).reduce(
-          (acc, row) => acc + Object.values(row).reduce((a, b) => a + b.available, 0),
-          0
-        );
-        const totalIssUnits = Object.values(inventoryStockMap).reduce(
-          (acc, row) => acc + Object.values(row).reduce((a, b) => a + b.issued, 0),
-          0
-        );
-        const expiredCount = bloodUnitsList.filter(u => u.status === 'EXPIRED').length;
-
-        return (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 font-extrabold font-mono">
-              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 font-sans block">Verified Hospitals</span>
-                <strong className="text-xl font-black text-blue-400 block">{verifiedHospitalsCount}</strong>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 font-sans block">Verified Blood Banks</span>
-                <strong className="text-xl font-black text-emerald-400 block">{verifiedBloodBanksCount}</strong>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 font-sans block">Live Available Units</span>
-                <strong className="text-xl font-black text-emerald-400 block">{totalAvailUnits} Units</strong>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 font-sans block">Issued Blood Units</span>
-                <strong className="text-xl font-black text-blue-400 block">{totalIssUnits} Units</strong>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 font-sans block">Expired Blood Units</span>
-                <strong className="text-xl font-black text-amber-400 block">{expiredCount} Units</strong>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
-                <span className="text-[10px] text-slate-400 font-sans block">Total Blood Requests</span>
-                <strong className="text-xl font-black text-white block">{totalRequestsCount}</strong>
-              </div>
+      {activeTab === 'dashboard' && (
+        <div className="space-y-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 font-extrabold font-mono">
+            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-400 font-sans block">Verified Hospitals</span>
+              <strong className="text-xl font-black text-blue-400 block">{verifiedHospitalsCount}</strong>
             </div>
-        );
-      })()}
+
+            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-400 font-sans block">Verified Blood Banks</span>
+              <strong className="text-xl font-black text-emerald-400 block">{verifiedBloodBanksCount}</strong>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-400 font-sans block">Live Available Units</span>
+              <strong className="text-xl font-black text-emerald-400 block">
+                {Object.values(inventoryStockMap).reduce((acc, row) => acc + Object.values(row).reduce((a, b) => a + b.available, 0), 0)} Units
+              </strong>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-400 font-sans block">Issued Blood Units</span>
+              <strong className="text-xl font-black text-blue-400 block">
+                {Object.values(inventoryStockMap).reduce((acc, row) => acc + Object.values(row).reduce((a, b) => a + b.issued, 0), 0)} Units
+              </strong>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-400 font-sans block">Expired Blood Units</span>
+              <strong className="text-xl font-black text-amber-400 block">
+                {bloodUnitsList.filter(u => u.status === 'EXPIRED').length} Units
+              </strong>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-1">
+              <span className="text-[10px] text-slate-400 font-sans block">Total Blood Requests</span>
+              <strong className="text-xl font-black text-white block">{totalRequestsCount}</strong>
+            </div>
+          </div>
 
           <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
             <h3 className="font-extrabold text-base text-white flex items-center gap-2">
