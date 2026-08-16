@@ -99,6 +99,57 @@ export interface DonorResponse {
   unitsCommitted: number;
 }
 
+export type ComponentType = 'PRBC' | 'Whole Blood' | 'Plasma (FFP)' | 'Platelets (PRP)';
+
+export type UnitLifecycleStatus =
+  | 'DONATED'
+  | 'COLLECTED'
+  | 'TESTING'
+  | 'APPROVED'
+  | 'STORED'
+  | 'RESERVED'
+  | 'ISSUED'
+  | 'TRANSFUSED'
+  | 'EXPIRED'
+  | 'DISCARDED';
+
+export interface DetailedBloodUnit {
+  unitId: string;
+  donationId: string;
+  bloodGroup: BloodGroup;
+  component: ComponentType;
+  collectionDate: string;
+  expiryDate: string;
+  storageLocation: string;
+  status: UnitLifecycleStatus;
+  donorRef: string;
+  createdDate: string;
+  lastUpdated: string;
+}
+
+export interface BankNotificationItem {
+  id: string;
+  title: string;
+  message: string;
+  timestamp: string;
+  type: 'urgent' | 'success' | 'warning' | 'info';
+  read: boolean;
+}
+
+export interface ImmutableActivityEntry {
+  activityId: string;
+  staff: string;
+  action: string;
+  requestId?: string;
+  unitId?: string;
+  bloodGroup?: BloodGroup;
+  component?: string;
+  units?: number;
+  date: string;
+  time: string;
+  details: string;
+}
+
 export interface TimelineStep {
   id: string;
   label: string;

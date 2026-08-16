@@ -14,7 +14,12 @@ import {
   ChannelStatuses,
   DonorResponse,
   TimelineStep,
-  BloodGroup
+  BloodGroup,
+  ComponentType,
+  UnitLifecycleStatus,
+  DetailedBloodUnit,
+  BankNotificationItem,
+  ImmutableActivityEntry
 } from '../types';
 import {
   MOCK_EMERGENCY_REQUESTS,
@@ -29,7 +34,7 @@ import {
 } from '../data/mockData.ts';
 import { calculateSmartDonorMatches } from '../utils/matchingEngine';
 
-interface AppContextType {
+export interface AppContextType {
   activePage: PageTab;
   navigateTo: (tab: PageTab) => void;
   isLoading: boolean;
@@ -44,6 +49,18 @@ interface AppContextType {
   patientVerifications: PatientVerification[];
   createPatientVerification: (patientName: string, bloodGroup: any, hospitalName: string) => PatientVerification;
   verifyPatientCredentials: (patientId: string, code: string, bloodGroup: string) => { isValid: boolean; message: string; record?: PatientVerification };
+
+  // Blood Bank Real-Time Operations API
+  inventoryStockMap: Record<BloodGroup, Record<ComponentType, { available: number; reserved: number; issued: number; expired: number }>>;
+  bloodUnitsList: DetailedBloodUnit[];
+  activityLogs: ImmutableActivityEntry[];
+  bankNotifications: BankNotificationItem[];
+  reserveBloodBankUnits: (requestId: string, bankId: string, group: BloodGroup, component: ComponentType, units: number, staffName: string) => void;
+  issueBloodBankUnits: (requestId: string, unitId: string, staffName: string) => void;
+  rejectBloodBankRequest: (requestId: string, reason: string, staffName: string) => void;
+  intakeBloodUnit: (unitData: Partial<DetailedBloodUnit>, staffName: string) => void;
+  checkBloodUnitExpiries: () => void;
+  detectDuplicateRequests: (patientId: string, group: string, hospitalName: string) => { isDuplicate: boolean; matchedReq?: EmergencyRequest };
 
   // Multi-Channel Handlers & Stock Reservation
   approveBloodBankReservation: (requestId: string, bankId: string) => void;
@@ -90,6 +107,9 @@ const DONORS_STORAGE_KEY = 'bloodsphere_donors_data';
 const BLOODBANKS_STORAGE_KEY = 'bloodsphere_bloodbanks_data';
 const VERIFICATIONS_STORAGE_KEY = 'bloodsphere_verifications_data';
 const NOTIFS_STORAGE_KEY = 'bloodsphere_notifications_data';
+const UNITS_STORAGE_KEY = 'bloodsphere_units_data';
+const LOGS_STORAGE_KEY = 'bloodsphere_logs_data';
+const MATRIX_STORAGE_KEY = 'bloodsphere_matrix_data';
 
 const DEFAULT_TIMELINE: TimelineStep[] = [
   { id: 'step_created', label: 'Request Created', status: 'completed', description: 'Request registered in system' },
@@ -100,6 +120,117 @@ const DEFAULT_TIMELINE: TimelineStep[] = [
   { id: 'step_blood_reserved', label: 'Blood Reserved', status: 'pending', description: 'Required units confirmed & reserved' },
   { id: 'step_blood_issued', label: 'Blood Collected / Issued', status: 'pending', description: 'Transfusion coordination active' },
   { id: 'step_completed', label: 'Completed', status: 'pending', description: 'Workflow fully completed' }
+];
+
+const INITIAL_INVENTORY_MATRIX: Record<BloodGroup, Record<ComponentType, { available: number; reserved: number; issued: number; expired: number }>> = {
+  'A+': {
+    'Whole Blood': { available: 16, reserved: 2, issued: 10, expired: 0 },
+    'PRBC': { available: 14, reserved: 2, issued: 8, expired: 0 },
+    'Plasma (FFP)': { available: 12, reserved: 1, issued: 6, expired: 0 },
+    'Platelets (PRP)': { available: 8, reserved: 0, issued: 4, expired: 1 }
+  },
+  'A-': {
+    'Whole Blood': { available: 3, reserved: 1, issued: 2, expired: 0 },
+    'PRBC': { available: 4, reserved: 1, issued: 2, expired: 0 },
+    'Plasma (FFP)': { available: 3, reserved: 0, issued: 1, expired: 0 },
+    'Platelets (PRP)': { available: 2, reserved: 0, issued: 1, expired: 0 }
+  },
+  'B+': {
+    'Whole Blood': { available: 20, reserved: 4, issued: 12, expired: 1 },
+    'PRBC': { available: 18, reserved: 3, issued: 10, expired: 0 },
+    'Plasma (FFP)': { available: 14, reserved: 2, issued: 8, expired: 0 },
+    'Platelets (PRP)': { available: 10, reserved: 1, issued: 5, expired: 0 }
+  },
+  'B-': {
+    'Whole Blood': { available: 4, reserved: 1, issued: 3, expired: 0 },
+    'PRBC': { available: 5, reserved: 1, issued: 3, expired: 0 },
+    'Plasma (FFP)': { available: 3, reserved: 0, issued: 2, expired: 0 },
+    'Platelets (PRP)': { available: 2, reserved: 0, issued: 1, expired: 0 }
+  },
+  'AB+': {
+    'Whole Blood': { available: 10, reserved: 2, issued: 5, expired: 0 },
+    'PRBC': { available: 8, reserved: 1, issued: 4, expired: 0 },
+    'Plasma (FFP)': { available: 6, reserved: 1, issued: 3, expired: 0 },
+    'Platelets (PRP)': { available: 4, reserved: 0, issued: 2, expired: 0 }
+  },
+  'AB-': {
+    'Whole Blood': { available: 2, reserved: 0, issued: 1, expired: 0 },
+    'PRBC': { available: 2, reserved: 0, issued: 1, expired: 0 },
+    'Plasma (FFP)': { available: 2, reserved: 0, issued: 1, expired: 0 },
+    'Platelets (PRP)': { available: 1, reserved: 0, issued: 1, expired: 0 }
+  },
+  'O+': {
+    'Whole Blood': { available: 28, reserved: 5, issued: 18, expired: 1 },
+    'PRBC': { available: 22, reserved: 4, issued: 14, expired: 0 },
+    'Plasma (FFP)': { available: 18, reserved: 3, issued: 10, expired: 0 },
+    'Platelets (PRP)': { available: 14, reserved: 2, issued: 8, expired: 0 }
+  },
+  'O-': {
+    'Whole Blood': { available: 3, reserved: 2, issued: 6, expired: 0 },
+    'PRBC': { available: 4, reserved: 1, issued: 3, expired: 0 },
+    'Plasma (FFP)': { available: 3, reserved: 1, issued: 2, expired: 0 },
+    'Platelets (PRP)': { available: 2, reserved: 0, issued: 1, expired: 0 }
+  },
+  'Bombay Phenotype (O-h)': {
+    'Whole Blood': { available: 1, reserved: 0, issued: 1, expired: 0 },
+    'PRBC': { available: 1, reserved: 0, issued: 0, expired: 0 },
+    'Plasma (FFP)': { available: 1, reserved: 0, issued: 0, expired: 0 },
+    'Platelets (PRP)': { available: 0, reserved: 0, issued: 0, expired: 0 }
+  }
+};
+
+const INITIAL_UNITS: DetailedBloodUnit[] = [
+  {
+    unitId: 'BU-2026-000125',
+    donationId: 'DON-8821',
+    bloodGroup: 'O-',
+    component: 'PRBC',
+    collectionDate: '2026-08-01',
+    expiryDate: '2026-09-12',
+    storageLocation: 'Cryo-Freezer B-02 (Compartment 4)',
+    status: 'STORED',
+    donorRef: 'DNR-Hubballi-042',
+    createdDate: '2026-08-01',
+    lastUpdated: '2026-08-11'
+  },
+  {
+    unitId: 'BU-2026-000126',
+    donationId: 'DON-8822',
+    bloodGroup: 'O-',
+    component: 'PRBC',
+    collectionDate: '2026-08-02',
+    expiryDate: '2026-09-13',
+    storageLocation: 'Cryo-Freezer B-02 (Compartment 5)',
+    status: 'RESERVED',
+    donorRef: 'DNR-Hubballi-098',
+    createdDate: '2026-08-02',
+    lastUpdated: '2026-08-11'
+  },
+  {
+    unitId: 'BU-2026-000127',
+    donationId: 'DON-8823',
+    bloodGroup: 'O+',
+    component: 'PRBC',
+    collectionDate: '2026-08-05',
+    expiryDate: '2026-09-16',
+    storageLocation: 'Main Refrigerator R-01',
+    status: 'STORED',
+    donorRef: 'DNR-Hubballi-104',
+    createdDate: '2026-08-05',
+    lastUpdated: '2026-08-11'
+  }
+];
+
+const INITIAL_LOGS: ImmutableActivityEntry[] = [
+  {
+    activityId: 'ACT-9001',
+    staff: 'Dr. Radhika Sen (Blood Bank Director)',
+    action: 'SYSTEM_INITIALIZATION',
+    requestId: 'BR-1025',
+    date: '2026-08-11',
+    time: '10:15 AM',
+    details: 'Blood Bank Real-Time Operational System initialized.'
+  }
 ];
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -173,6 +304,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return MOCK_PATIENT_VERIFICATIONS;
   });
 
+  // Blood Bank Operational State
+  const [inventoryStockMap, setInventoryStockMap] = useState<
+    Record<BloodGroup, Record<ComponentType, { available: number; reserved: number; issued: number; expired: number }>>
+  >(() => {
+    const saved = localStorage.getItem(MATRIX_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return INITIAL_INVENTORY_MATRIX;
+  });
+
+  const [bloodUnitsList, setBloodUnitsList] = useState<DetailedBloodUnit[]>(() => {
+    const saved = localStorage.getItem(UNITS_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return INITIAL_UNITS;
+  });
+
+  const [activityLogs, setActivityLogs] = useState<ImmutableActivityEntry[]>(() => {
+    const saved = localStorage.getItem(LOGS_STORAGE_KEY);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    return INITIAL_LOGS;
+  });
+
+  const [bankNotifications, setBankNotifications] = useState<BankNotificationItem[]>([]);
+
   const [camps, setCamps] = useState<DonationCamp[]>(MOCK_CAMPS);
   const [groupCircles, setGroupCircles] = useState<GroupCircle[]>(MOCK_GROUP_CIRCLES);
   const [interCityTransfers] = useState<InterCityTransfer[]>(MOCK_INTERCITY_TRANSFERS);
@@ -218,6 +390,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           setBloodBanks(payload);
         } else if (type === 'SYNC_NOTIFICATIONS' && payload) {
           setNotifications(payload);
+        } else if (type === 'SYNC_MATRIX' && payload) {
+          setInventoryStockMap(payload);
+        } else if (type === 'SYNC_UNITS' && payload) {
+          setBloodUnitsList(payload);
+        } else if (type === 'SYNC_LOGS' && payload) {
+          setActivityLogs(payload);
         } else if (type === 'REALTIME_TOAST' && payload) {
           setToastMessage(payload);
           setTimeout(() => setToastMessage(null), 3500);
@@ -264,6 +442,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     broadcastSync('SYNC_NOTIFICATIONS', notifications);
   }, [notifications]);
 
+  useEffect(() => {
+    localStorage.setItem(MATRIX_STORAGE_KEY, JSON.stringify(inventoryStockMap));
+    broadcastSync('SYNC_MATRIX', inventoryStockMap);
+
+    // Sync inventory stock map with regional blood bank entry
+    setBloodBanks(prev =>
+      prev.map(b => {
+        if (b.id === 'bb_1' || b.id === 'acc_bb_001') {
+          return {
+            ...b,
+            inventory: Object.entries(inventoryStockMap).map(([group, comps]) => ({
+              group: group as BloodGroup,
+              units: comps['PRBC']?.available || comps['Whole Blood']?.available || 0,
+              lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            }))
+          };
+        }
+        return b;
+      })
+    );
+  }, [inventoryStockMap]);
+
+  useEffect(() => {
+    localStorage.setItem(UNITS_STORAGE_KEY, JSON.stringify(bloodUnitsList));
+    broadcastSync('SYNC_UNITS', bloodUnitsList);
+  }, [bloodUnitsList]);
+
+  useEffect(() => {
+    localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(activityLogs));
+    broadcastSync('SYNC_LOGS', activityLogs);
+  }, [activityLogs]);
+
   const navigateTo = (tab: PageTab) => {
     setIsLoading(true);
     setActivePage(tab);
@@ -279,6 +489,282 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setTimeout(() => {
       setToastMessage(null);
     }, 3500);
+  };
+
+  // Helper to record Immutable Audit Activity (Read-Only)
+  const logActivity = (action: string, details: string, staffName: string = 'Dr. Radhika Sen', requestId?: string, unitId?: string) => {
+    const entry: ImmutableActivityEntry = {
+      activityId: `ACT-${Date.now().toString().slice(-4)}`,
+      staff: staffName,
+      action,
+      requestId,
+      unitId,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      details
+    };
+    setActivityLogs(prev => [entry, ...prev]);
+  };
+
+  // Detect Possible Duplicate Requests (Patient ID + Blood Group + Hospital)
+  const detectDuplicateRequests = (patientId: string, group: string, hospitalName: string) => {
+    const matched = requests.find(
+      r =>
+        r.patientId?.toUpperCase().trim() === patientId.toUpperCase().trim() &&
+        r.bloodGroup === group &&
+        r.status !== 'COMPLETED' &&
+        r.status !== 'CANCELLED'
+    );
+    return { isDuplicate: !!matched, matchedReq: matched };
+  };
+
+  // Real-Time Blood Reservation Backend Transaction
+  const reserveBloodBankUnits = (
+    requestId: string,
+    bankId: string,
+    group: BloodGroup,
+    component: ComponentType = 'PRBC',
+    unitsNeeded: number = 1,
+    staffName: string = 'Dr. Radhika Sen'
+  ) => {
+    const currentStock = inventoryStockMap[group]?.[component] || { available: 0, reserved: 0, issued: 0, expired: 0 };
+
+    if (currentStock.available < unitsNeeded) {
+      showToast(`❌ Cannot Reserve: Insufficient available ${group} ${component} stock (${currentStock.available} available, ${unitsNeeded} needed).`);
+      return;
+    }
+
+    // Move units from AVAILABLE -> RESERVED
+    setInventoryStockMap(prev => ({
+      ...prev,
+      [group]: {
+        ...prev[group],
+        [component]: {
+          ...currentStock,
+          available: currentStock.available - unitsNeeded,
+          reserved: currentStock.reserved + unitsNeeded
+        }
+      }
+    }));
+
+    // Update Request status in backend
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          const updatedTimeline = (r.requestTimeline || DEFAULT_TIMELINE).map(s => {
+            if (s.id === 'step_blood_reserved') {
+              return { ...s, status: 'completed' as const, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), description: `${unitsNeeded} units of ${group} reserved at Blood Bank` };
+            }
+            return s;
+          });
+
+          return {
+            ...r,
+            status: 'BLOOD_SECURED',
+            fulfilledChannel: 'bloodbank',
+            unitsFulfilled: unitsNeeded,
+            confirmedUnits: unitsNeeded,
+            requestTimeline: updatedTimeline,
+            trendingReason: `Fulfilled via Blood Bank Reservation (${unitsNeeded} units of ${group} reserved)`
+          };
+        }
+        return r;
+      })
+    );
+
+    logActivity('BLOOD_RESERVED', `Reserved ${unitsNeeded} units of ${group} (${component}) for Request ${requestId}`, staffName, requestId);
+    
+    // Send notifications to Requester & Hospital
+    const notifMsg = `Blood Reserved! ${unitsNeeded} units of ${group} (${component}) reserved for Patient at Blood Bank.`;
+    setNotifications(prev => [
+      {
+        id: `notif_res_${Date.now()}`,
+        title: `✅ Blood Reserved for Request ${requestId}`,
+        message: notifMsg,
+        time: 'Just now',
+        type: 'success',
+        read: false,
+        requestId
+      },
+      ...prev
+    ]);
+
+    showToast(`✅ Reserved ${unitsNeeded} units of ${group} (${component})! Available: ${currentStock.available - unitsNeeded}, Reserved: ${currentStock.reserved + unitsNeeded}.`);
+  };
+
+  // Real-Time Blood Issue Backend Transaction
+  const issueBloodBankUnits = (requestId: string, unitId: string, staffName: string = 'Dr. Radhika Sen') => {
+    const req = requests.find(r => r.id === requestId);
+    const unit = bloodUnitsList.find(u => u.unitId === unitId);
+
+    if (!req) {
+      showToast('Error: Active Request ID not found.');
+      return;
+    }
+
+    if (!unit) {
+      showToast('Error: Selected Blood Unit ID not found.');
+      return;
+    }
+
+    if (unit.status === 'EXPIRED') {
+      showToast('❌ Cannot Issue: Selected Blood Unit is EXPIRED!');
+      return;
+    }
+
+    const group = req.bloodGroup;
+    const component = (req.bloodComponent as ComponentType) || 'PRBC';
+    const units = req.unitsNeeded || 1;
+
+    const currentStock = inventoryStockMap[group]?.[component] || { available: 0, reserved: 0, issued: 0, expired: 0 };
+
+    // Move units from RESERVED -> ISSUED
+    setInventoryStockMap(prev => ({
+      ...prev,
+      [group]: {
+        ...prev[group],
+        [component]: {
+          ...currentStock,
+          reserved: Math.max(0, currentStock.reserved - units),
+          issued: currentStock.issued + units
+        }
+      }
+    }));
+
+    // Transition unit lifecycle status -> ISSUED
+    setBloodUnitsList(prev =>
+      prev.map(u => (u.unitId === unitId ? { ...u, status: 'ISSUED', lastUpdated: new Date().toISOString().split('T')[0] } : u))
+    );
+
+    // Transition request status -> COMPLETED
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          const completedTimeline = (r.requestTimeline || DEFAULT_TIMELINE).map(s => ({ ...s, status: 'completed' as const }));
+          return {
+            ...r,
+            status: 'COMPLETED',
+            requestTimeline: completedTimeline,
+            trendingReason: `Blood Issued (Unit ${unitId}) • Workflow Fully Completed`
+          };
+        }
+        return r;
+      })
+    );
+
+    logActivity('BLOOD_ISSUED', `Issued ${units} units of ${group} (${component}) Unit ID ${unitId} for Request ${requestId}`, staffName, requestId, unitId);
+
+    setNotifications(prev => [
+      {
+        id: `notif_iss_${Date.now()}`,
+        title: `🩸 Blood Issued for Request ${requestId}`,
+        message: `Blood Unit ${unitId} (${group} ${component}) issued to authorized medical recipient. Request completed!`,
+        time: 'Just now',
+        type: 'success',
+        read: false,
+        requestId
+      },
+      ...prev
+    ]);
+
+    showToast(`✅ Blood Unit ${unitId} Issued! Request ${requestId} completed successfully.`);
+  };
+
+  // Reject Request by Blood Bank
+  const rejectBloodBankRequest = (requestId: string, reason: string, staffName: string = 'Dr. Radhika Sen') => {
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          return {
+            ...r,
+            status: 'REJECTED',
+            trendingReason: `Rejected by Blood Bank: ${reason}`
+          };
+        }
+        return r;
+      })
+    );
+
+    logActivity('REQUEST_REJECTED', `Request ${requestId} rejected by Blood Bank: ${reason}`, staffName, requestId);
+    showToast(`Request ${requestId} rejected.`);
+  };
+
+  // Intake New Blood Unit Workflow
+  const intakeBloodUnit = (unitData: Partial<DetailedBloodUnit>, staffName: string = 'Dr. Radhika Sen') => {
+    const group = (unitData.bloodGroup as BloodGroup) || 'O+';
+    const component = (unitData.component as ComponentType) || 'PRBC';
+    const unitsCount = 1;
+
+    const newUnit: DetailedBloodUnit = {
+      unitId: unitData.unitId || `BU-2026-${Math.floor(Math.random() * 900000 + 100000)}`,
+      donationId: unitData.donationId || `DON-${Math.floor(Math.random() * 9000 + 1000)}`,
+      bloodGroup: group,
+      component,
+      collectionDate: unitData.collectionDate || new Date().toISOString().split('T')[0],
+      expiryDate: unitData.expiryDate || new Date(Date.now() + 35 * 86400000).toISOString().split('T')[0],
+      storageLocation: unitData.storageLocation || 'Main Refrigerator R-01',
+      status: 'STORED',
+      donorRef: unitData.donorRef || 'Voluntary Donation',
+      createdDate: new Date().toISOString().split('T')[0],
+      lastUpdated: new Date().toISOString().split('T')[0]
+    };
+
+    setBloodUnitsList(prev => [newUnit, ...prev]);
+
+    // Increase AVAILABLE stock in matrix
+    const currentStock = inventoryStockMap[group]?.[component] || { available: 0, reserved: 0, issued: 0, expired: 0 };
+    setInventoryStockMap(prev => ({
+      ...prev,
+      [group]: {
+        ...prev[group],
+        [component]: {
+          ...currentStock,
+          available: currentStock.available + unitsCount
+        }
+      }
+    }));
+
+    logActivity('DONATION_INTAKE', `Intake of Unit ${newUnit.unitId} (${group} ${component}) stored at ${newUnit.storageLocation}`, staffName, undefined, newUnit.unitId);
+
+    // Notify requesters searching for this blood group
+    const activeMatchingReqs = requests.filter(r => r.bloodGroup === group && r.status !== 'COMPLETED' && r.status !== 'CANCELLED');
+    if (activeMatchingReqs.length > 0) {
+      setNotifications(prev => [
+        {
+          id: `notif_stock_${Date.now()}`,
+          title: `🔔 NEW BLOOD AVAILABLE: ${group}`,
+          message: `${group} stock intake recorded at Blood Bank. Live stock available for immediate reservation!`,
+          time: 'Just now',
+          type: 'success',
+          read: false
+        },
+        ...prev
+      ]);
+      showToast(`🔔 Stock Intake Recorded: Unit ${newUnit.unitId} (${group}) added! Live notifications sent to ${activeMatchingReqs.length} requesters.`);
+    } else {
+      showToast(`Intake of Unit ${newUnit.unitId} (${group} ${component}) recorded successfully.`);
+    }
+  };
+
+  // Expiry Auto-Management Scan
+  const checkBloodUnitExpiries = () => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    let expiredCount = 0;
+
+    setBloodUnitsList(prev =>
+      prev.map(u => {
+        if (u.status !== 'EXPIRED' && u.status !== 'ISSUED' && u.expiryDate < todayStr) {
+          expiredCount++;
+          logActivity('UNIT_EXPIRED', `Blood Unit ${u.unitId} (${u.bloodGroup} ${u.component}) expired on ${u.expiryDate}`, 'System Auto-Monitor', undefined, u.unitId);
+          return { ...u, status: 'EXPIRED', lastUpdated: todayStr };
+        }
+        return u;
+      })
+    );
+
+    if (expiredCount > 0) {
+      showToast(`⚠️ Expiry Scan Completed: ${expiredCount} unit(s) marked EXPIRED and removed from available pool.`);
+    }
   };
 
   // Hospital generates Patient Verification credentials (Patient ID & Code)
@@ -328,7 +814,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const reqLat = newReq.lat || 15.3647;
     const reqLng = newReq.lng || 75.124;
 
-    // Run backend smart donor matching algorithm to identify eligible donors
     const matchedDonorResults = calculateSmartDonorMatches(
       donors,
       (newReq.bloodGroup as BloodGroup) || 'O+',
@@ -406,7 +891,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setRequests(prev => [created, ...prev]);
 
-    // Send notifications to eligible matched donors
+    // Send notifications to eligible matched donors & Blood Bank
     const newNotifications: NotificationItem[] = matchedDonorResults.map(res => ({
       id: `notif_donor_${res.donor.id}_${Date.now()}`,
       title: `🚨 BLOOD REQUEST: ${created.bloodGroup} ${created.bloodComponent}`,
@@ -417,11 +902,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       requestId: created.id
     }));
 
-    // Add requester notification
     newNotifications.unshift({
       id: `notif_req_${Date.now()}`,
       title: `Request ${created.id} Created`,
-      message: `Searching for ${created.bloodGroup} ${created.bloodComponent} (${created.unitsNeeded} Units). ${matchedDonorResults.length} eligible donors notified.`,
+      message: `Searching for ${created.bloodGroup} ${created.bloodComponent} (${created.unitsNeeded} Units). ${matchedDonorResults.length} eligible donors & Blood Banks notified.`,
       time: "Just now",
       type: "info",
       read: false,
@@ -429,16 +913,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     setNotifications(prev => [...newNotifications, ...prev]);
-    showToast(`Blood Request ${created.id} created! Real-time search dispatched to ${matchedDonorResults.length} eligible donors.`);
+    logActivity('REQUEST_CREATED', `New Blood Request ${created.id} created for ${created.unitsNeeded} units of ${created.bloodGroup} ${created.bloodComponent}`, 'Patient / Requester', created.id);
+    showToast(`Blood Request ${created.id} created! Real-time search dispatched.`);
   };
 
-  // Requester sends direct emergency alert to a specific donor
   const sendDirectRequestToDonor = (requestId: string, donorId: string) => {
     const req = requests.find(r => r.id === requestId);
     const donorObj = donors.find(d => d.id === donorId);
     if (!req || !donorObj) return;
 
-    // Push notification to donor
     setNotifications(prev => [
       {
         id: `notif_direct_${Date.now()}`,
@@ -468,7 +951,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(`Real-time emergency notification dispatched to ${donorObj.name}!`);
   };
 
-  // Donor accepts or declines a request in real time
   const donorRespondToRequest = (requestId: string, donorId: string, responseStatus: 'ACCEPTED' | 'DECLINED') => {
     const donorObj = donors.find(d => d.id === donorId) || donors[0];
 
@@ -476,7 +958,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map(req => {
         if (req.id === requestId) {
           const existingResponses = req.donorResponses || [];
-          // Avoid duplicate responses from same donor
           const filtered = existingResponses.filter(res => res.donorId !== donorId);
           
           const newResponse: DonorResponse = {
@@ -492,7 +973,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const acceptedCount = updatedResponses.filter(r => r.status === 'ACCEPTED').length;
           const isFullySecured = acceptedCount >= req.unitsNeeded;
 
-          // Update timeline
           const updatedTimeline = (req.requestTimeline || DEFAULT_TIMELINE).map(step => {
             if (step.id === 'step_response_received') {
               return { ...step, status: 'completed' as const, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), description: `${acceptedCount} donor(s) responded` };
@@ -521,7 +1001,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    // Update donor accepted requests list
     if (responseStatus === 'ACCEPTED') {
       setDonors(prev =>
         prev.map(d => {
@@ -537,7 +1016,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       );
     }
 
-    // Push Notification to Requester
     const notifTitle = responseStatus === 'ACCEPTED' ? "✅ Donor Accepted Your Request!" : "ℹ️ Donor Declined Request";
     const notifMsg = responseStatus === 'ACCEPTED'
       ? `${donorObj.name} has accepted your blood request for ${requestId}. Coordination active.`
@@ -559,7 +1037,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(responseStatus === 'ACCEPTED' ? `You accepted request ${requestId}! Requester notified automatically.` : `Declined request ${requestId}.`);
   };
 
-  // Toggle donor availability
   const toggleDonorAvailability = (
     donorId: string,
     status: 'AVAILABLE' | 'NOT AVAILABLE' | 'TEMPORARILY UNAVAILABLE',
@@ -582,21 +1059,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(`Donor availability updated to ${status}.`);
   };
 
-  // Cancel Emergency Request
   const cancelEmergencyRequest = (requestId: string, reason?: string) => {
     setRequests(prev =>
       prev.map(r => {
         if (r.id === requestId) {
-          const updatedTimeline = (r.requestTimeline || DEFAULT_TIMELINE).map(s => ({
-            ...s,
-            status: s.id === 'step_completed' ? ('pending' as const) : s.status
-          }));
-
           return {
             ...r,
             status: 'CANCELLED',
-            trendingReason: `Cancelled: ${reason || 'Cancelled by requester'}`,
-            requestTimeline: updatedTimeline
+            trendingReason: `Cancelled: ${reason || 'Cancelled by requester'}`
           };
         }
         return r;
@@ -616,48 +1086,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...prev
     ]);
 
+    logActivity('REQUEST_CANCELLED', `Request ${requestId} cancelled: ${reason || 'Cancelled by user'}`, 'Requester', requestId);
     showToast(`Request ${requestId} cancelled.`);
   };
 
-  // Blood Bank Approves Stock Reservation
   const approveBloodBankReservation = (requestId: string, bankId: string) => {
-    const matchedBank = bloodBanks.find(b => b.id === bankId) || bloodBanks[0];
-    
-    setRequests(prev =>
-      prev.map(r => {
-        if (r.id === requestId) {
-          showToast(`Stock Reserved! ${r.unitsNeeded} units of ${r.bloodGroup} reserved at ${matchedBank.name}.`);
-          return {
-            ...r,
-            status: "COMPLETED",
-            fulfilledChannel: 'bloodbank',
-            unitsFulfilled: r.unitsNeeded,
-            channelStatuses: {
-              hospitalStatus: r.channelStatuses?.hospitalStatus ? 'CANCELLED' : undefined,
-              donorStatus: r.channelStatuses?.donorStatus ? 'CANCELLED' : undefined,
-              bloodBankStatus: 'RESERVED'
-            },
-            trendingReason: `Fulfilled via Blood Bank Stock Reservation (${matchedBank.name})`
-          };
-        }
-        return r;
-      })
-    );
-
-    // Reserve stock from Blood Bank inventory
-    setBloodBanks(prev =>
-      prev.map(bank => {
-        if (bank.id === bankId) {
-          return {
-            ...bank,
-            inventory: bank.inventory.map(item =>
-              item.group === "O-" ? { ...item, units: Math.max(0, item.units - 1) } : item
-            )
-          };
-        }
-        return bank;
-      })
-    );
+    reserveBloodBankUnits(requestId, bankId, 'O+', 'PRBC', 1, 'Dr. Radhika Sen');
   };
 
   const approveRequestByHospital = (requestId: string, notes?: string) => {
@@ -751,7 +1185,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    // Update Donor Profile Stats
     setDonors(prev =>
       prev.map(d => {
         if (d.id === targetDonorId) {
@@ -771,7 +1204,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    // Push notification to requester and donor
+    // Intake verified donated unit into Blood Bank inventory automatically
+    intakeBloodUnit({
+      bloodGroup: 'O+',
+      component: 'PRBC',
+      donorRef: targetDonorId,
+      storageLocation: 'Main Refrigerator R-01 (Verified Donation)'
+    }, 'Hospital / Blood Bank Staff');
+
+    logActivity('DONATION_COMPLETED', `Donation completed for Request ${requestId}. Verified by Hospital. +250 points awarded.`, 'Hospital / Blood Bank Staff', requestId);
+
     setNotifications(prev => [
       {
         id: `notif_comp_${Date.now()}`,
@@ -815,7 +1257,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })
     );
 
-    // If stock became available, notify active requesters searching for this blood group
     if (newlyAvailable || change > 0) {
       const activeMatchingReqs = requests.filter(r => r.bloodGroup === group && r.status !== 'COMPLETED' && r.status !== 'CANCELLED');
       
@@ -887,6 +1328,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         patientVerifications,
         createPatientVerification,
         verifyPatientCredentials,
+        inventoryStockMap,
+        bloodUnitsList,
+        activityLogs,
+        bankNotifications,
+        reserveBloodBankUnits,
+        issueBloodBankUnits,
+        rejectBloodBankRequest,
+        intakeBloodUnit,
+        checkBloodUnitExpiries,
+        detectDuplicateRequests,
         approveBloodBankReservation,
         approveRequestByHospital,
         rejectRequestByHospital,
