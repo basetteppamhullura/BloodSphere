@@ -45,10 +45,9 @@ export const RealtimeDonorPortal: React.FC = () => {
   // Donor eligibility check
   const eligibility = checkDonorEligibility(loggedInDonor);
 
-  // Incoming Emergency Requests for donor (Active requests matching donor's blood group or universal compatibility)
+  // Incoming Emergency Requests for donor
   const incomingRequests = requests.filter(r => {
     if (r.status === 'COMPLETED' || r.status === 'CANCELLED' || r.status === 'EXPIRED') return false;
-    // Match blood group or universal O-
     return r.bloodGroup === loggedInDonor.bloodGroup || loggedInDonor.bloodGroup === 'O-';
   });
 
@@ -66,311 +65,181 @@ export const RealtimeDonorPortal: React.FC = () => {
     <div className="space-y-6 text-xs animate-in fade-in">
       
       {/* 1. DONOR REAL-TIME DASHBOARD HEADER */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-rose-950/50 border border-slate-800 shadow-2xl space-y-6">
+      <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-sm space-y-6">
         
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sky-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 text-white font-black text-xl flex flex-col items-center justify-center shadow-lg shadow-red-950">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-700 text-white font-black text-xl flex flex-col items-center justify-center shadow-md shadow-red-500/20">
               <span>{loggedInDonor.bloodGroup}</span>
               <span className="text-[9px] opacity-90">Donor</span>
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl font-black text-white">{loggedInDonor.name}</h2>
-                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Verified Donor
+                <h2 className="text-xl font-black text-slate-900">{loggedInDonor.name}</h2>
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Verified Donor
                 </span>
               </div>
-              <p className="text-xs text-slate-400 mt-0.5 flex items-center gap-1">
-                <MapPin className="w-3.5 h-3.5 text-red-400" /> {loggedInDonor.city}, Karnataka • Emergency Alert System Active
+              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-red-500" /> {loggedInDonor.city}, Karnataka • Real-Time Alert System Active
               </p>
             </div>
           </div>
 
           {/* AVAILABILITY CONTROLS TOGGLE */}
-          <div className="p-2 rounded-2xl bg-slate-950 border border-slate-800 flex items-center gap-3">
+          <div className="p-2 rounded-2xl bg-sky-50/60 border border-sky-100 flex items-center gap-3">
             <div>
-              <span className="text-[10px] text-slate-400 font-bold block">Availability Status</span>
+              <span className="text-[10px] text-slate-500 font-bold block">Availability Status</span>
               <select
                 value={loggedInDonor.availabilityStatus || 'AVAILABLE'}
                 onChange={e => toggleDonorAvailability(loggedInDonor.id, e.target.value as any, loggedInDonor.emergencyAlertsEnabled)}
-                className="bg-transparent text-white font-black text-xs focus:outline-none cursor-pointer"
+                className="bg-transparent text-slate-900 font-black text-xs focus:outline-none cursor-pointer"
               >
-                <option value="AVAILABLE" className="bg-slate-900 text-emerald-400">🟢 AVAILABLE</option>
-                <option value="TEMPORARILY UNAVAILABLE" className="bg-slate-900 text-amber-400">🟡 TEMPORARILY UNAVAILABLE</option>
-                <option value="NOT AVAILABLE" className="bg-slate-900 text-red-400">🔴 NOT AVAILABLE</option>
+                <option value="AVAILABLE" className="bg-white text-emerald-600 font-bold">🟢 AVAILABLE</option>
+                <option value="TEMPORARILY UNAVAILABLE" className="bg-white text-amber-600 font-bold">🟡 TEMPORARILY UNAVAILABLE</option>
+                <option value="NOT AVAILABLE" className="bg-white text-red-600 font-bold">🔴 NOT AVAILABLE</option>
               </select>
             </div>
-
-            <div className="pl-3 border-l border-slate-800">
-              <span className="text-[10px] text-slate-400 font-bold block">Emergency Alerts</span>
-              <button
-                onClick={() => toggleDonorAvailability(loggedInDonor.id, loggedInDonor.availabilityStatus || 'AVAILABLE', !loggedInDonor.emergencyAlertsEnabled)}
-                className={`px-3 py-1 rounded-xl text-[10px] font-black transition-all ${
-                  loggedInDonor.emergencyAlertsEnabled !== false
-                    ? 'bg-emerald-600 text-white'
-                    : 'bg-slate-800 text-slate-400 border border-slate-700'
-                }`}
-              >
-                {loggedInDonor.emergencyAlertsEnabled !== false ? 'ON' : 'OFF'}
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* DONOR REAL-TIME METRICS & ELIGIBILITY */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 font-mono">
-          
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800">
-            <span className="text-[10px] text-slate-400 font-sans block mb-1">Donor Status</span>
-            <strong className={`text-xs font-black block ${eligibility.isEligible ? 'text-emerald-400' : 'text-amber-400'}`}>
-              {eligibility.isEligible ? '🟢 Eligible to Donate' : '🟡 Temporarily Ineligible'}
-            </strong>
-            {!eligibility.isEligible && (
-              <p className="text-[9px] text-slate-400 font-sans mt-1 line-clamp-1">{eligibility.reason}</p>
-            )}
+        {/* 10-METRICS REAL-TIME COUNTER CARDS GRID */}
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 font-mono">
+          <div className="p-3.5 rounded-2xl bg-sky-50/50 border border-sky-100">
+            <span className="text-[10px] text-slate-500 font-sans block mb-1">Total Verified Donations</span>
+            <strong className="text-lg text-slate-900 font-black block">{loggedInDonor.totalDonations} Completed</strong>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800">
-            <span className="text-[10px] text-slate-400 font-sans block mb-1">Last Donation</span>
-            <strong className="text-sm text-white font-bold block">{loggedInDonor.lastDonationDate || '2026-03-10'}</strong>
-            <span className="text-[9px] text-slate-400 font-sans">Next Eligible: {loggedInDonor.nextEligibleDate || '2026-06-10'}</span>
+          <div className="p-3.5 rounded-2xl bg-sky-50/50 border border-sky-100">
+            <span className="text-[10px] text-slate-500 font-sans block mb-1">Last Verified Donation</span>
+            <strong className="text-xs text-slate-700 font-bold block mt-1">{loggedInDonor.lastDonationDate || '2026-03-10'}</strong>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800">
-            <span className="text-[10px] text-slate-400 font-sans block mb-1">Nearby Emergency Requests</span>
-            <strong className="text-lg text-red-400 font-black block">{nearbyEmergencyCount} Requests</strong>
+          <div className="p-3.5 rounded-2xl bg-sky-50/50 border border-sky-100">
+            <span className="text-[10px] text-slate-500 font-sans block mb-1">Next Eligible Date</span>
+            <strong className="text-xs text-emerald-600 font-bold block mt-1">{loggedInDonor.nextEligibleDate || '2026-06-10'}</strong>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800">
-            <span className="text-[10px] text-slate-400 font-sans block mb-1">Active Accepted Requests</span>
-            <strong className="text-lg text-emerald-400 font-black block">{activeAcceptedCount} Active</strong>
+          <div className="p-3.5 rounded-2xl bg-sky-50/50 border border-sky-100">
+            <span className="text-[10px] text-slate-500 font-sans block mb-1">Nearby Emergency Alerts</span>
+            <strong className="text-lg text-red-600 font-black block">{nearbyEmergencyCount} Requests</strong>
           </div>
 
-          <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800">
-            <span className="text-[10px] text-slate-400 font-sans block mb-1">Today's Opportunities</span>
-            <strong className="text-lg text-amber-400 font-black block">{todaysOpportunitiesCount} Critical</strong>
+          <div className="p-3.5 rounded-2xl bg-sky-50/50 border border-sky-100">
+            <span className="text-[10px] text-slate-500 font-sans block mb-1">Accepted Requests</span>
+            <strong className="text-lg text-indigo-600 font-black block">{activeAcceptedCount} Active</strong>
           </div>
-
         </div>
-
-        {/* MEDICAL ELIGIBILITY GUIDANCE CARD */}
-        {!eligibility.isEligible && (
-          <div className="p-4 rounded-2xl bg-amber-950/40 border border-amber-800 text-amber-200 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <HelpCircle className="w-5 h-5 text-amber-400 shrink-0" />
-              <div>
-                <strong className="font-extrabold text-white block">Medical Eligibility & Health Guidance</strong>
-                <p className="text-[11px] text-amber-300">
-                  {eligibility.reason} Standard interval between whole blood donations is 90 days. For medical queries, consult nearest blood center staff.
-                </p>
-              </div>
-            </div>
-            <a
-              href="https://nbtc.naco.gov.in"
-              target="_blank"
-              rel="noreferrer"
-              className="px-3.5 py-1.5 rounded-xl bg-amber-700 hover:bg-amber-600 text-white font-extrabold text-[11px] shrink-0"
-            >
-              Medical Guidance
-            </a>
-          </div>
-        )}
 
       </div>
 
-      {/* 2. REAL-TIME EMERGENCY BLOOD REQUESTS FEED */}
-      <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-          <h3 className="font-extrabold text-base text-white flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-red-500 animate-pulse" /> Real-Time Nearby Emergency Requests ({incomingRequests.length})
-          </h3>
-          <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> Real-Time Dispatch Active
-          </span>
+      {/* 2. REAL-TIME EMERGENCY BLOOD ALERTS FEED */}
+      <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-100 pb-3">
+          <div>
+            <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+              <Zap className="w-5 h-5 text-red-600 fill-red-600 animate-pulse" /> Live Emergency Requests Feed ({incomingRequests.length})
+            </h3>
+            <p className="text-slate-500 text-[11px]">Real-time push alerts matched to your blood group ({loggedInDonor.bloodGroup})</p>
+          </div>
         </div>
 
         {incomingRequests.length === 0 ? (
-          <div className="p-8 rounded-2xl bg-slate-950 border border-slate-800 text-center text-slate-400">
-            No active emergency blood requests nearby at this moment. You will be notified live when a request is dispatched!
+          <div className="p-8 rounded-2xl bg-sky-50/40 border border-sky-100 text-center text-slate-500 space-y-2">
+            <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+            <strong className="block text-slate-900 font-bold">You're all clear for now!</strong>
+            <p className="text-xs">No active emergency blood requests match your current location. We will notify you instantly when a need arises.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {incomingRequests.map(req => {
-              const myResponse = (req.donorResponses || []).find(r => r.donorId === loggedInDonor.id);
-              const matchScore = req.matchScores?.[loggedInDonor.id] || 95;
+              const myResp = (req.donorResponses || []).find(r => r.donorId === loggedInDonor.id);
+              const isAccepted = myResp?.status === 'ACCEPTED';
+              const isDeclined = myResp?.status === 'DECLINED';
 
               return (
                 <div
                   key={req.id}
-                  className={`p-5 rounded-3xl bg-slate-950 border-2 transition-all space-y-4 shadow-xl ${
-                    req.urgency === 'CRITICAL' ? 'border-red-600/80 shadow-red-950/40' : 'border-slate-800'
+                  className={`p-5 rounded-3xl border-2 transition-all space-y-4 shadow-sm ${
+                    req.urgency === 'CRITICAL' ? 'border-red-200 bg-red-50/20' : 'border-sky-100 bg-white'
                   }`}
                 >
-                  <div className="flex items-start justify-between gap-3 border-b border-slate-800/80 pb-3">
+                  <div className="flex items-start justify-between gap-3 border-b border-sky-100 pb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 text-white font-black text-xl flex flex-col items-center justify-center shadow-lg shadow-red-950">
+                      <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-700 text-white font-black text-xl flex flex-col items-center justify-center shadow-md shadow-red-500/20">
                         <span>{req.bloodGroup}</span>
                         <span className="text-[9px] opacity-90">{req.bloodComponent || 'PRBC'}</span>
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded bg-red-950 text-red-300 font-black text-[10px] uppercase">
-                            🚨 {req.urgency} EMERGENCY
+                          <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 font-black text-[10px] uppercase border border-red-200">
+                            🚨 {req.urgency}
                           </span>
-                          <span className="text-slate-400 text-[10px]">Req ID: {req.id}</span>
+                          <span className="text-slate-400 font-mono text-[10px]">ID: {req.id}</span>
                         </div>
-                        <h4 className="font-extrabold text-base text-white mt-0.5">{req.patientName}</h4>
-                        <p className="text-xs text-slate-400 flex items-center gap-1 mt-0.5">
-                          <Building2 className="w-3.5 h-3.5 text-red-400" /> {req.hospitalName}, {req.city}
+                        <h4 className="font-extrabold text-base text-slate-900 mt-0.5">{req.patientName}</h4>
+                        <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                          <Building2 className="w-3.5 h-3.5 text-red-500" /> {req.hospitalName}, {req.city}
                         </p>
                       </div>
                     </div>
 
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-indigo-950 text-indigo-300 border border-indigo-800">
-                      {matchScore}% Match
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-indigo-100 text-indigo-800 border border-indigo-200">
+                      {req.unitsNeeded} Units
                     </span>
                   </div>
 
-                  {/* DETAILS */}
-                  <div className="grid grid-cols-2 gap-2 text-[11px] bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+                  <div className="grid grid-cols-2 gap-2 text-[11px] bg-sky-50/50 p-3 rounded-2xl border border-sky-100 font-mono">
                     <div>
-                      <span className="text-[10px] text-slate-400 block">Units Required</span>
-                      <strong className="text-white font-bold">{req.unitsNeeded} Units ({req.bloodComponent || 'PRBC'})</strong>
+                      <span className="text-[10px] text-slate-500 font-sans block">Required Within</span>
+                      <strong className="text-amber-600 font-bold">{req.requiredTime || 'Within 2 Hours'}</strong>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block">Required Within</span>
-                      <strong className="text-amber-400 font-bold">{req.requiredTime || 'Within 2 Hours'}</strong>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Distance</span>
-                      <span className="text-slate-200 font-bold">{req.lat ? '2.1' : '3.2'} km from your location</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Medical Reason</span>
-                      <span className="text-slate-300 line-clamp-1">{req.reason}</span>
+                      <span className="text-[10px] text-slate-500 font-sans block">Confirmed Donors</span>
+                      <strong className="text-emerald-600 font-bold">{req.confirmedUnits || 0} / {req.unitsNeeded} Units</strong>
                     </div>
                   </div>
 
-                  {/* RESPONSE BUTTONS */}
-                  {myResponse ? (
-                    <div className="p-3 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-between text-xs">
-                      <span className="text-slate-300 font-bold">Your Response:</span>
-                      <span className={`px-3 py-1 rounded-xl font-extrabold uppercase ${
-                        myResponse.status === 'ACCEPTED' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
-                      }`}>
-                        {myResponse.status}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-2 gap-2 pt-1">
-                      <button
-                        onClick={() => donorRespondToRequest(req.id, loggedInDonor.id, 'ACCEPTED')}
-                        className="py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-black text-xs shadow-lg shadow-emerald-950 flex items-center justify-center gap-1.5 transition-all hover:scale-105"
-                      >
-                        <Check className="w-4 h-4" /> Accept Request
-                      </button>
-                      <button
-                        onClick={() => donorRespondToRequest(req.id, loggedInDonor.id, 'DECLINED')}
-                        className="py-3 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-extrabold text-xs border border-slate-700 flex items-center justify-center gap-1.5 transition-all"
-                      >
-                        <X className="w-4 h-4" /> Decline
-                      </button>
-                    </div>
-                  )}
+                  {/* ACTION BUTTONS */}
+                  <div className="pt-1">
+                    {isAccepted ? (
+                      <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between">
+                        <span>✅ You accepted this emergency request</span>
+                        <button
+                          onClick={() => setActiveChatModal({ request: req, donor: loggedInDonor })}
+                          className="px-3 py-1 rounded-xl bg-indigo-600 text-white text-[11px] font-bold"
+                        >
+                          Privacy Chat
+                        </button>
+                      </div>
+                    ) : isDeclined ? (
+                      <div className="p-3 rounded-2xl bg-slate-100 text-slate-500 text-xs font-bold text-center">
+                        ℹ️ You declined this request.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => donorRespondToRequest(req.id, loggedInDonor.id, 'ACCEPTED')}
+                          className="py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all hover:scale-105"
+                        >
+                          <Check className="w-4 h-4" /> ACCEPT
+                        </button>
+
+                        <button
+                          onClick={() => donorRespondToRequest(req.id, loggedInDonor.id, 'DECLINED')}
+                          className="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs border border-slate-200 flex items-center justify-center gap-1.5 transition-all"
+                        >
+                          <X className="w-4 h-4" /> DECLINE
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
                 </div>
               );
             })}
           </div>
         )}
-      </div>
-
-      {/* 3. ACCEPTED REQUESTS & DONATION APPOINTMENT COORDINATION */}
-      {acceptedRequests.length > 0 && (
-        <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl">
-          <h3 className="font-extrabold text-base text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" /> Active Accepted Requests & Appointment Coordination
-          </h3>
-
-          <div className="space-y-4">
-            {acceptedRequests.map(req => (
-              <div key={req.id} className="p-5 rounded-3xl bg-slate-950 border border-slate-800 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <span className="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 font-bold text-[10px] uppercase">
-                      Status: Accepted & Confirmed
-                    </span>
-                    <h4 className="font-extrabold text-base text-white mt-1">{req.patientName} at {req.hospitalName}</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Blood Group: <strong>{req.bloodGroup}</strong> ({req.unitsNeeded} Units Needed)</p>
-                  </div>
-
-                  <button
-                    onClick={() => setActiveChatModal({ request: req, donor: loggedInDonor })}
-                    className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-1.5 shrink-0 shadow-md"
-                  >
-                    <MessageSquare className="w-4 h-4" /> Open Privacy Chat Relay
-                  </button>
-                </div>
-
-                {/* APPOINTMENT DETAILS */}
-                <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800 space-y-2">
-                  <h5 className="font-bold text-xs text-amber-400 flex items-center gap-1.5">
-                    <Calendar className="w-4 h-4" /> Donation Appointment Schedule
-                  </h5>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-300 pt-1">
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Date & Time</span>
-                      <strong className="text-white">{req.appointmentDetails?.date || 'Today'} • {req.appointmentDetails?.time || '10:30 AM'}</strong>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Venue / Room</span>
-                      <strong className="text-white">{req.appointmentDetails?.venue || `${req.hospitalName} Blood Desk`}</strong>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 block">Appointment Status</span>
-                      <span className="px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 font-extrabold text-[10px] uppercase">
-                        Confirmed & Scheduled
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 4. GAMIFICATION & BADGES */}
-      <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-5 shadow-xl">
-        <h3 className="font-extrabold text-base text-white flex items-center gap-2 border-b border-slate-800 pb-3">
-          <Award className="w-5 h-5 text-amber-400" /> Donor Achievement Badges & Lifesaver Leaderboard
-        </h3>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
-            <span className="text-3xl block">🛡️</span>
-            <strong className="font-extrabold text-white text-xs block">Universal Lifesaver</strong>
-            <span className="text-[10px] text-slate-400 block">Donated rare blood 5+ times</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
-            <span className="text-3xl block">⚡</span>
-            <strong className="font-extrabold text-white text-xs block">Fast Responder</strong>
-            <span className="text-[10px] text-slate-400 block">Responded within 15 minutes</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
-            <span className="text-3xl block">🔥</span>
-            <strong className="font-extrabold text-white text-xs block">Regular Donor</strong>
-            <span className="text-[10px] text-slate-400 block">Maintained active streak</span>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-slate-950 border border-slate-800 text-center space-y-1">
-            <span className="text-3xl block">🦸</span>
-            <strong className="font-extrabold text-white text-xs block">Emergency Hero</strong>
-            <span className="text-[10px] text-slate-400 block">Accepted critical ICU alert</span>
-          </div>
-        </div>
       </div>
 
     </div>

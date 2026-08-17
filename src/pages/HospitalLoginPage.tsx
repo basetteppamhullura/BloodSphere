@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
-import { Building2, KeyRound, ShieldCheck, ShieldAlert, LogIn, Lock } from 'lucide-react';
+import { BloodNetLogo } from '../components/common/BloodNetLogo';
+import { Building2, LogIn, Lock, AlertCircle, KeyRound, Check } from 'lucide-react';
 
 export const HospitalLoginPage: React.FC = () => {
-  const { login, verifyTwoFactorOtp, failedAttemptsMap } = useAuth();
+  const { login, verifyTwoFactorOtp } = useAuth();
   const { navigateTo, showToast } = useApp();
 
-  const [licenseNumber, setLicenseNumber] = useState('LIC-HUB-4482');
   const [email, setEmail] = useState('admin@kims.edu.in');
   const [password, setPassword] = useState('••••••••');
+  const [licenseNumber, setLicenseNumber] = useState('LIC-HUB-4482');
 
   const [is2FAScreen, setIs2FAScreen] = useState(false);
   const [otpInput, setOtpInput] = useState('778899');
@@ -44,120 +45,101 @@ export const HospitalLoginPage: React.FC = () => {
     }
   };
 
-  const attempts = failedAttemptsMap[`${email}_hospital`] || 0;
-
   return (
     <div className="max-w-md mx-auto my-8 space-y-6 animate-in fade-in">
       
-      {/* Route Badge */}
-      <div className="text-center space-y-2">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 text-white font-extrabold mx-auto flex items-center justify-center shadow-xl shadow-blue-950">
-          <Building2 className="w-8 h-8" />
+      {/* Brand Header */}
+      <div className="text-center space-y-3">
+        <div className="flex justify-center">
+          <BloodNetLogo size="lg" showTagline={true} />
         </div>
-        <h2 className="text-2xl font-black text-white tracking-tight">Hospital Desk Login</h2>
-        <div className="flex items-center justify-center gap-1.5">
-          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-blue-950 text-blue-300 border border-blue-800 uppercase flex items-center gap-1">
-            <Lock className="w-3 h-3 text-blue-400" /> Restricted Medical Portal
-          </span>
-          <code className="text-xs text-blue-400 font-mono">/login/hospital</code>
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 border border-sky-200 text-xs font-bold mt-2">
+          <Building2 className="w-4 h-4 text-sky-600" /> Hospital Trauma Center Portal
         </div>
       </div>
 
-      {attempts > 0 && attempts < 5 && (
-        <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-800 text-amber-300 text-xs font-bold text-center">
-          ⚠️ Warning: {attempts} failed attempt(s). Account locks after 5 failed attempts.
-        </div>
-      )}
+      {/* Login Card */}
+      <div className="p-8 rounded-3xl bg-white border border-sky-100 shadow-lg space-y-5">
+        
+        {loginError && (
+          <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <span>{loginError}</span>
+          </div>
+        )}
 
-      {loginError && (
-        <div className="p-4 rounded-2xl bg-red-950/80 border border-red-800 text-red-300 text-xs font-bold flex items-center gap-2">
-          <ShieldAlert className="w-5 h-5 shrink-0" />
-          <span>{loginError}</span>
-        </div>
-      )}
-
-      {is2FAScreen ? (
-        <form onSubmit={handleVerifyOtpSubmit} className="p-6 rounded-3xl bg-slate-900 border border-blue-600 space-y-4 shadow-xl text-xs">
-          <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-            <KeyRound className="w-5 h-5 text-blue-400" />
+        {!is2FAScreen ? (
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
             <div>
-              <h3 className="font-extrabold text-sm text-white">2-Factor Security Step</h3>
-              <p className="text-[11px] text-slate-400">Enter 6-digit OTP code sent to hospital phone</p>
+              <label className="text-slate-700 font-bold block mb-1">Hospital Official Email *</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs focus:outline-none focus:border-sky-500"
+                required
+              />
             </div>
-          </div>
 
-          <div>
-            <label className="text-slate-300 font-bold block mb-1">Enter 6-Digit 2FA OTP *</label>
-            <input
-              type="text"
-              placeholder="778899"
-              value={otpInput}
-              onChange={e => setOtpInput(e.target.value)}
-              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-center text-lg tracking-widest focus:border-blue-600 focus:outline-none"
-              required
-            />
-          </div>
+            <div>
+              <label className="text-slate-700 font-bold block mb-1">Password *</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs focus:outline-none focus:border-sky-500"
+                required
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg flex items-center justify-center gap-2"
-          >
-            <ShieldCheck className="w-4 h-4" /> Verify 2FA & Open Hospital Dashboard
-          </button>
-        </form>
-      ) : (
-        <form onSubmit={handleSubmit} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
-          <div>
-            <label className="text-slate-300 font-bold block mb-1">Hospital License Registration Number *</label>
-            <input
-              type="text"
-              placeholder="LIC-HUB-4482"
-              value={licenseNumber}
-              onChange={e => setLicenseNumber(e.target.value)}
-              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:border-blue-600 focus:outline-none"
-              required
-            />
-          </div>
+            <div>
+              <label className="text-slate-700 font-bold block mb-1">Hospital License Number *</label>
+              <input
+                type="text"
+                value={licenseNumber}
+                onChange={e => setLicenseNumber(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs focus:outline-none focus:border-sky-500"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="text-slate-300 font-bold block mb-1">Official Hospital Email *</label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-blue-600 focus:outline-none"
-              required
-            />
-          </div>
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-md shadow-sky-500/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+            >
+              <LogIn className="w-4 h-4" /> Log In to Hospital Portal
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtpSubmit} className="space-y-4 text-xs">
+            <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 text-sky-900 text-center space-y-1">
+              <KeyRound className="w-8 h-8 text-sky-600 mx-auto" />
+              <strong className="block text-slate-900 font-extrabold text-sm">Two-Factor Authentication (2FA)</strong>
+              <p className="text-[11px] text-slate-600">Enter the 6-digit OTP code sent to your registered hospital device.</p>
+            </div>
 
-          <div>
-            <label className="text-slate-300 font-bold block mb-1">Password *</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-blue-600 focus:outline-none"
-              required
-            />
-          </div>
+            <div>
+              <label className="text-slate-700 font-bold block mb-1">6-Digit OTP Code *</label>
+              <input
+                type="text"
+                maxLength={6}
+                value={otpInput}
+                onChange={e => setOtpInput(e.target.value)}
+                className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-mono font-black text-center text-lg tracking-widest focus:outline-none focus:border-sky-500"
+                required
+              />
+            </div>
 
-          <button
-            type="submit"
-            className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs shadow-lg flex items-center justify-center gap-2"
-          >
-            <LogIn className="w-4 h-4" /> Enter Hospital Desk
-          </button>
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2"
+            >
+              <Check className="w-4 h-4" /> Verify 2FA OTP Code
+            </button>
+          </form>
+        )}
 
-          <div className="pt-2 text-center text-slate-400">
-            <p>
-              New Hospital Desk?{' '}
-              <button type="button" onClick={() => navigateTo('register')} className="text-blue-400 font-bold underline">
-                Register Hospital (License Verification)
-              </button>
-            </p>
-          </div>
-        </form>
-      )}
+      </div>
 
     </div>
   );

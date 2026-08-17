@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { UserRole } from '../types';
-import { Heart, LogIn, ShieldCheck, User, Building2, Droplet, Lock, AlertCircle, ShieldAlert, KeyRound, Check } from 'lucide-react';
+import { BloodNetLogo } from '../components/common/BloodNetLogo';
+import { LogIn, ShieldCheck, User, Building2, Droplet, Lock, AlertCircle, KeyRound, Check } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login, verifyTwoFactorOtp, failedAttemptsMap } = useAuth();
@@ -86,12 +87,12 @@ export const LoginPage: React.FC = () => {
     <div className="max-w-xl mx-auto my-8 space-y-6 animate-in fade-in">
       
       {/* Brand Header */}
-      <div className="text-center space-y-2">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-rose-600 text-white font-extrabold mx-auto flex items-center justify-center shadow-xl shadow-red-950">
-          <Heart className="w-8 h-8 fill-white animate-pulse" />
+      <div className="text-center space-y-3">
+        <div className="flex justify-center">
+          <BloodNetLogo size="lg" showTagline={true} />
         </div>
-        <h2 className="text-2xl font-black text-white tracking-tight">Choose how you want to access Blood Net</h2>
-        <p className="text-xs text-slate-400">Select your access portal to enter your dedicated system</p>
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight mt-2">Access Your Dedicated Portal</h2>
+        <p className="text-xs text-slate-500">Choose how you want to connect to the real-time blood network</p>
       </div>
 
       {/* 4 Separate Login Portal Choice Cards */}
@@ -99,218 +100,175 @@ export const LoginPage: React.FC = () => {
         <button
           type="button"
           onClick={() => handlePortalSwitch('donor_requester')}
-          className={`p-3 rounded-2xl border text-center space-y-1 transition-all ${
+          className={`p-3 rounded-2xl border text-center transition-all font-bold ${
             activePortalTab === 'donor_requester'
-              ? 'bg-red-950/80 border-red-600 text-white shadow-lg ring-1 ring-red-500'
-              : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+              ? 'bg-red-600 text-white border-red-600 shadow-md shadow-red-500/20'
+              : 'bg-white text-slate-700 border-sky-100 hover:bg-sky-50'
           }`}
         >
-          <User className="w-5 h-5 mx-auto text-red-500" />
-          <span className="font-extrabold block text-[11px]">🩸 Donor / Requester</span>
+          <User className="w-5 h-5 mx-auto mb-1" />
+          <span>Donor / Requester</span>
         </button>
 
         <button
           type="button"
           onClick={() => handlePortalSwitch('hospital')}
-          className={`p-3 rounded-2xl border text-center space-y-1 transition-all ${
+          className={`p-3 rounded-2xl border text-center transition-all font-bold ${
             activePortalTab === 'hospital'
-              ? 'bg-blue-950/80 border-blue-600 text-white shadow-lg ring-1 ring-blue-500'
-              : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+              ? 'bg-sky-600 text-white border-sky-600 shadow-md shadow-sky-500/20'
+              : 'bg-white text-slate-700 border-sky-100 hover:bg-sky-50'
           }`}
         >
-          <Building2 className="w-5 h-5 mx-auto text-blue-400" />
-          <span className="font-extrabold block text-[11px]">🏥 Hospital Portal</span>
+          <Building2 className="w-5 h-5 mx-auto mb-1" />
+          <span>Hospital Portal</span>
         </button>
 
         <button
           type="button"
           onClick={() => handlePortalSwitch('bloodbank')}
-          className={`p-3 rounded-2xl border text-center space-y-1 transition-all ${
+          className={`p-3 rounded-2xl border text-center transition-all font-bold ${
             activePortalTab === 'bloodbank'
-              ? 'bg-emerald-950/80 border-emerald-600 text-white shadow-lg ring-1 ring-emerald-500'
-              : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-500/20'
+              : 'bg-white text-slate-700 border-sky-100 hover:bg-sky-50'
           }`}
         >
-          <Droplet className="w-5 h-5 mx-auto text-emerald-400" />
-          <span className="font-extrabold block text-[11px]">🏦 Blood Bank Portal</span>
+          <Droplet className="w-5 h-5 mx-auto mb-1" />
+          <span>Blood Bank</span>
         </button>
 
         <button
           type="button"
           onClick={() => handlePortalSwitch('admin')}
-          className={`p-3 rounded-2xl border text-center space-y-1 transition-all ${
+          className={`p-3 rounded-2xl border text-center transition-all font-bold ${
             activePortalTab === 'admin'
-              ? 'bg-amber-950/80 border-amber-600 text-white shadow-lg ring-1 ring-amber-500'
-              : 'bg-slate-900 border-slate-800 text-slate-400 hover:border-slate-700'
+              ? 'bg-amber-600 text-white border-amber-600 shadow-md shadow-amber-500/20'
+              : 'bg-white text-slate-700 border-sky-100 hover:bg-sky-50'
           }`}
         >
-          <Lock className="w-5 h-5 mx-auto text-amber-400" />
-          <span className="font-extrabold block text-[11px]">👨‍💼 Super Admin</span>
+          <ShieldCheck className="w-5 h-5 mx-auto mb-1" />
+          <span>Super Admin</span>
         </button>
       </div>
 
-      {/* Shared Donor/Requester Role Selector Toggle */}
-      {activePortalTab === 'donor_requester' && (
-        <div className="p-1 rounded-2xl bg-slate-900 border border-slate-800 grid grid-cols-2 text-xs">
-          <button
-            type="button"
-            onClick={() => handleRoleToggle('donor')}
-            className={`py-2 rounded-xl font-bold transition-all ${
-              selectedRole === 'donor' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            🩸 Voluntary Donor
-          </button>
-          <button
-            type="button"
-            onClick={() => handleRoleToggle('requester')}
-            className={`py-2 rounded-xl font-bold transition-all ${
-              selectedRole === 'requester' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            🆘 Patient Requester
-          </button>
-        </div>
-      )}
-
-      {/* Account Lockout Warning */}
-      {currentAttempts > 0 && currentAttempts < 5 && (
-        <div className="p-3 rounded-xl bg-amber-950/60 border border-amber-800 text-amber-300 text-xs font-bold text-center">
-          ⚠️ Warning: {currentAttempts} failed attempt(s). Account locks after 5 failed attempts.
-        </div>
-      )}
-
-      {/* Error Message Banner */}
-      {loginError && (
-        <div className="p-4 rounded-2xl bg-red-950/80 border border-red-800 text-red-300 text-xs flex items-center gap-2 font-bold animate-in fade-in">
-          <ShieldAlert className="w-5 h-5 shrink-0" />
-          <span>{loginError}</span>
-        </div>
-      )}
-
-      {/* 2FA OTP Step Screen */}
-      {is2FAScreen ? (
-        <form onSubmit={handleVerifyOtpSubmit} className="p-6 rounded-3xl bg-slate-900 border border-blue-600 space-y-4 shadow-xl text-xs animate-in fade-in">
-          <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-            <KeyRound className="w-5 h-5 text-blue-400" />
-            <div>
-              <h3 className="font-extrabold text-sm text-white">2-Factor Authentication Required</h3>
-              <p className="text-[11px] text-slate-400">Enter 6-digit OTP code sent to registered facility mobile number</p>
-            </div>
+      {/* Login Form Container */}
+      <div className="p-8 rounded-3xl bg-white border border-sky-100 shadow-lg space-y-5">
+        
+        {/* Failed Attempt Warning Banner */}
+        {currentAttempts > 0 && currentAttempts < 5 && (
+          <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>Warning: {currentAttempts} failed attempt(s). Account locks after 5 failed attempts.</span>
           </div>
+        )}
 
-          <div>
-            <label className="text-slate-300 font-bold block mb-1">Enter 6-Digit 2FA OTP *</label>
-            <input
-              type="text"
-              placeholder="778899"
-              value={otpInput}
-              onChange={e => setOtpInput(e.target.value)}
-              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono text-center text-lg tracking-widest focus:border-blue-600 focus:outline-none"
-              required
-            />
+        {/* Login Error Banner */}
+        {loginError && (
+          <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <span>{loginError}</span>
           </div>
+        )}
 
-          <button
-            type="submit"
-            className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-black text-xs shadow-lg flex items-center justify-center gap-2"
-          >
-            <ShieldCheck className="w-4 h-4" /> Verify 2FA OTP & Enter Portal
-          </button>
-        </form>
-      ) : (
-        /* Standard Login Form */
-        <form onSubmit={handleSubmit} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
-          
-          {activePortalTab === 'hospital' && (
+        {!is2FAScreen ? (
+          <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+            
+            {/* Donor vs Requester role selector */}
+            {activePortalTab === 'donor_requester' && (
+              <div className="flex items-center gap-2 p-1 rounded-2xl bg-sky-50 border border-sky-100 font-extrabold">
+                <button
+                  type="button"
+                  onClick={() => handleRoleToggle('donor')}
+                  className={`flex-1 py-2 rounded-xl transition-all ${
+                    selectedRole === 'donor' ? 'bg-red-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  ❤️ Voluntary Donor
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleRoleToggle('requester')}
+                  className={`flex-1 py-2 rounded-xl transition-all ${
+                    selectedRole === 'requester' ? 'bg-red-600 text-white shadow' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  🆘 Patient Requester
+                </button>
+              </div>
+            )}
+
             <div>
-              <label className="text-slate-300 font-bold block mb-1">Hospital License Registration Number *</label>
+              <label className="text-slate-700 font-bold block mb-1">Email Address *</label>
               <input
-                type="text"
-                placeholder="LIC-HUB-4482"
-                value={licenseNumber}
-                onChange={e => setLicenseNumber(e.target.value)}
-                className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white font-mono focus:border-blue-600 focus:outline-none"
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs focus:outline-none focus:border-sky-500"
                 required
               />
             </div>
-          )}
 
-          <div>
-            <label className="text-slate-300 font-bold block mb-1">
-              {activePortalTab === 'hospital' ? 'Official Hospital Email *' : activePortalTab === 'bloodbank' ? 'Official Blood Bank Email *' : activePortalTab === 'admin' ? 'Admin Credential Email *' : 'Email Address or Mobile Number *'}
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-red-600 focus:outline-none"
-              required
-            />
-          </div>
+            <div>
+              <label className="text-slate-700 font-bold block mb-1">Password *</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs focus:outline-none focus:border-sky-500"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="text-slate-300 font-bold block mb-1">Password *</label>
-            <input
-              type="password"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-red-600 focus:outline-none"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-lg shadow-red-950 flex items-center justify-center gap-2"
-          >
-            <LogIn className="w-4 h-4" /> Enter Portal as {selectedRole.toUpperCase()}
-          </button>
-
-          {/* Portal Registration Links */}
-          <div className="pt-2 text-center text-slate-400">
             {activePortalTab === 'hospital' && (
-              <p>
-                New Hospital Desk?{' '}
-                <button
-                  type="button"
-                  onClick={() => navigateTo('register')}
-                  className="text-blue-400 font-bold underline"
-                >
-                  Register Hospital (License Verification)
-                </button>
-              </p>
+              <div>
+                <label className="text-slate-700 font-bold block mb-1">Hospital License Number *</label>
+                <input
+                  type="text"
+                  value={licenseNumber}
+                  onChange={e => setLicenseNumber(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs focus:outline-none focus:border-sky-500"
+                  required
+                />
+              </div>
             )}
 
-            {activePortalTab === 'bloodbank' && (
-              <p>
-                New Blood Bank?{' '}
-                <button
-                  type="button"
-                  onClick={() => navigateTo('register')}
-                  className="text-emerald-400 font-bold underline"
-                >
-                  Register Blood Bank Unit
-                </button>
-              </p>
-            )}
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+            >
+              <LogIn className="w-4 h-4" /> Log In to Blood Net
+            </button>
+          </form>
+        ) : (
+          <form onSubmit={handleVerifyOtpSubmit} className="space-y-4 text-xs">
+            <div className="p-4 rounded-2xl bg-sky-50 border border-sky-200 text-sky-900 text-center space-y-1">
+              <KeyRound className="w-8 h-8 text-sky-600 mx-auto" />
+              <strong className="block text-slate-900 font-extrabold text-sm">Two-Factor Authentication (2FA) Required</strong>
+              <p className="text-[11px] text-slate-600">Enter the 6-digit OTP code sent to your registered mobile device.</p>
+            </div>
 
-            {activePortalTab === 'donor_requester' && (
-              <p>
-                Don't have an account?{' '}
-                <button
-                  type="button"
-                  onClick={() => navigateTo('register')}
-                  className="text-red-400 font-bold underline"
-                >
-                  Register New Donor/Requester
-                </button>
-              </p>
-            )}
-          </div>
+            <div>
+              <label className="text-slate-700 font-bold block mb-1">Enter 6-Digit OTP Code *</label>
+              <input
+                type="text"
+                maxLength={6}
+                value={otpInput}
+                onChange={e => setOtpInput(e.target.value)}
+                className="w-full p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-mono font-black text-center text-lg tracking-widest focus:outline-none focus:border-sky-500"
+                required
+              />
+            </div>
 
-        </form>
-      )}
+            <button
+              type="submit"
+              className="w-full py-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-2"
+            >
+              <Check className="w-4 h-4" /> Verify 2FA OTP Code
+            </button>
+          </form>
+        )}
+
+      </div>
 
     </div>
   );

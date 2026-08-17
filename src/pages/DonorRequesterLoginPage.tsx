@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
-import { UserRole, BloodGroup } from '../types';
-import { Heart, User, LogIn, Phone, Mail, MapPin, ShieldCheck } from 'lucide-react';
+import { UserRole } from '../types';
+import { BloodNetLogo } from '../components/common/BloodNetLogo';
+import { LogIn, User, AlertCircle } from 'lucide-react';
 
 export const DonorRequesterLoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -10,7 +11,6 @@ export const DonorRequesterLoginPage: React.FC = () => {
 
   const [selectedRole, setSelectedRole] = useState<UserRole>('donor');
   const [email, setEmail] = useState('ananya.sharma@example.com');
-  const [phone, setPhone] = useState('+91 98765 43210');
   const [password, setPassword] = useState('••••••••');
   const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -37,83 +37,80 @@ export const DonorRequesterLoginPage: React.FC = () => {
   return (
     <div className="max-w-md mx-auto my-8 space-y-6 animate-in fade-in">
       
-      {/* Route Badge */}
-      <div className="text-center space-y-2">
-        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-rose-600 text-white font-extrabold mx-auto flex items-center justify-center shadow-xl shadow-red-950">
-          <Heart className="w-8 h-8 fill-white animate-pulse" />
+      {/* Brand Header */}
+      <div className="text-center space-y-3">
+        <div className="flex justify-center">
+          <BloodNetLogo size="lg" showTagline={true} />
         </div>
-        <h2 className="text-2xl font-black text-white tracking-tight">Donor & Requester Login</h2>
-        <p className="text-xs text-slate-400">URL Route: <code className="text-red-400 font-mono">/login/donor-requester</code></p>
+        <h2 className="text-2xl font-black text-slate-900 tracking-tight mt-2">Donor & Requester Access</h2>
+        <p className="text-xs text-slate-500">Log in to manage emergency blood requests and voluntary donations</p>
       </div>
 
-      {/* Role Toggle Selector */}
-      <div className="p-1 rounded-2xl bg-slate-900 border border-slate-800 grid grid-cols-2 text-xs">
-        <button
-          type="button"
-          onClick={() => handleRoleToggle('donor')}
-          className={`py-2.5 rounded-xl font-extrabold transition-all ${
-            selectedRole === 'donor' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          🩸 Voluntary Donor
-        </button>
-        <button
-          type="button"
-          onClick={() => handleRoleToggle('requester')}
-          className={`py-2.5 rounded-xl font-extrabold transition-all ${
-            selectedRole === 'requester' ? 'bg-red-600 text-white shadow-md' : 'text-slate-400 hover:text-white'
-          }`}
-        >
-          🆘 Patient Requester
-        </button>
+      {/* Login Card */}
+      <div className="p-8 rounded-3xl bg-white border border-sky-100 shadow-lg space-y-5">
+        
+        {/* Role Toggle Pill */}
+        <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-sky-50 border border-sky-100 font-extrabold text-xs">
+          <button
+            type="button"
+            onClick={() => handleRoleToggle('donor')}
+            className={`flex-1 py-2.5 rounded-xl transition-all ${
+              selectedRole === 'donor' ? 'bg-red-600 text-white shadow-md shadow-red-500/20' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            ❤️ Voluntary Donor
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleRoleToggle('requester')}
+            className={`flex-1 py-2.5 rounded-xl transition-all ${
+              selectedRole === 'requester' ? 'bg-red-600 text-white shadow-md shadow-red-500/20' : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            🆘 Patient Requester
+          </button>
+        </div>
+
+        {loginError && (
+          <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+            <span>{loginError}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+          <div>
+            <label className="text-slate-700 font-bold block mb-1">Email Address *</label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs focus:outline-none focus:border-sky-500"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="text-slate-700 font-bold block mb-1">Password *</label>
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs focus:outline-none focus:border-sky-500"
+              required
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]"
+          >
+            <LogIn className="w-4 h-4" /> Log In as {selectedRole === 'donor' ? 'Donor' : 'Requester'}
+          </button>
+        </form>
+
       </div>
-
-      {loginError && (
-        <div className="p-4 rounded-2xl bg-red-950/80 border border-red-800 text-red-300 text-xs font-bold">
-          {loginError}
-        </div>
-      )}
-
-      {/* Standalone Login Form */}
-      <form onSubmit={handleSubmit} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4 shadow-xl text-xs">
-        <div>
-          <label className="text-slate-300 font-bold block mb-1">Mobile Number or Email Address *</label>
-          <input
-            type="text"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-red-600 focus:outline-none"
-            required
-          />
-        </div>
-
-        <div>
-          <label className="text-slate-300 font-bold block mb-1">Password *</label>
-          <input
-            type="password"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:border-red-600 focus:outline-none"
-            required
-          />
-        </div>
-
-        <button
-          type="submit"
-          className="w-full py-3.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-black text-xs shadow-lg shadow-red-950 flex items-center justify-center gap-2"
-        >
-          <LogIn className="w-4 h-4" /> Enter Portal as {selectedRole.toUpperCase()}
-        </button>
-
-        <div className="pt-2 text-center text-slate-400">
-          <p>
-            Need an account?{' '}
-            <button type="button" onClick={() => navigateTo('register')} className="text-red-400 font-bold underline">
-              Register New Public Account
-            </button>
-          </p>
-        </div>
-      </form>
 
     </div>
   );
