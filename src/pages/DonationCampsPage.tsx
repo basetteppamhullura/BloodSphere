@@ -1,81 +1,62 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Tent, Calendar, MapPin, Users, CheckCircle2, PlusCircle } from 'lucide-react';
+import { Tent, Calendar, MapPin, Users, CheckCircle2 } from 'lucide-react';
 
 export const DonationCampsPage: React.FC = () => {
-  const { camps, toggleCampRSVP, showToast } = useApp();
+  const { camps, toggleCampRSVP } = useApp();
 
   return (
-    <div className="space-y-6 animate-in fade-in">
+    <div className="space-y-6 text-xs animate-in fade-in">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sky-100 pb-4">
         <div>
           <div className="flex items-center gap-2">
-            <Tent className="w-6 h-6 text-rose-500" />
-            <h2 className="text-xl font-bold text-white">Blood Donation Camps & Drives</h2>
+            <Tent className="w-6 h-6 text-red-600" />
+            <h2 className="text-xl font-black text-slate-900">Voluntary Blood Donation Drives & Camps</h2>
           </div>
-          <p className="text-xs text-slate-400 mt-1">Join upcoming voluntary blood donation camps hosted by Rotary, Red Cross & Colleges</p>
+          <p className="text-xs text-slate-500 mt-1">Join upcoming voluntary blood donation camps in your city</p>
         </div>
-
-        <button
-          onClick={() => showToast("Host camp request form opened! Admin review pending.")}
-          className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200"
-        >
-          <PlusCircle className="w-4 h-4 text-emerald-400" /> Host a Donation Camp
-        </button>
       </div>
 
-      {/* Camps List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {camps.map((camp) => (
-          <div key={camp.id} className="rounded-3xl bg-slate-900 border border-slate-800 overflow-hidden flex flex-col justify-between">
-            
-            <div className="h-44 relative bg-slate-800">
-              <img src={camp.bannerUrl} alt={camp.title} className="w-full h-full object-cover opacity-80" />
-              <span className="absolute top-3 left-3 px-3 py-1 rounded-full bg-slate-950/80 text-xs font-bold text-white border border-slate-700">
-                📍 {camp.city}
-              </span>
-            </div>
+          <div key={camp.id} className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm flex flex-col justify-between">
+            <div className="space-y-2">
+              <div className="flex justify-between items-start">
+                <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 text-sky-800 border border-sky-200">
+                  Organized by {camp.organizer}
+                </span>
+                <span className="text-slate-500 font-mono text-[10px] flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5 text-sky-600" /> {camp.registeredDonorsCount} Donors Attending
+                </span>
+              </div>
 
-            <div className="p-6 space-y-4 flex-1 flex flex-col justify-between">
-              <div>
-                <h3 className="font-extrabold text-base text-white">{camp.title}</h3>
-                <p className="text-xs text-slate-400 mt-0.5">Organized by {camp.organizer}</p>
+              <h3 className="font-extrabold text-base text-slate-900">{camp.title}</h3>
 
-                <div className="space-y-1.5 mt-3 text-xs text-slate-300">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4 text-red-400" /> {camp.date} ({camp.time})
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-4 h-4 text-emerald-400" /> {camp.venue}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Users className="w-4 h-4 text-blue-400" /> {camp.rsvpsCount} Donors RSVP'd (Target: {camp.expectedDonors})
-                  </div>
+              <div className="grid grid-cols-2 gap-2 text-[11px] bg-sky-50/50 p-3 rounded-2xl border border-sky-100 font-mono">
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-red-500" />
+                  <span className="text-slate-900 font-bold">{camp.date}</span>
                 </div>
-
-                <div className="flex flex-wrap gap-1.5 mt-3">
-                  {camp.amenities.map((a, i) => (
-                    <span key={i} className="text-[10px] bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded-lg border border-slate-700">
-                      ✓ {a}
-                    </span>
-                  ))}
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-red-500" />
+                  <span className="text-slate-900 font-bold">{camp.city}</span>
                 </div>
               </div>
 
-              <button
-                onClick={() => toggleCampRSVP(camp.id)}
-                className={`w-full py-3 rounded-2xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all ${
-                  camp.isJoined
-                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                    : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white shadow-lg shadow-red-950'
-                }`}
-              >
-                {camp.isJoined ? <><CheckCircle2 className="w-4 h-4" /> You've RSVP'd for this Drive</> : 'Confirm RSVP Slot'}
-              </button>
+              <p className="text-slate-600 text-xs">{camp.location}</p>
             </div>
 
+            <button
+              onClick={() => toggleCampRSVP(camp.id)}
+              className={`w-full py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all ${
+                camp.isUserRegistered
+                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                  : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white shadow-md shadow-red-500/20'
+              }`}
+            >
+              {camp.isUserRegistered ? <><CheckCircle2 className="w-4 h-4 text-emerald-600" /> RSVP Confirmed</> : 'Confirm My Voluntary RSVP'}
+            </button>
           </div>
         ))}
       </div>

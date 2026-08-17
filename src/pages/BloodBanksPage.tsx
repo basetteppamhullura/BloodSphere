@@ -1,86 +1,69 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { Building2, MapPin, Phone, Clock, ShieldCheck, Plus, Minus } from 'lucide-react';
+import { Building2, MapPin, Droplet, Search } from 'lucide-react';
 
 export const BloodBanksPage: React.FC = () => {
-  const { bloodBanks, updateInventoryStock } = useApp();
+  const { bloodBanks } = useApp();
+  const [searchCity, setSearchCity] = useState('ALL');
+
+  const filteredBanks = bloodBanks.filter(b => {
+    if (searchCity !== 'ALL' && b.city.toLowerCase() !== searchCity.toLowerCase()) return false;
+    return true;
+  });
 
   return (
-    <div className="space-y-6 animate-in fade-in">
+    <div className="space-y-6 text-xs animate-in fade-in">
       
-      {/* Header */}
-      <div>
-        <div className="flex items-center gap-2">
-          <Building2 className="w-6 h-6 text-emerald-400" />
-          <h2 className="text-xl font-bold text-white">Blood Bank Inventory Directory</h2>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sky-100 pb-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <Building2 className="w-6 h-6 text-sky-600" />
+            <h2 className="text-xl font-black text-slate-900">Regional Blood Banks Directory & Stock</h2>
+          </div>
+          <p className="text-xs text-slate-500 mt-1">Live inventory level monitor across regional certified blood centers</p>
         </div>
-        <p className="text-xs text-slate-400 mt-1">Live stock levels, 7-day unit expiry warnings, and direct contact details</p>
+
+        <select
+          value={searchCity}
+          onChange={e => setSearchCity(e.target.value)}
+          className="p-2.5 rounded-xl bg-white border border-sky-200 text-slate-900 font-bold text-xs shadow-xs"
+        >
+          <option value="ALL">All Regional Centers</option>
+          <option value="Hubballi">Hubballi</option>
+          <option value="Dharwad">Dharwad</option>
+          <option value="Belagavi">Belagavi</option>
+        </select>
       </div>
 
-      {/* Hospital Blood Banks List */}
-      <div className="space-y-6">
-        {bloodBanks.map((bank) => (
-          <div key={bank.id} className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
-            
-            {/* Facility Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {filteredBanks.map((bank) => (
+          <div key={bank.id} className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
+            <div className="flex items-start justify-between gap-2 border-b border-sky-100 pb-3">
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-extrabold text-base text-white">{bank.name}</h3>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5" /> Licensed Facility
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 flex items-center gap-1 mt-1">
-                  <MapPin className="w-3.5 h-3.5 text-red-400" /> {bank.address} ({bank.distanceKm} km away)
+                <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-sky-600" /> {bank.name}
+                </h3>
+                <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-3.5 h-3.5 text-red-500" /> {bank.address}, {bank.city}
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <a
-                  href={`tel:${bank.phone}`}
-                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-200 border border-slate-700 flex items-center gap-1.5"
-                >
-                  <Phone className="w-3.5 h-3.5 text-emerald-400" /> Call Facility
-                </a>
-              </div>
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                Verified Center
+              </span>
             </div>
 
-            {/* Inventory Gauges Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-              {bank.inventory.map((item) => (
-                <div
-                  key={item.group}
-                  className={`p-3 rounded-2xl border text-center space-y-1 ${
-                    item.status === 'CRITICAL'
-                      ? 'bg-red-950/40 border-red-800'
-                      : item.status === 'Low'
-                      ? 'bg-amber-950/30 border-amber-800'
-                      : 'bg-slate-800/40 border-slate-800'
-                  }`}
-                >
-                  <span className="font-extrabold text-base text-white block">{item.group}</span>
-                  <span className="text-xl font-black text-slate-100">{item.units}</span>
-                  <span className="text-[10px] text-slate-400 block">{item.status}</span>
-
-                  <div className="flex items-center justify-center gap-1 pt-2 border-t border-slate-800">
-                    <button
-                      onClick={() => updateInventoryStock(bank.id, item.group, -1)}
-                      className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
-                    >
-                      <Minus className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={() => updateInventoryStock(bank.id, item.group, 1)}
-                      className="p-1 rounded bg-emerald-950 hover:bg-emerald-900 text-emerald-400 border border-emerald-800"
-                    >
-                      <Plus className="w-3 h-3" />
-                    </button>
-                  </div>
+            {/* Inventory Grid */}
+            <div className="grid grid-cols-4 sm:grid-cols-8 gap-1.5 font-mono text-center">
+              {bank.inventory.map(item => (
+                <div key={item.group} className="p-2 rounded-xl bg-sky-50/50 border border-sky-100">
+                  <span className="text-[10px] text-slate-500 font-sans block">{item.group}</span>
+                  <strong className={`text-xs block font-bold ${item.units > 5 ? 'text-emerald-600' : item.units > 0 ? 'text-amber-600' : 'text-red-600'}`}>
+                    {item.units}u
+                  </strong>
                 </div>
               ))}
             </div>
-
           </div>
         ))}
       </div>

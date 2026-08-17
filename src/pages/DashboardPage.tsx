@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { RealtimeRequesterPortal } from '../components/requester/RealtimeRequesterPortal';
 import { RealtimeDonorPortal } from '../components/donor/RealtimeDonorPortal';
-import { HospitalDashboardDesk } from '../components/hospital/HospitalDashboardDesk';
+import { HospitalMonitorDesk } from '../components/hospital/HospitalMonitorDesk';
 import { BloodBankPortalDesk } from '../components/bloodbank/BloodBankPortalDesk';
 import { AdminControlCenterDesk } from '../components/admin/AdminControlCenterDesk';
 
@@ -19,7 +19,7 @@ export const DashboardPage: React.FC = () => {
       {currentRole === 'requester' && <RealtimeRequesterPortal />}
 
       {/* 3. HOSPITAL PERSPECTIVE */}
-      {currentRole === 'hospital' && <HospitalDashboardDesk />}
+      {currentRole === 'hospital' && <HospitalMonitorDesk />}
 
       {/* 4. BLOOD BANK PERSPECTIVE */}
       {currentRole === 'bloodbank' && <BloodBankPortalDesk />}
