@@ -2,9 +2,9 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { PageTab, UserRole } from '../../types';
+import { PageTab } from '../../types';
+import { BloodNetLogo } from '../common/BloodNetLogo';
 import {
-  Heart,
   Home,
   LayoutDashboard,
   Search,
@@ -18,7 +18,8 @@ import {
   Truck,
   ChevronRight,
   Sun,
-  Moon
+  Moon,
+  Radio
 } from 'lucide-react';
 
 export const Sidebar: React.FC = () => {
@@ -44,43 +45,45 @@ export const Sidebar: React.FC = () => {
   const permittedNavItems = allNavItems.filter(item => isPageAllowedForRole(item.tab, currentRole));
 
   return (
-    <aside className="hidden lg:flex flex-col w-64 bg-slate-900 border-r border-slate-800/80 min-h-screen sticky top-0 z-40 text-slate-300">
+    <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-sky-100/80 min-h-screen sticky top-0 z-40 text-slate-800 shadow-xs">
       
       {/* Brand Header */}
-      <div className="p-5 border-b border-slate-800 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-600 to-rose-600 flex items-center justify-center text-white shadow-lg shadow-red-950">
-          <Heart className="w-6 h-6 fill-white animate-pulse" />
-        </div>
-        <div>
-          <h1 className="font-extrabold text-base tracking-tight text-white flex items-center gap-1">
-            Blood<span className="text-red-500">Sphere</span>
-          </h1>
-          <p className="text-[10px] text-slate-400 font-medium">Healthcare Donor Network</p>
-        </div>
+      <div className="p-5 border-b border-sky-100 flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('landing')}>
+        <BloodNetLogo size="sm" showTagline={false} />
       </div>
 
       {/* Permitted Navigation Links */}
       <nav className="p-4 space-y-1 flex-1 overflow-y-auto">
-        <span className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold px-3 py-1 block mb-1">
-          {currentRole.toUpperCase()} Perspective
-        </span>
+        <div className="flex items-center justify-between px-3 py-1 mb-2">
+          <span className="text-[10px] text-slate-400 uppercase tracking-wider font-extrabold block">
+            {currentRole.toUpperCase()} PORTAL
+          </span>
+          <span className="flex items-center gap-1 text-[9px] font-extrabold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
+            <Radio className="w-2.5 h-2.5 animate-pulse" /> LIVE
+          </span>
+        </div>
 
         {permittedNavItems.map(item => {
           const IconComp = item.icon;
           const isActive = activePage === item.tab;
+          const isEmergency = item.tab === 'emergency-requests';
 
           return (
             <button
               key={item.tab}
               onClick={() => navigateTo(item.tab)}
-              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
                 isActive
-                  ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-red-950'
-                  : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
+                  ? isEmergency
+                    ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-red-500/20'
+                    : 'bg-sky-500 text-white shadow-md shadow-sky-500/20'
+                  : isEmergency
+                  ? 'text-red-600 hover:bg-red-50'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-sky-50/60'
               }`}
             >
               <div className="flex items-center gap-2.5">
-                <IconComp className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <IconComp className={`w-4 h-4 ${isActive ? 'text-white' : isEmergency ? 'text-red-600' : 'text-sky-600'}`} />
                 <span>{item.label}</span>
               </div>
               {isActive && <ChevronRight className="w-3.5 h-3.5" />}
@@ -89,19 +92,16 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* Theme Toggle & Session Info */}
-      <div className="p-4 border-t border-slate-800 bg-slate-950/60 flex items-center justify-between text-xs">
+      {/* Footer Info */}
+      <div className="p-4 border-t border-sky-100 bg-sky-50/40 text-xs flex items-center justify-between">
+        <span className="text-[10px] text-slate-500 font-medium">Blood Net Operational</span>
         <button
           onClick={toggleTheme}
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-all"
+          className="p-1.5 rounded-lg bg-white border border-sky-100 text-slate-600 hover:text-slate-900 shadow-2xs"
+          title="Toggle Dark/Light Mode"
         >
-          {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-indigo-400" />}
-          <span>{isDarkMode ? 'Light' : 'Dark'} Mode</span>
+          {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-500" /> : <Moon className="w-3.5 h-3.5 text-sky-600" />}
         </button>
-
-        <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-          <ShieldCheck className="w-3.5 h-3.5" /> Session Active
-        </span>
       </div>
 
     </aside>

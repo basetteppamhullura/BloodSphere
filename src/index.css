@@ -4,17 +4,19 @@
 
 @layer base {
   :root {
-    --bg-main: #0f1117;
-    --bg-card: rgba(24, 27, 37, 0.85);
-    --bg-card-hover: rgba(33, 38, 52, 0.95);
-    --border-card: rgba(255, 255, 255, 0.08);
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --accent-red: #e63946;
-    --accent-red-glow: rgba(230, 57, 70, 0.4);
-    --accent-rose: #ff4d6d;
-    --accent-gold: #ffb703;
-    --accent-green: #10b981;
+    --bg-main: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f1f5f9;
+    --border-card: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --accent-red: #dc2626;
+    --accent-red-glow: rgba(220, 38, 38, 0.25);
+    --accent-rose: #e11d48;
+    --accent-blue: #0284c7;
+    --accent-blue-soft: #eaf7ff;
+    --accent-gold: #d97706;
+    --accent-green: #059669;
   }
 
   body {
@@ -25,36 +27,61 @@
   }
 }
 
-/* Glassmorphism Styles */
+/* Glassmorphism Light Styles */
 .glass-card {
-  background: var(--bg-card);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid var(--border-card);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-  border-radius: 1rem;
+  border: 1px solid #e0f2fe;
+  box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+  border-radius: 1.25rem;
 }
 
 .glass-nav {
-  background: rgba(15, 17, 23, 0.85);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(16px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid #e0f2fe;
+  box-shadow: 0 4px 20px -2px rgba(2, 132, 199, 0.04);
 }
 
 .glow-crimson {
   box-shadow: 0 0 25px var(--accent-red-glow);
 }
 
-.glow-gold {
-  box-shadow: 0 0 20px rgba(255, 183, 3, 0.3);
+.glow-blue {
+  box-shadow: 0 0 20px rgba(2, 132, 199, 0.2);
+}
+
+/* Floating Water Bubble Animations */
+@keyframes floatBubble {
+  0% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.6;
+  }
+  50% {
+    transform: translateY(-12px) scale(1.05);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.6;
+  }
+}
+
+.animate-bubble-float {
+  animation: floatBubble 6s ease-in-out infinite;
+}
+
+.animate-bubble-slow {
+  animation: floatBubble 9s ease-in-out infinite;
 }
 
 /* Heartbeat pulse animation */
 @keyframes heartbeat {
   0% { transform: scale(1); }
-  14% { transform: scale(1.1); }
+  14% { transform: scale(1.08); }
   28% { transform: scale(1); }
-  42% { transform: scale(1.15); }
+  42% { transform: scale(1.12); }
   70% { transform: scale(1); }
 }
 
@@ -64,28 +91,28 @@
 
 @keyframes pulse-glow {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.6; transform: scale(1.03); }
+  50% { opacity: 0.75; transform: scale(1.02); }
 }
 
 .animate-pulse-glow {
   animation: pulse-glow 2s infinite ease-in-out;
 }
 
-/* Custom Scrollbar */
+/* Custom Healthcare Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f1117;
+  background: #f1f5f9;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2a2e3d;
+  background: #cbd5e1;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #e63946;
+  background: #dc2626;
 }
