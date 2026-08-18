@@ -13,11 +13,12 @@ import {
   ChevronDown,
   ShieldCheck,
   Zap,
-  AlertTriangle
+  AlertTriangle,
+  Menu
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
-  const { navigateTo, setActiveEmergencyPostModal, notifications } = useApp();
+  const { navigateTo, setActiveEmergencyPostModal, notifications, isMobileSidebarOpen, setIsMobileSidebarOpen } = useApp();
   const { currentRole, currentUser, logout } = useAuth();
 
   const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
@@ -28,9 +29,19 @@ export const Header: React.FC = () => {
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-sky-100 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         
-        {/* Brand Logo & Name */}
-        <div className="cursor-pointer" onClick={() => navigateTo('landing')}>
-          <BloodNetLogo size="md" showTagline={true} />
+        {/* Brand Logo & Name + Mobile Hamburger */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
+            className="lg:hidden p-2 rounded-xl bg-sky-50 hover:bg-sky-100 text-slate-800 border border-sky-100 flex items-center justify-center"
+            title="Toggle Sidebar Menu"
+          >
+            <Menu className="w-5 h-5 text-sky-600" />
+          </button>
+
+          <div className="cursor-pointer" onClick={() => navigateTo('landing')}>
+            <BloodNetLogo size="md" showTagline={true} />
+          </div>
         </div>
 
         {/* Navigation Actions Hub */}
