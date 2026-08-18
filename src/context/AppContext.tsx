@@ -104,6 +104,10 @@ export interface AppContextType {
   setActiveHealthPassportModal: (open: boolean) => void;
   activeCorporateImpactModal: boolean;
   setActiveCorporateImpactModal: (open: boolean) => void;
+  
+  // Mobile Sidebar Drawer
+  isMobileSidebarOpen: boolean;
+  setIsMobileSidebarOpen: (open: boolean) => void;
 }
 
 const REQUESTS_STORAGE_KEY = 'bloodsphere_requests_data';
@@ -242,6 +246,30 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activePage, setActivePage] = useState<PageTab>('landing');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState<boolean>(navigator.onLine);
+  const [connectionStatus, setConnectionStatus] = useState<'ONLINE' | 'RECONNECTING' | 'OFFLINE'>(
+    navigator.onLine ? 'ONLINE' : 'OFFLINE'
+  );
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsRealtimeConnected(true);
+      setConnectionStatus('ONLINE');
+    };
+    const handleOffline = () => {
+      setIsRealtimeConnected(false);
+      setConnectionStatus('OFFLINE');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   // Initialize requests with enriched real-time data
   const [requests, setRequests] = useState<EmergencyRequest[]>(() => {
@@ -1362,6 +1390,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         notifications,
         toastMessage,
         showToast,
+        isRealtimeConnected,
+        connectionStatus,
         activeSmartMatchModal,
         setActiveSmartMatchModal,
         activeEmergencyPostModal,
@@ -1373,7 +1403,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         activeHealthPassportModal,
         setActiveHealthPassportModal,
         activeCorporateImpactModal,
-        setActiveCorporateImpactModal
+        setActiveCorporateImpactModal,
+        isMobileSidebarOpen,
+        setIsMobileSidebarOpen
       }}
     >
       {children}
