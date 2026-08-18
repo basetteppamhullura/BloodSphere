@@ -87,6 +87,10 @@ export interface AppContextType {
   toastMessage: string | null;
   showToast: (msg: string) => void;
   
+  // Real-Time Connection Status
+  isRealtimeConnected: boolean;
+  connectionStatus: 'ONLINE' | 'RECONNECTING' | 'OFFLINE';
+
   // Modals
   activeSmartMatchModal: EmergencyRequest | null;
   setActiveSmartMatchModal: (req: EmergencyRequest | null) => void;
