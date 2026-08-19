@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { BloodNetLogo } from '../common/BloodNetLogo';
@@ -18,12 +19,24 @@ import {
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
-  const { navigateTo, setActiveEmergencyPostModal, notifications, isMobileSidebarOpen, setIsMobileSidebarOpen } = useApp();
+  const { setActiveEmergencyPostModal, isMobileSidebarOpen, setIsMobileSidebarOpen } = useApp();
   const { currentRole, currentUser, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const handleLogout = () => {
+    const roleBeforeLogout = currentRole;
+    logout();
+    const loginPaths: Record<string, string> = {
+      donor: '/login',
+      requester: '/login',
+      hospital: '/login/hospital',
+      bloodbank: '/login/bloodbank',
+      admin: '/login/admin'
+    };
+    navigate(loginPaths[roleBeforeLogout] || '/login', { replace: true });
+  };
 
   return (
     <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-sky-100 shadow-xs">
@@ -39,9 +52,9 @@ export const Header: React.FC = () => {
             <Menu className="w-5 h-5 text-sky-600" />
           </button>
 
-          <div className="cursor-pointer" onClick={() => navigateTo('landing')}>
+          <Link to="/" className="cursor-pointer">
             <BloodNetLogo size="md" showTagline={true} />
-          </div>
+          </Link>
         </div>
 
         {/* Navigation Actions Hub */}
@@ -71,27 +84,23 @@ export const Header: React.FC = () => {
                   Select Login Portal
                 </div>
 
-                <div
-                  onClick={() => {
-                    setIsLoginDropdownOpen(false);
-                    navigateTo('login-donor-requester');
-                  }}
+                <Link
+                  to="/login"
+                  onClick={() => setIsLoginDropdownOpen(false)}
                   className="p-2.5 rounded-xl hover:bg-sky-50 cursor-pointer flex items-center justify-between text-slate-800"
                 >
                   <div className="flex items-center gap-2">
                     <User className="w-4 h-4 text-red-600" />
                     <div>
                       <span className="font-bold block">Donor & Requester</span>
-                      <span className="text-[10px] text-slate-400 font-mono">/login/donor-requester</span>
+                      <span className="text-[10px] text-slate-400 font-mono">/login</span>
                     </div>
                   </div>
-                </div>
+                </Link>
 
-                <div
-                  onClick={() => {
-                    setIsLoginDropdownOpen(false);
-                    navigateTo('login-hospital');
-                  }}
+                <Link
+                  to="/login/hospital"
+                  onClick={() => setIsLoginDropdownOpen(false)}
                   className="p-2.5 rounded-xl hover:bg-sky-50 cursor-pointer flex items-center justify-between text-slate-800"
                 >
                   <div className="flex items-center gap-2">
@@ -102,13 +111,11 @@ export const Header: React.FC = () => {
                     </div>
                   </div>
                   <Lock className="w-3.5 h-3.5 text-sky-600" />
-                </div>
+                </Link>
 
-                <div
-                  onClick={() => {
-                    setIsLoginDropdownOpen(false);
-                    navigateTo('login-bloodbank');
-                  }}
+                <Link
+                  to="/login/bloodbank"
+                  onClick={() => setIsLoginDropdownOpen(false)}
                   className="p-2.5 rounded-xl hover:bg-sky-50 cursor-pointer flex items-center justify-between text-slate-800"
                 >
                   <div className="flex items-center gap-2">
@@ -119,13 +126,11 @@ export const Header: React.FC = () => {
                     </div>
                   </div>
                   <Lock className="w-3.5 h-3.5 text-emerald-600" />
-                </div>
+                </Link>
 
-                <div
-                  onClick={() => {
-                    setIsLoginDropdownOpen(false);
-                    navigateTo('login-admin');
-                  }}
+                <Link
+                  to="/login/admin"
+                  onClick={() => setIsLoginDropdownOpen(false)}
                   className="p-2.5 rounded-xl hover:bg-amber-50 cursor-pointer flex items-center justify-between text-slate-800 border-t border-slate-100"
                 >
                   <div className="flex items-center gap-2">
@@ -136,7 +141,7 @@ export const Header: React.FC = () => {
                     </div>
                   </div>
                   <Lock className="w-3.5 h-3.5 text-amber-600" />
-                </div>
+                </Link>
               </div>
             )}
           </div>
@@ -144,13 +149,14 @@ export const Header: React.FC = () => {
           {/* User Profile Badge */}
           {currentUser && (
             <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-              <span className="font-bold text-xs text-slate-800 hidden md:inline">{currentUser.name}</span>
+              <span className="font-bold text-xs text-slate-800 hidden md:inline">{currentUser.name} ({currentRole.toUpperCase()})</span>
               <button
-                onClick={logout}
-                className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                onClick={handleLogout}
+                className="p-2 rounded-xl text-slate-400 hover:text-red-600 hover:bg-red-50 transition-all flex items-center gap-1"
                 title="Logout"
               >
                 <LogOut className="w-4 h-4" />
+                <span className="text-[11px] font-bold text-slate-600 hidden lg:inline">Logout</span>
               </button>
             </div>
           )}

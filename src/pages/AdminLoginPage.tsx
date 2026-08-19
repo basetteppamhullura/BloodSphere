@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { BloodNetLogo } from '../components/common/BloodNetLogo';
@@ -6,7 +7,8 @@ import { ShieldCheck, LogIn, Lock, AlertCircle } from 'lucide-react';
 
 export const AdminLoginPage: React.FC = () => {
   const { login } = useAuth();
-  const { navigateTo, showToast } = useApp();
+  const { showToast } = useApp();
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState('admin@bloodnet.gov.in');
   const [password, setPassword] = useState('••••••••');
@@ -19,7 +21,7 @@ export const AdminLoginPage: React.FC = () => {
     const res = login(email, 'admin');
     if (res.success) {
       showToast(res.message);
-      navigateTo('dashboard');
+      navigate('/admin/dashboard', { replace: true });
     } else {
       setLoginError(res.message);
     }

@@ -1,11 +1,10 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { BloodNetLogo } from '../common/BloodNetLogo';
 import { Heart, PhoneCall, ShieldCheck, ExternalLink, MapPin, Mail, Droplet } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { navigateTo } = useApp();
-
   return (
     <footer className="bg-white border-t border-sky-100 text-slate-600 text-xs mt-12 shadow-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -38,20 +37,20 @@ export const Footer: React.FC = () => {
           <div className="space-y-2">
             <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">Portals & Login Routes</h4>
             <ul className="space-y-1.5 font-medium text-slate-600">
-              <li><button onClick={() => navigateTo('login-donor-requester')} className="hover:text-red-600 transition-colors">Donor & Requester Portal</button></li>
-              <li><button onClick={() => navigateTo('login-hospital')} className="hover:text-sky-600 transition-colors">Hospital Trauma Center</button></li>
-              <li><button onClick={() => navigateTo('login-bloodbank')} className="hover:text-emerald-600 transition-colors">Blood Bank Operations</button></li>
-              <li><button onClick={() => navigateTo('login-admin')} className="hover:text-amber-600 transition-colors">Super Admin Control</button></li>
+              <li><Link to="/login" className="hover:text-red-600 transition-colors">Donor & Requester Portal</Link></li>
+              <li><Link to="/login/hospital" className="hover:text-sky-600 transition-colors">Hospital Trauma Center</Link></li>
+              <li><Link to="/login/bloodbank" className="hover:text-emerald-600 transition-colors">Blood Bank Operations</Link></li>
+              <li><Link to="/login/admin" className="hover:text-amber-600 transition-colors">Super Admin Control</Link></li>
             </ul>
           </div>
 
           <div className="space-y-2">
             <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">Emergency Network</h4>
             <ul className="space-y-1.5 font-medium text-slate-600">
-              <li><button onClick={() => navigateTo('emergency-requests')} className="hover:text-red-600 transition-colors">🚨 Emergency Request Board</button></li>
-              <li><button onClick={() => navigateTo('rare-registry')} className="hover:text-sky-600 transition-colors">🛡️ Rare Blood Registry</button></li>
-              <li><button onClick={() => navigateTo('group-circles')} className="hover:text-sky-600 transition-colors">Family & Circles</button></li>
-              <li><button onClick={() => navigateTo('donor-search')} className="hover:text-sky-600 transition-colors">Donor Directory Search</button></li>
+              <li><Link to="/donor/emergency" className="hover:text-red-600 transition-colors">🚨 Emergency Request Board</Link></li>
+              <li><Link to="/donor/rare-blood" className="hover:text-sky-600 transition-colors">🛡️ Rare Blood Registry</Link></li>
+              <li><Link to="/donor/family" className="hover:text-sky-600 transition-colors">Family & Circles</Link></li>
+              <li><Link to="/donor/directory" className="hover:text-sky-600 transition-colors">Donor Directory Search</Link></li>
             </ul>
           </div>
 

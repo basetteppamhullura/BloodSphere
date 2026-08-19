@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { UserRole } from '../types';
@@ -7,7 +8,8 @@ import { LogIn, ShieldCheck, User, Building2, Droplet, Lock, AlertCircle, KeyRou
 
 export const LoginPage: React.FC = () => {
   const { login, verifyTwoFactorOtp, failedAttemptsMap } = useAuth();
-  const { navigateTo, showToast } = useApp();
+  const { showToast } = useApp();
+  const navigate = useNavigate();
 
   const [activePortalTab, setActivePortalTab] = useState<'donor_requester' | 'hospital' | 'bloodbank' | 'admin'>('donor_requester');
   const [selectedRole, setSelectedRole] = useState<UserRole>('donor');
@@ -21,6 +23,23 @@ export const LoginPage: React.FC = () => {
   const [otpInput, setOtpInput] = useState('778899');
 
   const [loginError, setLoginError] = useState<string | null>(null);
+
+  const getDashboardPath = (role: UserRole) => {
+    switch (role) {
+      case 'donor':
+        return '/donor/dashboard';
+      case 'requester':
+        return '/requester/dashboard';
+      case 'hospital':
+        return '/hospital/dashboard';
+      case 'bloodbank':
+        return '/bloodbank/dashboard';
+      case 'admin':
+        return '/admin/dashboard';
+      default:
+        return '/donor/dashboard';
+    }
+  };
 
   const handlePortalSwitch = (portal: 'donor_requester' | 'hospital' | 'bloodbank' | 'admin') => {
     setActivePortalTab(portal);
@@ -62,7 +81,7 @@ export const LoginPage: React.FC = () => {
       showToast(res.message);
     } else if (res.success) {
       showToast(res.message);
-      navigateTo('dashboard');
+      navigate(getDashboardPath(selectedRole), { replace: true });
     } else {
       setLoginError(res.message);
     }
@@ -75,7 +94,7 @@ export const LoginPage: React.FC = () => {
     const res = verifyTwoFactorOtp(otpInput);
     if (res.success) {
       showToast(res.message);
-      navigateTo('dashboard');
+      navigate(getDashboardPath(selectedRole), { replace: true });
     } else {
       setLoginError(res.message);
     }
