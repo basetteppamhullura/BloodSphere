@@ -97,19 +97,19 @@ export const LandingPage: React.FC = () => {
 
             {/* HERO BUTTONS */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <button
-                onClick={() => navigateTo('donor-search')}
+              <Link
+                to={currentUser ? `/${currentRole}/directory` : "/login"}
                 className="px-6 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-md shadow-sky-500/25 flex items-center gap-2 transition-all hover:scale-105"
               >
                 <Search className="w-4 h-4" /> Find Blood Now
-              </button>
+              </Link>
 
-              <button
-                onClick={() => navigateTo('camps')}
+              <Link
+                to={currentUser ? `/${currentRole}/camps` : "/login"}
                 className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md shadow-red-500/25 flex items-center gap-2 transition-all hover:scale-105"
               >
                 <Heart className="w-4 h-4 fill-white" /> Donate Blood
-              </button>
+              </Link>
 
               <button
                 onClick={() => setActiveEmergencyPostModal(true)}

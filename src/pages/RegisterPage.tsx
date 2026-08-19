@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { UserRole, BloodGroup } from '../types';
@@ -6,8 +7,9 @@ import { BloodNetLogo } from '../components/common/BloodNetLogo';
 import { UserPlus, User, Building2, Droplet, CheckCircle2 } from 'lucide-react';
 
 export const RegisterPage: React.FC = () => {
-  const { register } = useAuth();
-  const { navigateTo, showToast } = useApp();
+  const { registerPortalAccount } = useAuth();
+  const { showToast } = useApp();
+  const navigate = useNavigate();
 
   const [role, setRole] = useState<UserRole>('donor');
   const [name, setName] = useState('');
@@ -21,20 +23,25 @@ export const RegisterPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const res = register({
+    const createdAcc = registerPortalAccount({
       name,
       email,
       phone,
-      password,
       role,
-      bloodGroup: role === 'donor' || role === 'requester' ? bloodGroup : undefined,
       city,
       licenseNumber: role === 'hospital' || role === 'bloodbank' ? licenseNumber : undefined
     });
 
-    if (res.success) {
-      showToast(res.message);
-      navigateTo('dashboard');
+    if (createdAcc) {
+      showToast(`Account registered successfully for ${name}!`);
+      const defaultRolePath: Record<UserRole, string> = {
+        donor: '/donor/dashboard',
+        requester: '/requester/dashboard',
+        hospital: '/hospital/dashboard',
+        bloodbank: '/bloodbank/dashboard',
+        admin: '/admin/dashboard'
+      };
+      navigate(defaultRolePath[role] || '/login', { replace: true });
     }
   };
 
