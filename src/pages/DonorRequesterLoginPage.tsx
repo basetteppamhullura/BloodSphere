@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { UserRole } from '../types';
@@ -7,7 +8,8 @@ import { LogIn, User, AlertCircle } from 'lucide-react';
 
 export const DonorRequesterLoginPage: React.FC = () => {
   const { login } = useAuth();
-  const { navigateTo, showToast } = useApp();
+  const { showToast } = useApp();
+  const navigate = useNavigate();
 
   const [selectedRole, setSelectedRole] = useState<UserRole>('donor');
   const [email, setEmail] = useState('ananya.sharma@example.com');
@@ -28,7 +30,11 @@ export const DonorRequesterLoginPage: React.FC = () => {
     const res = login(email, selectedRole);
     if (res.success) {
       showToast(res.message);
-      navigateTo('dashboard');
+      if (selectedRole === 'donor') {
+        navigate('/donor/dashboard', { replace: true });
+      } else {
+        navigate('/requester/dashboard', { replace: true });
+      }
     } else {
       setLoginError(res.message);
     }

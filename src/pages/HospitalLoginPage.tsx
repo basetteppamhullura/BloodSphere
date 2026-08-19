@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { BloodNetLogo } from '../components/common/BloodNetLogo';
@@ -6,7 +7,8 @@ import { Building2, LogIn, Lock, AlertCircle, KeyRound, Check } from 'lucide-rea
 
 export const HospitalLoginPage: React.FC = () => {
   const { login, verifyTwoFactorOtp } = useAuth();
-  const { navigateTo, showToast } = useApp();
+  const { showToast } = useApp();
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState('admin@kims.edu.in');
   const [password, setPassword] = useState('••••••••');
@@ -26,7 +28,7 @@ export const HospitalLoginPage: React.FC = () => {
       showToast(res.message);
     } else if (res.success) {
       showToast(res.message);
-      navigateTo('dashboard');
+      navigate('/hospital/dashboard', { replace: true });
     } else {
       setLoginError(res.message);
     }
@@ -39,7 +41,7 @@ export const HospitalLoginPage: React.FC = () => {
     const res = verifyTwoFactorOtp(otpInput);
     if (res.success) {
       showToast(res.message);
-      navigateTo('dashboard');
+      navigate('/hospital/dashboard', { replace: true });
     } else {
       setLoginError(res.message);
     }

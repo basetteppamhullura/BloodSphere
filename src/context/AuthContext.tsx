@@ -10,7 +10,8 @@ interface AuthContextType {
   verifyTwoFactorOtp: (otp: string) => { success: boolean; message: string };
   logout: () => void;
   isPageAllowedForRole: (page: PageTab, role: UserRole) => boolean;
-  
+  authorizeRole: (requiredRole: UserRole) => { isAuthorized: boolean; userRole: UserRole | null; redirectPath: string };
+
   // Unified Donor/Requester Perspective Toggle
   unifiedPerspective: 'donor' | 'requester';
   setUnifiedPerspective: (view: 'donor' | 'requester') => void;
@@ -26,6 +27,7 @@ interface AuthContextType {
 const ROLE_STORAGE_KEY = 'bloodsphere_active_role';
 const ACCOUNTS_STORAGE_KEY = 'bloodsphere_portal_accounts';
 const PERSPECTIVE_STORAGE_KEY = 'bloodsphere_unified_perspective';
+const USER_STORAGE_KEY = 'bloodsphere_current_user';
 
 const SEED_PORTAL_ACCOUNTS: PortalAccount[] = [
   {
@@ -121,10 +123,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [failedAttemptsMap, setFailedAttemptsMap] = useState<Record<string, number>>({});
   const [pending2FAUser, setPending2FAUser] = useState<{ email: string; role: UserRole; account: PortalAccount } | null>(null);
 
-  const [currentUser, setCurrentUser] = useState<User | null>(() => ({
-    ...MOCK_CURRENT_USER,
-    role: (localStorage.getItem(ROLE_STORAGE_KEY) as UserRole) || 'donor'
-  }));
+  const [currentUser, setCurrentUser] = useState<User | null>(() => {
+    const savedUser = localStorage.getItem(USER_STORAGE_KEY);
+    if (savedUser) {
+      try {
+        return JSON.parse(savedUser);
+      } catch (e) {
+        // Fallback
+      }
+    }
+    const savedRole = localStorage.getItem(ROLE_STORAGE_KEY) as UserRole || 'donor';
+    return {
+      ...MOCK_CURRENT_USER,
+      role: savedRole
+    };
+  });
 
   useEffect(() => {
     localStorage.setItem(ROLE_STORAGE_KEY, currentRole);
@@ -138,6 +151,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem(ACCOUNTS_STORAGE_KEY, JSON.stringify(portalAccounts));
   }, [portalAccounts]);
 
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(currentUser));
+    } else {
+      localStorage.removeItem(USER_STORAGE_KEY);
+    }
+  }, [currentUser]);
+
   const setUnifiedPerspective = (view: 'donor' | 'requester') => {
     setUnifiedPerspectiveState(view);
     localStorage.setItem(PERSPECTIVE_STORAGE_KEY, view);
@@ -148,7 +169,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setCurrentRole(role);
     localStorage.setItem(ROLE_STORAGE_KEY, role);
     if (currentUser) {
-      setCurrentUser({ ...currentUser, role });
+      const updatedUser = { ...currentUser, role };
+      setCurrentUser(updatedUser);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(updatedUser));
     }
   };
 
@@ -194,12 +217,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setFailedAttemptsMap(prev => ({ ...prev, [accountKey]: 0 }));
 
     switchRole(role);
-    setCurrentUser({
+    const newUser: User = {
       ...MOCK_CURRENT_USER,
       email,
       role,
       name: account?.name || MOCK_CURRENT_USER.name
-    });
+    };
+    setCurrentUser(newUser);
+    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
 
     return { success: true, message: `Logged in successfully as ${role.toUpperCase()}!` };
   };
@@ -215,12 +240,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setFailedAttemptsMap(prev => ({ ...prev, [accountKey]: 0 }));
 
       switchRole(role);
-      setCurrentUser({
+      const newUser: User = {
         ...MOCK_CURRENT_USER,
         email,
         role,
         name: account.name
-      });
+      };
+      setCurrentUser(newUser);
+      localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
       setPending2FAUser(null);
       return { success: true, message: `2FA Verified! Welcome ${account.name}.` };
     }
@@ -265,11 +292,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     setCurrentUser(null);
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(ROLE_STORAGE_KEY);
   };
 
   const isPageAllowedForRole = (page: PageTab, role: UserRole): boolean => {
     const allowed = ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS.donor;
     return allowed.includes(page);
+  };
+
+  const authorizeRole = (requiredRole: UserRole): { isAuthorized: boolean; userRole: UserRole | null; redirectPath: string } => {
+    if (!currentUser) {
+      const loginPaths: Record<UserRole, string> = {
+        donor: '/login',
+        requester: '/login',
+        hospital: '/login/hospital',
+        bloodbank: '/login/bloodbank',
+        admin: '/login/admin'
+      };
+      return { isAuthorized: false, userRole: null, redirectPath: loginPaths[requiredRole] || '/login' };
+    }
+
+    if (currentRole !== requiredRole) {
+      const defaultRolePath: Record<UserRole, string> = {
+        donor: '/donor/dashboard',
+        requester: '/requester/dashboard',
+        hospital: '/hospital/dashboard',
+        bloodbank: '/bloodbank/dashboard',
+        admin: '/admin/dashboard'
+      };
+      return { isAuthorized: false, userRole: currentRole, redirectPath: defaultRolePath[currentRole] || '/login' };
+    }
+
+    return { isAuthorized: true, userRole: currentRole, redirectPath: '' };
   };
 
   return (
@@ -282,6 +337,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         verifyTwoFactorOtp,
         logout,
         isPageAllowedForRole,
+        authorizeRole,
         unifiedPerspective,
         setUnifiedPerspective,
         portalAccounts,

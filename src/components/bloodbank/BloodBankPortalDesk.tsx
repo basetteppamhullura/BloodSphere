@@ -46,7 +46,11 @@ const REGIONAL_INSTITUTIONS: NearbyInstitution[] = [
   { id: 'inst_5', name: 'Lifeline Regional Blood Center', type: 'bloodbank', city: 'Belagavi', lat: 15.852, lng: 74.502, surplusGroup: 'AB+', surplusUnits: 20 }
 ];
 
-export const BloodBankPortalDesk: React.FC = () => {
+export interface BloodBankPortalDeskProps {
+  initialTab?: 'dashboard' | 'queue' | 'inventory' | 'lifecycle' | 'expiry' | 'alerts' | 'activity' | 'reports' | 'nearby';
+}
+
+export const BloodBankPortalDesk: React.FC<BloodBankPortalDeskProps> = ({ initialTab = 'dashboard' }) => {
   const {
     requests,
     inventoryStockMap,
@@ -73,7 +77,7 @@ export const BloodBankPortalDesk: React.FC = () => {
   // Navigation Tab State
   const [activeTab, setActiveTab] = useState<
     'dashboard' | 'queue' | 'inventory' | 'lifecycle' | 'expiry' | 'alerts' | 'activity' | 'reports' | 'nearby'
-  >('dashboard');
+  >(initialTab);
 
   // Filters & Search State
   const [searchQuery, setSearchQuery] = useState<string>('');

@@ -52,17 +52,25 @@ export interface AdminAuditEntry {
   details: string;
 }
 
-export const AdminControlCenterDesk: React.FC = () => {
+export interface AdminControlCenterDeskProps {
+  initialTab?: 'overview' | 'users' | 'requests' | 'fraud' | 'audit' | 'analytics' | 'network';
+  initialRoleFilter?: string;
+}
+
+export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
+  initialTab = 'overview',
+  initialRoleFilter = 'ALL'
+}) => {
   const { requests, inventoryStockMap, bloodUnitsList, showToast } = useApp();
   const { portalAccounts, updateAccountStatusByAdmin, currentUser } = useAuth();
   const adminName = currentUser?.name || 'Super Admin (System Control)';
 
   const [activeTab, setActiveTab] = useState<
     'overview' | 'users' | 'requests' | 'fraud' | 'audit' | 'analytics' | 'network'
-  >('overview');
+  >(initialTab);
 
   const [searchAccountQuery, setSearchAccountQuery] = useState('');
-  const [roleFilter, setRoleFilter] = useState('ALL');
+  const [roleFilter, setRoleFilter] = useState(initialRoleFilter);
 
   // Compute live admin statistics
   const totalAccountsCount = portalAccounts.length;

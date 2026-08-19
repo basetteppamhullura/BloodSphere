@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { BloodNetLogo } from '../components/common/BloodNetLogo';
@@ -6,7 +7,8 @@ import { Droplet, LogIn, Lock, AlertCircle } from 'lucide-react';
 
 export const BloodBankLoginPage: React.FC = () => {
   const { login } = useAuth();
-  const { navigateTo, showToast } = useApp();
+  const { showToast } = useApp();
+  const navigate = useNavigate();
 
   const [email, setEmail] = useState('contact@rotaryblood.org');
   const [password, setPassword] = useState('••••••••');
@@ -21,7 +23,7 @@ export const BloodBankLoginPage: React.FC = () => {
     const res = login(email, 'bloodbank', licenseNumber);
     if (res.success) {
       showToast(res.message);
-      navigateTo('dashboard');
+      navigate('/bloodbank/dashboard', { replace: true });
     } else {
       setLoginError(res.message);
     }

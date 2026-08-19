@@ -52,7 +52,11 @@ function calculateTimeAgo(timestampStr: string): string {
   return `${Math.floor(hrs / 24)} days ago`;
 }
 
-export const HospitalMonitorDesk: React.FC = () => {
+export interface HospitalMonitorDeskProps {
+  initialTab?: 'monitor' | 'audit_log';
+}
+
+export const HospitalMonitorDesk: React.FC<HospitalMonitorDeskProps> = ({ initialTab = 'monitor' }) => {
   const {
     requests,
     approveRequestByHospital,
@@ -69,7 +73,7 @@ export const HospitalMonitorDesk: React.FC = () => {
   const [lowThreshold, setLowThreshold] = useState<number>(5);
 
   // Active Desk Tab: 'monitor' | 'audit_log'
-  const [deskTab, setDeskTab] = useState<'monitor' | 'audit_log'>('monitor');
+  const [deskTab, setDeskTab] = useState<'monitor' | 'audit_log'>(initialTab);
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState<string>('');
