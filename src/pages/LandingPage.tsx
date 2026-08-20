@@ -42,11 +42,36 @@ export const LandingPage: React.FC = () => {
     notifications
   } = useApp();
 
-  const { currentUser } = useAuth();
+  const { currentUser, currentRole } = useAuth();
+  const navigate = useNavigate();
 
   // Find active donor profile
   const loggedInDonor = donors.find(d => d.email === currentUser?.email || d.id === currentUser?.id) || donors[0];
   const eligibility = checkDonorEligibility(loggedInDonor);
+
+  const getFindBloodPath = () => {
+    if (!currentUser) return '/login';
+    const paths: Record<string, string> = {
+      donor: '/donor/directory',
+      requester: '/requester/find-blood',
+      hospital: '/hospital/blood-availability',
+      bloodbank: '/bloodbank/inventory',
+      admin: '/admin/dashboard'
+    };
+    return paths[currentRole] || '/login';
+  };
+
+  const getDonateBloodPath = () => {
+    if (!currentUser) return '/login';
+    const paths: Record<string, string> = {
+      donor: '/donor/emergency',
+      requester: '/requester/requests',
+      hospital: '/hospital/requests',
+      bloodbank: '/bloodbank/requests',
+      admin: '/admin/requests'
+    };
+    return paths[currentRole] || '/login';
+  };
 
   // Compute live metrics
   const activeNearbyRequests = requests.filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED');
@@ -98,14 +123,14 @@ export const LandingPage: React.FC = () => {
             {/* HERO BUTTONS */}
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
-                to={currentUser ? `/${currentRole}/directory` : "/login"}
+                to={getFindBloodPath()}
                 className="px-6 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-md shadow-sky-500/25 flex items-center gap-2 transition-all hover:scale-105"
               >
                 <Search className="w-4 h-4" /> Find Blood Now
               </Link>
 
               <Link
-                to={currentUser ? `/${currentRole}/camps` : "/login"}
+                to={getDonateBloodPath()}
                 className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md shadow-red-500/25 flex items-center gap-2 transition-all hover:scale-105"
               >
                 <Heart className="w-4 h-4 fill-white" /> Donate Blood
@@ -205,7 +230,7 @@ export const LandingPage: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <button
-              onClick={() => navigateTo('emergency-requests')}
+              onClick={() => navigate(getDonateBloodPath())}
               className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center gap-1.5"
             >
               <AlertTriangle className="w-4 h-4" /> View Emergency Board
