@@ -48,15 +48,3 @@ export const BloodBankLayout: React.FC = () => {
     </div>
   );
 };
-
-      {/* Global Modals */}
-      <EmergencyPostModal />
-
-      {/* Footer */}
-      <Footer />
-
-      {/* Mobile Bottom Navigation */}
-      <MobileNav />
-    </div>
-  );
-};

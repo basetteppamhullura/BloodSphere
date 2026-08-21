@@ -15,15 +15,18 @@ import {
   ShieldCheck,
   Zap,
   AlertTriangle,
-  Menu
+  Menu,
+  MessageSquare
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
-  const { setActiveEmergencyPostModal, isMobileSidebarOpen, setIsMobileSidebarOpen } = useApp();
+  const { setActiveEmergencyPostModal, isMobileSidebarOpen, setIsMobileSidebarOpen, chatSessions, openEmergencyChat } = useApp();
   const { currentRole, currentUser, logout } = useAuth();
   const navigate = useNavigate();
 
   const [isLoginDropdownOpen, setIsLoginDropdownOpen] = useState(false);
+
+  const activeChats = chatSessions.filter(s => s.status === 'active');
 
   const handleLogout = () => {
     const roleBeforeLogout = currentRole;
@@ -60,6 +63,21 @@ export const Header: React.FC = () => {
         {/* Navigation Actions Hub */}
         <div className="flex items-center gap-3">
           
+          {/* Emergency Chat Launcher */}
+          {activeChats.length > 0 && (
+            <button
+              onClick={() => openEmergencyChat(activeChats[0].requestId)}
+              className="px-3 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-extrabold text-xs flex items-center gap-1.5 hover:bg-red-100 transition-colors relative"
+              title="Open Private Real-Time Emergency Chat"
+            >
+              <MessageSquare className="w-4 h-4 text-red-600" />
+              <span className="hidden sm:inline">Emergency Chat</span>
+              <span className="w-4 h-4 rounded-full bg-red-600 text-white text-[9px] font-black flex items-center justify-center">
+                {activeChats.length}
+              </span>
+            </button>
+          )}
+
           <button
             onClick={() => setActiveEmergencyPostModal(true)}
             className="hidden sm:flex px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-sm shadow-red-500/20 items-center gap-1.5 transition-all hover:scale-105"

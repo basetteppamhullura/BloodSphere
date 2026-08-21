@@ -6,6 +6,7 @@ import { AdminSidebar } from './AdminSidebar';
 import { Footer } from './Footer';
 import { MobileNav } from './MobileNav';
 import { EmergencyPostModal } from '../modals/EmergencyPostModal';
+import { EmergencyChatModal } from '../chat/EmergencyChatModal';
 import { WaterBubbleBackground } from '../common/WaterBubbleBackground';
 
 export const AdminLayout: React.FC = () => {
@@ -37,6 +38,7 @@ export const AdminLayout: React.FC = () => {
 
       {/* Global Modals */}
       <EmergencyPostModal />
+      <EmergencyChatModal />
 
       {/* Footer */}
       <Footer />

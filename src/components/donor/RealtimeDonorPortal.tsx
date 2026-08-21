@@ -206,10 +206,10 @@ export const RealtimeDonorPortal: React.FC = () => {
                       <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between">
                         <span>✅ You accepted this emergency request</span>
                         <button
-                          onClick={() => setActiveChatModal({ request: req, donor: loggedInDonor })}
-                          className="px-3 py-1 rounded-xl bg-indigo-600 text-white text-[11px] font-bold"
+                          onClick={() => openEmergencyChat(req.id, loggedInDonor.id)}
+                          className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white text-[11px] font-extrabold flex items-center gap-1 shadow-xs transition-all hover:scale-105"
                         >
-                          Privacy Chat
+                          <MessageSquare className="w-3.5 h-3.5" /> Open Private Chat
                         </button>
                       </div>
                     ) : isDeclined ? (
