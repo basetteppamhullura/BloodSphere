@@ -32,7 +32,7 @@ export const RealtimeDonorPortal: React.FC = () => {
     donors,
     donorRespondToRequest,
     toggleDonorAvailability,
-    setActiveChatModal,
+    openEmergencyChat,
     leaderboard,
     showToast
   } = useApp();

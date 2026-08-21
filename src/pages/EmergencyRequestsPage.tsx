@@ -8,7 +8,8 @@ import {
   MapPin,
   Check,
   X,
-  Building2
+  Building2,
+  MessageSquare
 } from 'lucide-react';
 
 export const EmergencyRequestsPage: React.FC = () => {
@@ -17,7 +18,7 @@ export const EmergencyRequestsPage: React.FC = () => {
     donors,
     donorRespondToRequest,
     setActiveEmergencyPostModal,
-    setActiveChatModal
+    openEmergencyChat
   } = useApp();
 
   const { currentUser } = useAuth();
