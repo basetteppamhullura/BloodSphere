@@ -315,3 +315,64 @@ export interface InterCityTransfer {
   courierStatus: 'In Transit' | 'Dispatch Pending' | 'Delivered';
   etaMinutes: number;
 }
+
+// ==================================================
+// PRIVATE REAL-TIME EMERGENCY CHAT TYPES
+// ==================================================
+export type MessageType = 
+  | 'text' 
+  | 'hospital_location' 
+  | 'hospital_details' 
+  | 'eta' 
+  | 'appointment_details' 
+  | 'confirm_availability' 
+  | 'decline' 
+  | 'report_issue';
+
+export interface EmergencyChatMessage {
+  id: string;
+  senderId: string;
+  senderName: string;
+  senderRole: UserRole;
+  message: string;
+  messageType: MessageType;
+  timestamp: string;
+  read: boolean;
+  metadata?: {
+    location?: { lat: number; lng: number; address: string };
+    hospitalName?: string;
+    etaMinutes?: number;
+    appointmentDate?: string;
+    appointmentTime?: string;
+    venue?: string;
+  };
+}
+
+export type EmergencyChatStatus = 'active' | 'completed' | 'cancelled' | 'closed';
+
+export interface EmergencyChatSession {
+  id: string; // "chat-{requestId}"
+  requestId: string;
+  requesterId: string;
+  requesterName: string;
+  donorId: string;
+  donorName: string;
+  donorBloodGroup: BloodGroup;
+  patientName: string;
+  bloodGroup: BloodGroup;
+  hospitalName: string;
+  hospitalAddress?: string;
+  messages: EmergencyChatMessage[];
+  status: EmergencyChatStatus;
+  createdAt: string;
+  updatedAt: string;
+  lastMessageText?: string;
+  lastMessageTimestamp?: string;
+  isRequesterTyping?: boolean;
+  isDonorTyping?: boolean;
+  isRequesterOnline?: boolean;
+  isDonorOnline?: boolean;
+  unreadCountRequester?: number;
+  unreadCountDonor?: number;
+}
+

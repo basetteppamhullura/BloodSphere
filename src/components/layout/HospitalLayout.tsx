@@ -6,6 +6,7 @@ import { HospitalSidebar } from './HospitalSidebar';
 import { Footer } from './Footer';
 import { MobileNav } from './MobileNav';
 import { EmergencyPostModal } from '../modals/EmergencyPostModal';
+import { EmergencyChatModal } from '../chat/EmergencyChatModal';
 import { WaterBubbleBackground } from '../common/WaterBubbleBackground';
 
 export const HospitalLayout: React.FC = () => {
@@ -37,6 +38,7 @@ export const HospitalLayout: React.FC = () => {
 
       {/* Global Modals */}
       <EmergencyPostModal />
+      <EmergencyChatModal />
 
       {/* Footer */}
       <Footer />

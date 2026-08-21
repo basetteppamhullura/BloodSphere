@@ -5,6 +5,7 @@ import { Header } from './Header';
 import { Footer } from './Footer';
 import { MobileNav } from './MobileNav';
 import { EmergencyPostModal } from '../modals/EmergencyPostModal';
+import { EmergencyChatModal } from '../chat/EmergencyChatModal';
 import { WaterBubbleBackground } from '../common/WaterBubbleBackground';
 
 export const PublicLayout: React.FC = () => {
@@ -27,6 +28,7 @@ export const PublicLayout: React.FC = () => {
       </main>
 
       <EmergencyPostModal />
+      <EmergencyChatModal />
       <Footer />
       <MobileNav />
     </div>

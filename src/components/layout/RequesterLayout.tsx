@@ -6,6 +6,7 @@ import { RequesterSidebar } from './RequesterSidebar';
 import { Footer } from './Footer';
 import { MobileNav } from './MobileNav';
 import { EmergencyPostModal } from '../modals/EmergencyPostModal';
+import { EmergencyChatModal } from '../chat/EmergencyChatModal';
 import { WaterBubbleBackground } from '../common/WaterBubbleBackground';
 
 export const RequesterLayout: React.FC = () => {
@@ -37,6 +38,7 @@ export const RequesterLayout: React.FC = () => {
 
       {/* Global Modals */}
       <EmergencyPostModal />
+      <EmergencyChatModal />
 
       {/* Footer */}
       <Footer />

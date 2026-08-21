@@ -6,6 +6,7 @@ import { BloodBankSidebar } from './BloodBankSidebar';
 import { Footer } from './Footer';
 import { MobileNav } from './MobileNav';
 import { EmergencyPostModal } from '../modals/EmergencyPostModal';
+import { EmergencyChatModal } from '../chat/EmergencyChatModal';
 import { WaterBubbleBackground } from '../common/WaterBubbleBackground';
 
 export const BloodBankLayout: React.FC = () => {
@@ -34,6 +35,19 @@ export const BloodBankLayout: React.FC = () => {
           <Outlet />
         </main>
       </div>
+
+      {/* Global Modals */}
+      <EmergencyPostModal />
+      <EmergencyChatModal />
+
+      {/* Footer */}
+      <Footer />
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav />
+    </div>
+  );
+};
 
       {/* Global Modals */}
       <EmergencyPostModal />
