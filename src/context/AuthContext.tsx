@@ -291,6 +291,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   };
 
+  const deleteAccountByAdmin = (accountId: string) => {
+    setPortalAccounts(prev => prev.filter(acc => acc.id !== accountId));
+  };
+
   const logout = () => {
     setCurrentUser(null);
     localStorage.removeItem(USER_STORAGE_KEY);
@@ -344,6 +348,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         portalAccounts,
         registerPortalAccount,
         updateAccountStatusByAdmin,
+        deleteAccountByAdmin,
         failedAttemptsMap,
         unlockAccountByAdmin
       }}
