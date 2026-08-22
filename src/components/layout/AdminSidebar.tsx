@@ -23,17 +23,22 @@ export const AdminSidebar: React.FC = () => {
   const { requests } = useApp();
   const { isDarkMode, toggleTheme } = useTheme();
 
-  const pendingAccountsCount = portalAccounts.filter(a => a.verificationStatus === 'PENDING').length;
-  const requestsCount = requests.length;
+  const pendingHospitalsCount = portalAccounts.filter(a => a.role === 'hospital' && a.status === 'Pending Verification').length;
+  const pendingBloodBanksCount = portalAccounts.filter(a => a.role === 'bloodbank' && a.status === 'Pending Verification').length;
+  const pendingAccountsCount = portalAccounts.filter(a => a.status === 'Pending Verification').length;
+  const activeRequestsCount = requests.filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED').length;
+  
+  // Total pending system requests queue count
+  const pendingSystemRequestsCount = pendingHospitalsCount + pendingBloodBanksCount + activeRequestsCount;
 
   const navItems = [
     { to: '/admin/dashboard', label: 'Control Overview', icon: ShieldCheck },
     { to: '/admin/users', label: 'All Accounts & Approvals', icon: Users, badge: pendingAccountsCount },
     { to: '/admin/donors', label: 'Donors Management', icon: Heart },
     { to: '/admin/requesters', label: 'Requesters Management', icon: FileText },
-    { to: '/admin/hospitals', label: 'Hospitals Verification', icon: Building2 },
-    { to: '/admin/bloodbanks', label: 'Blood Banks Verification', icon: Droplet },
-    { to: '/admin/requests', label: 'System Requests Monitor', icon: ShieldAlert, badge: requestsCount },
+    { to: '/admin/hospitals', label: 'Hospitals Verification', icon: Building2, badge: pendingHospitalsCount },
+    { to: '/admin/bloodbanks', label: 'Blood Banks Verification', icon: Droplet, badge: pendingBloodBanksCount },
+    { to: '/admin/requests', label: 'System Requests Management', icon: ShieldAlert, badge: pendingSystemRequestsCount },
     { to: '/admin/reports', label: 'Analytics & Compliance', icon: BarChart3 },
     { to: '/admin/settings', label: 'Audit Logs & Settings', icon: Settings }
   ];

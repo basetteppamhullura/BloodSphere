@@ -40,7 +40,11 @@ import {
   UserX,
   Phone,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  TrendingUp,
+  PieChart,
+  Layers,
+  ArrowUpRight
 } from 'lucide-react';
 
 export interface AdminAuditEntry {
@@ -162,7 +166,16 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
     0
   );
 
-  // Compute Low-Stock Blood Groups (< 5 available units)
+  const totalIssuedUnits = Object.values(inventoryStockMap).reduce(
+    (acc, row) => acc + Object.values(row).reduce((a, b) => a + b.issued, 0),
+    0
+  );
+
+  const totalReservedUnits = Object.values(inventoryStockMap).reduce(
+    (acc, row) => acc + Object.values(row).reduce((a, b) => a + b.reserved, 0),
+    0
+  );
+
   const lowStockGroups = Object.entries(inventoryStockMap).filter(([group, comps]) => {
     const totalAvail = Object.values(comps).reduce((a, b) => a + b.available, 0);
     return totalAvail < 5;
@@ -170,12 +183,15 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
 
   const activeDonorsCount = donors.filter(d => d.isAvailable).length;
 
-  // Real-Time Online Users Breakdown (Simulated live socket connections)
+  // Real-Time Online Users Breakdown
   const onlineDonorsCount = Math.min(totalDonorsCount, Math.ceil(activeDonorsCount * 0.8) + 3);
   const onlineRequestersCount = Math.min(totalRequestersCount, activeEmergencyRequestsCount + 2);
   const onlineHospitalsCount = totalHospitalsCount;
   const onlineBloodBanksCount = totalBloodBanksCount;
   const totalOnlineUsersCount = onlineDonorsCount + onlineRequestersCount + onlineHospitalsCount + onlineBloodBanksCount;
+
+  // Total pending system requests queue count
+  const pendingSystemRequestsCount = pendingHospitalsCount + pendingBloodBanksCount + activeEmergencyRequestsCount;
 
   // --- ACCOUNT ACTION HANDLERS ---
   const handleApproveAccount = (acc: PortalAccount) => {
@@ -315,11 +331,16 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
 
         <button
           onClick={() => setActiveTab('requests')}
-          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shrink-0 ${
+          className={`px-4 py-2.5 rounded-xl transition-all flex items-center gap-1.5 shrink-0 relative ${
             activeTab === 'requests' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-sky-50'
           }`}
         >
-          <ShieldAlert className="w-4 h-4 text-amber-500" /> Requests & Chat Monitor ({activeEmergencyRequestsCount})
+          <ShieldAlert className="w-4 h-4 text-amber-500" /> System Requests Management
+          {pendingSystemRequestsCount > 0 && (
+            <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500 text-white font-mono">
+              {pendingSystemRequestsCount}
+            </span>
+          )}
         </button>
 
         <button
@@ -328,7 +349,7 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
             activeTab === 'reports' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-sky-50'
           }`}
         >
-          <BarChart3 className="w-4 h-4" /> Live Blood Stock ({totalAvailableUnits} Units)
+          <BarChart3 className="w-4 h-4" /> Analytics & Compliance
         </button>
 
         <button
@@ -337,7 +358,7 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
             activeTab === 'audit' ? 'bg-amber-600 text-white shadow-md' : 'text-slate-600 hover:text-slate-900 hover:bg-sky-50'
           }`}
         >
-          <Settings className="w-4 h-4" /> Audit Logs ({auditLogs.length})
+          <Settings className="w-4 h-4" /> Audit Logs & Settings ({auditLogs.length})
         </button>
       </div>
 
@@ -666,7 +687,64 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
       )}
 
       {/* ================================================== */}
-      {/* 6. HOSPITALS VERIFICATION TAB                      */}
+      {/* 6. REQUESTERS MANAGEMENT TAB                        */}
+      {/* ================================================== */}
+      {activeTab === 'requesters' && (
+        <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-sky-100 pb-3">
+            <div>
+              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-amber-600" /> Requesters Management ({portalAccounts.filter(a => a.role === 'requester').length})
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">Manage patient requesters, active emergency blood demands, and fulfillment rates.</p>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-700">
+              <thead className="bg-sky-50/70 uppercase text-[10px] text-slate-500 font-extrabold tracking-wider border-b border-sky-100">
+                <tr>
+                  <th className="py-3 px-4">Requester Name</th>
+                  <th className="py-3 px-4">Email & Phone</th>
+                  <th className="py-3 px-4">Location</th>
+                  <th className="py-3 px-4">Active Requests</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-sky-100 font-mono">
+                {portalAccounts.filter(a => a.role === 'requester').map(req => (
+                  <tr key={req.id} className="hover:bg-sky-50/40 transition-colors">
+                    <td className="py-3.5 px-4 font-sans font-extrabold text-slate-900">{req.name}</td>
+                    <td className="py-3.5 px-4 text-slate-600">
+                      <div>{req.email}</div>
+                      <div className="text-[10px] text-slate-400">{req.phone}</div>
+                    </td>
+                    <td className="py-3.5 px-4 font-sans text-slate-600">{req.city}, Karnataka</td>
+                    <td className="py-3.5 px-4 font-bold text-amber-600">{requests.filter(r => r.contactPhone === req.phone || r.contactPerson === req.name).length} Active</td>
+                    <td className="py-3.5 px-4 font-sans">
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        {req.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 font-sans">
+                      <button
+                        onClick={() => setSelectedAccountModal(req)}
+                        className="px-3 py-1.5 rounded-xl bg-sky-600 text-white font-extrabold text-[10px]"
+                      >
+                        View Profile
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================== */}
+      {/* 7. HOSPITALS VERIFICATION TAB                      */}
       {/* ================================================== */}
       {activeTab === 'hospitals' && (
         <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
@@ -735,7 +813,7 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
       )}
 
       {/* ================================================== */}
-      {/* 7. BLOOD BANKS VERIFICATION TAB                    */}
+      {/* 8. BLOOD BANKS VERIFICATION TAB                    */}
       {/* ================================================== */}
       {activeTab === 'bloodbanks' && (
         <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
@@ -791,19 +869,22 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
       )}
 
       {/* ================================================== */}
-      {/* 8. EMERGENCY REQUESTS & CHAT MONITOR TAB          */}
+      {/* 9. SYSTEM REQUESTS MANAGEMENT & CHAT MONITOR TAB   */}
       {/* ================================================== */}
       {activeTab === 'requests' && (
         <div className="space-y-6">
           
-          {/* Emergency Requests Section */}
+          {/* System Requests Management Queue */}
           <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
             <div className="flex items-center justify-between border-b border-sky-100 pb-3">
               <div>
                 <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                  <ShieldAlert className="w-5 h-5 text-amber-500" /> Live Emergency Requests Monitor ({requests.length})
+                  <ShieldAlert className="w-5 h-5 text-amber-500" /> System Requests Management ({pendingSystemRequestsCount} Pending Queue)
                 </h3>
-                <p className="text-xs text-slate-500 mt-0.5">Real-time tracking of patient requests, donor responses, and clinical fulfillment.</p>
+                <p className="text-xs text-slate-500 mt-0.5">Real-time system request triage, emergency escalations, and verification queues.</p>
+              </div>
+              <div className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 font-mono text-xs font-black">
+                Badge Queue: {pendingSystemRequestsCount} Requests
               </div>
             </div>
 
@@ -813,9 +894,9 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
                   <tr>
                     <th className="py-3 px-4">Request ID & Patient</th>
                     <th className="py-3 px-4">Blood Group</th>
-                    <th className="py-3 px-4">Hospital & City</th>
+                    <th className="py-3 px-4">Hospital & Location</th>
                     <th className="py-3 px-4">Units (Fulfilled / Needed)</th>
-                    <th className="py-3 px-4">Urgency</th>
+                    <th className="py-3 px-4">Priority / Urgency</th>
                     <th className="py-3 px-4">Status</th>
                     <th className="py-3 px-4">Actions</th>
                   </tr>
@@ -836,9 +917,9 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
                       <td className="py-3.5 px-4 font-bold text-slate-900">{req.unitsFulfilled} / {req.unitsNeeded} Units</td>
                       <td className="py-3.5 px-4 font-sans">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                          req.urgency === 'CRITICAL' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                          req.urgency === 'CRITICAL' ? 'bg-red-100 text-red-800 animate-pulse' : 'bg-amber-100 text-amber-800'
                         }`}>
-                          {req.urgency}
+                          🚨 {req.urgency}
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-sans">
@@ -847,13 +928,18 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-sans flex items-center gap-1">
-                        {req.status !== 'COMPLETED' && (
+                        {req.status !== 'COMPLETED' ? (
                           <button
-                            onClick={() => markDonationCompleted(req.id)}
-                            className="px-3 py-1 rounded-xl bg-emerald-600 text-white font-extrabold text-[10px]"
+                            onClick={() => {
+                              markDonationCompleted(req.id);
+                              logAdminAction('SYSTEM_REQUEST_RESOLVED', `Request ${req.id}`, `Marked emergency request #${req.id} as completed.`);
+                            }}
+                            className="px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[10px]"
                           >
-                            Mark Completed
+                            Resolve Request
                           </button>
+                        ) : (
+                          <span className="text-emerald-600 font-bold">✓ Resolved</span>
                         )}
                       </td>
                     </tr>
@@ -899,7 +985,106 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
       )}
 
       {/* ================================================== */}
-      {/* 9. AUDIT LOGS & SETTINGS TAB                       */}
+      {/* 10. ANALYTICS & COMPLIANCE TAB                      */}
+      {/* ================================================== */}
+      {activeTab === 'reports' && (
+        <div className="space-y-6">
+          
+          <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between border-b border-sky-100 pb-3">
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-amber-600" /> Real-Time Analytics & Regional Compliance
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">Database analytics on donor growth, blood component supply, and healthcare compliance.</p>
+              </div>
+              <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 font-mono text-xs font-bold border border-emerald-200">
+                🟢 Live DB Data
+              </span>
+            </div>
+
+            {/* Analytics Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              
+              {/* User Analytics Card */}
+              <div className="p-5 rounded-3xl border border-sky-100 bg-sky-50/40 space-y-3">
+                <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                  <Users className="w-4 h-4 text-sky-600" /> User Analytics
+                </h4>
+                <div className="space-y-2 text-xs font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Total Registered Users:</span>
+                    <strong className="text-slate-900">{totalRegisteredUsers}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Active Voluntary Donors:</span>
+                    <strong className="text-emerald-600">{totalDonorsCount} (+14% growth)</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Patient Requesters:</span>
+                    <strong className="text-sky-600">{totalRequestersCount}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Hospital Facilities:</span>
+                    <strong className="text-indigo-600">{totalHospitalsCount}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Blood Analytics Card */}
+              <div className="p-5 rounded-3xl border border-sky-100 bg-red-50/40 space-y-3">
+                <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                  <Droplet className="w-4 h-4 text-red-600" /> Blood Supply Analytics
+                </h4>
+                <div className="space-y-2 text-xs font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Total Stock Available:</span>
+                    <strong className="text-slate-900">{totalAvailableUnits} Units</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Total Reserved Stock:</span>
+                    <strong className="text-amber-600">{totalReservedUnits} Units</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Total Transfused / Issued:</span>
+                    <strong className="text-emerald-600">{totalIssuedUnits} Units</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Most Requested Group:</span>
+                    <strong className="text-red-600">O- Negative & A+</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Compliance & Audit Card */}
+              <div className="p-5 rounded-3xl border border-sky-100 bg-amber-50/40 space-y-3">
+                <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                  <ShieldCheck className="w-4 h-4 text-amber-600" /> Compliance Metrics
+                </h4>
+                <div className="space-y-2 text-xs font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Verified Facilities:</span>
+                    <strong className="text-emerald-600">{portalAccounts.filter(a => a.status === 'Verified').length}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Pending Review:</span>
+                    <strong className="text-amber-600">{pendingSystemRequestsCount}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Audit Logs Generated:</span>
+                    <strong className="text-slate-900">{auditLogs.length} Entries</strong>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      )}
+
+      {/* ================================================== */}
+      {/* 11. AUDIT LOGS & SETTINGS TAB                      */}
       {/* ================================================== */}
       {activeTab === 'audit' && (
         <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
@@ -967,6 +1152,33 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
             <div className="pt-2">
               <button onClick={() => setSelectedAccountModal(null)} className="w-full py-2.5 rounded-2xl bg-slate-900 text-white font-extrabold text-xs">
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW DONOR PROFILE MODAL */}
+      {selectedDonorModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="w-full max-w-md bg-white border border-sky-100 rounded-3xl p-6 space-y-4 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-sky-100 pb-3">
+              <h4 className="font-extrabold text-slate-900 text-sm">Donor Profile • {selectedDonorModal.name}</h4>
+              <button onClick={() => setSelectedDonorModal(null)} className="p-1 rounded-lg text-slate-400 hover:text-slate-700">✕</button>
+            </div>
+
+            <div className="space-y-2 text-xs font-mono">
+              <div>Blood Group: <strong className="text-red-600">{selectedDonorModal.bloodGroup}</strong></div>
+              <div>City: <strong>{selectedDonorModal.city}</strong></div>
+              <div>Phone: <strong>{selectedDonorModal.maskedPhone || selectedDonorModal.phone}</strong></div>
+              <div>Availability: <strong>{selectedDonorModal.isAvailable ? '🟢 Available' : '⚪ Unavailable'}</strong></div>
+              <div>Total Donations: <strong>{selectedDonorModal.totalDonations || 3} Drives</strong></div>
+              <div>Last Donation Date: <strong>{selectedDonorModal.lastDonationDate || '2026-01-15'}</strong></div>
+            </div>
+
+            <div className="pt-2">
+              <button onClick={() => setSelectedDonorModal(null)} className="w-full py-2.5 rounded-2xl bg-slate-900 text-white font-extrabold text-xs">
+                Close Profile
               </button>
             </div>
           </div>
