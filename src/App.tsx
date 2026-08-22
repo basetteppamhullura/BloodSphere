@@ -160,12 +160,12 @@ export default function App() {
                 <Route index element={<Navigate to="/admin/dashboard" replace />} />
                 <Route path="dashboard" element={<AdminControlCenterDesk initialTab="overview" />} />
                 <Route path="users" element={<AdminControlCenterDesk initialTab="users" initialRoleFilter="ALL" />} />
-                <Route path="donors" element={<AdminControlCenterDesk initialTab="users" initialRoleFilter="donor" />} />
-                <Route path="requesters" element={<AdminControlCenterDesk initialTab="users" initialRoleFilter="requester" />} />
-                <Route path="hospitals" element={<AdminControlCenterDesk initialTab="users" initialRoleFilter="hospital" />} />
-                <Route path="bloodbanks" element={<AdminControlCenterDesk initialTab="users" initialRoleFilter="bloodbank" />} />
+                <Route path="donors" element={<AdminControlCenterDesk initialTab="donors" initialRoleFilter="donor" />} />
+                <Route path="requesters" element={<AdminControlCenterDesk initialTab="requesters" initialRoleFilter="requester" />} />
+                <Route path="hospitals" element={<AdminControlCenterDesk initialTab="hospitals" initialRoleFilter="hospital" />} />
+                <Route path="bloodbanks" element={<AdminControlCenterDesk initialTab="bloodbanks" initialRoleFilter="bloodbank" />} />
                 <Route path="requests" element={<AdminControlCenterDesk initialTab="requests" />} />
-                <Route path="reports" element={<AdminControlCenterDesk initialTab="analytics" />} />
+                <Route path="reports" element={<AdminControlCenterDesk initialTab="reports" />} />
                 <Route path="settings" element={<AdminControlCenterDesk initialTab="audit" />} />
               </Route>
 
