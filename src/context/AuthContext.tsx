@@ -20,6 +20,7 @@ interface AuthContextType {
   portalAccounts: PortalAccount[];
   registerPortalAccount: (acc: Partial<PortalAccount>) => PortalAccount;
   updateAccountStatusByAdmin: (accountId: string, status: AccountVerificationStatus) => void;
+  deleteAccountByAdmin: (accountId: string) => void;
   failedAttemptsMap: Record<string, number>;
   unlockAccountByAdmin: (accountId: string) => void;
 }

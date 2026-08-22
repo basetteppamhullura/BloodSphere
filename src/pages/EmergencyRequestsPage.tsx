@@ -187,15 +187,15 @@ export const EmergencyRequestsPage: React.FC = () => {
                 {/* ACTION BUTTONS */}
                 <div className="pt-1">
                   {myResponse ? (
-                    <div className="p-3 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-between text-xs">
+                    <div className="p-3 rounded-2xl bg-sky-50 border border-sky-100 text-slate-800 text-xs font-bold flex items-center justify-between">
                       <span className="text-slate-800 font-bold">
                         {myResponse.status === 'ACCEPTED' ? '✅ You accepted this emergency request' : 'ℹ️ You declined this request'}
                       </span>
                       <button
-                        onClick={() => setActiveChatModal({ request: req, donor: loggedInDonor })}
-                        className="px-3 py-1 rounded-xl bg-indigo-600 text-white font-bold text-[11px]"
+                        onClick={() => openEmergencyChat(req.id, loggedInDonor.id)}
+                        className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-[11px] flex items-center gap-1 shadow-xs transition-all hover:scale-105"
                       >
-                        Privacy Chat
+                        <MessageSquare className="w-3.5 h-3.5" /> Open Private Chat
                       </button>
                     </div>
                   ) : isSecured ? (

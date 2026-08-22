@@ -44,7 +44,7 @@ export const RealtimeRequesterPortal: React.FC = () => {
     cancelEmergencyRequest,
     approveBloodBankReservation,
     setActiveEmergencyPostModal,
-    setActiveChatModal,
+    openEmergencyChat,
     showToast
   } = useApp();
 
@@ -253,6 +253,15 @@ export const RealtimeRequesterPortal: React.FC = () => {
                   <span>Distance: {resp.distanceKm} km</span>
                   <span className="font-mono">{resp.respondedAt}</span>
                 </div>
+
+                {resp.status === 'ACCEPTED' && (
+                  <button
+                    onClick={() => openEmergencyChat(activeReq.id, resp.donorId)}
+                    className="w-full mt-2 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white text-[11px] font-extrabold flex items-center justify-center gap-1.5 shadow-xs transition-all hover:scale-102"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5" /> Open Private Chat
+                  </button>
+                )}
               </div>
             ))}
           </div>
