@@ -5,9 +5,9 @@ import { ShieldAlert, AlertTriangle, Clock, Check, Phone, Building2 } from 'luci
 export const HospitalEmergencyBoard: React.FC = () => {
   const { requests, approveRequestByHospital, showToast } = useApp();
 
-  // Filter only Critical & Urgent requests, sorted by urgency and oldest requestedAt
+  // Filter only Critical & Urgent requests live, sorted by urgency and oldest requestedAt
   const emergencyRequests = requests
-    .filter(r => (r.urgency === 'CRITICAL' || r.urgency === 'HIGH') && r.status !== 'COMPLETED')
+    .filter(r => (r.urgency === 'CRITICAL' || r.urgency === 'HIGH') && r.status !== 'COMPLETED' && r.status !== 'CANCELLED')
     .sort((a, b) => {
       if (a.urgency === 'CRITICAL' && b.urgency !== 'CRITICAL') return -1;
       if (a.urgency !== 'CRITICAL' && b.urgency === 'CRITICAL') return 1;
@@ -15,58 +15,58 @@ export const HospitalEmergencyBoard: React.FC = () => {
     });
 
   return (
-    <div className="space-y-6 animate-in fade-in">
+    <div className="space-y-6 text-xs animate-in fade-in w-full max-w-7xl mx-auto">
       
-      {/* Header Banner */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-red-950 via-slate-900 to-slate-900 border-2 border-red-600 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* 1. TOP HEADER BANNER */}
+      <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <ShieldAlert className="w-6 h-6 text-red-500 animate-pulse" />
-            <h2 className="text-xl font-black text-white tracking-tight">Hospital Emergency & ICU Board</h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-600 text-white uppercase">
-              Live Trauma Desk
+            <ShieldAlert className="w-6 h-6 text-red-600 animate-pulse" />
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Hospital Emergency & ICU Trauma Board</h2>
+            <span className="px-3 py-1 rounded-full text-[10px] font-black bg-red-100 text-red-800 border border-red-200 uppercase tracking-wider">
+              LIVE TRAUMA QUEUE
             </span>
           </div>
-          <p className="text-xs text-slate-300 mt-1">High-priority queue displaying Critical (Within 2 Hours) & Urgent cases</p>
+          <p className="text-xs text-slate-500 mt-1">High-priority queue displaying Critical (Within 2 Hours) & Urgent cases in real time</p>
         </div>
 
-        <div className="px-4 py-2 rounded-2xl bg-slate-950 border border-slate-800 text-right">
-          <span className="text-[10px] text-slate-400 font-bold uppercase block">Active Critical Cases</span>
-          <span className="text-2xl font-black text-red-500">{emergencyRequests.filter(r => r.urgency === 'CRITICAL').length}</span>
+        <div className="px-4 py-2 rounded-2xl bg-red-50 border border-red-200 text-right font-mono">
+          <span className="text-[10px] text-slate-500 font-bold uppercase block">Active Critical Cases</span>
+          <span className="text-2xl font-black text-red-600">{emergencyRequests.filter(r => r.urgency === 'CRITICAL').length} Cases</span>
         </div>
       </div>
 
-      {/* Emergency Cards List */}
+      {/* 2. EMERGENCY CARDS LIST (VERTICAL STACK) */}
       <div className="space-y-4">
         {emergencyRequests.length === 0 ? (
-          <div className="p-12 rounded-3xl bg-slate-900 border border-slate-800 text-center space-y-2">
-            <Check className="w-10 h-10 text-emerald-400 mx-auto" />
-            <h3 className="font-extrabold text-base text-white">No Pending Emergency Cases</h3>
-            <p className="text-xs text-slate-400">All critical trauma blood requests have been fulfilled or cleared.</p>
+          <div className="p-12 rounded-3xl bg-white border border-sky-100 shadow-sm text-center space-y-2">
+            <Check className="w-10 h-10 text-emerald-500 mx-auto" />
+            <h3 className="font-extrabold text-base text-slate-900">No Pending Emergency Trauma Cases</h3>
+            <p className="text-xs text-slate-500">All critical trauma blood requests have been fulfilled or cleared.</p>
           </div>
         ) : (
           emergencyRequests.map(req => (
             <div
               key={req.id}
-              className={`p-6 rounded-3xl bg-slate-900 border space-y-4 shadow-xl transition-all ${
+              className={`p-6 rounded-3xl bg-white border space-y-4 shadow-sm transition-all ${
                 req.urgency === 'CRITICAL'
-                  ? 'border-2 border-red-600 ring-1 ring-red-500/80 animate-pulse'
-                  : 'border-slate-800'
+                  ? 'border-2 border-red-300 ring-1 ring-red-400/30'
+                  : 'border-sky-100'
               }`}
             >
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-100 pb-3">
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-extrabold text-xs">
                       {req.bloodGroup}
                     </span>
-                    <h3 className="font-extrabold text-base text-white">{req.patientName}</h3>
-                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-950 text-red-300 border border-red-800 uppercase">
+                    <h3 className="font-extrabold text-base text-slate-900">{req.patientName}</h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-800 border border-red-200 uppercase">
                       Urgency: {req.urgency}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Hospital: <strong>{req.hospitalName}</strong> • Units Required: <strong>{req.unitsNeeded} units</strong>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Hospital: <strong>{req.hospitalName}</strong> • Units Required: <strong>{req.unitsNeeded} units</strong> • City: {req.city}
                   </p>
                 </div>
 
@@ -75,15 +75,15 @@ export const HospitalEmergencyBoard: React.FC = () => {
                     approveRequestByHospital(req.id);
                     showToast(`Approved Emergency Request for ${req.patientName}!`);
                   }}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-black text-xs shadow-lg shadow-red-950 flex items-center gap-1.5 shrink-0"
+                  className="px-5 py-2.5 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 shrink-0"
                 >
                   <Check className="w-4 h-4" /> Immediate Priority Approval
                 </button>
               </div>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-300">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-600 font-mono">
                 <div>Requester: <strong>{req.contactPerson} ({req.contactPhone})</strong></div>
-                <a href={`tel:${req.contactPhone}`} className="text-emerald-400 font-bold hover:underline flex items-center gap-1">
+                <a href={`tel:${req.contactPhone}`} className="text-emerald-700 font-bold hover:underline flex items-center gap-1">
                   <Phone className="w-3.5 h-3.5" /> Call ICU Desk ({req.contactPhone})
                 </a>
               </div>
