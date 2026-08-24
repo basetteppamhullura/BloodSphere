@@ -53,7 +53,6 @@ export default function Footer() {
             <li className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-amber-400" /> Smart Donor Matching Engine</li>
             <li className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-amber-400" /> 30-Day Demand Forecasting</li>
             <li className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-amber-400" /> NLP Emergency Request Generator</li>
-            <li className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-amber-400" /> AI Lifesaver Assistant</li>
           </ul>
         </div>
 
