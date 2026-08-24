@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { checkDonorEligibility } from '../utils/matchingEngine';
-import { BloodNetLogo } from '../components/common/BloodNetLogo';
 import {
   Heart,
   Search,
@@ -93,7 +92,7 @@ export const LandingPage: React.FC = () => {
   });
 
   return (
-    <div className="space-y-10 py-2 animate-in fade-in text-xs">
+    <div className="space-y-8 py-2 animate-in fade-in text-xs">
       
       {/* 1. HERO SECTION WITH WATER BUBBLES & NETWORK GRAPHIC */}
       <section className="relative overflow-hidden p-8 sm:p-14 rounded-3xl bg-gradient-to-br from-white via-sky-50/60 to-red-50/30 border border-sky-100 shadow-sm space-y-8">
@@ -169,13 +168,9 @@ export const LandingPage: React.FC = () => {
               {/* Network Node Lines */}
               <svg className="absolute inset-0 w-full h-full text-sky-400" viewBox="0 0 200 200" fill="none">
                 <circle cx="100" cy="100" r="75" stroke="currentColor" strokeWidth="1.5" strokeDasharray="4 4" className="opacity-50" />
-                {/* Node 1: Donor */}
                 <line x1="100" y1="25" x2="100" y2="65" stroke="#0284C7" strokeWidth="2" strokeDasharray="2 2" />
-                {/* Node 2: Hospital */}
                 <line x1="175" y1="100" x2="135" y2="100" stroke="#0284C7" strokeWidth="2" strokeDasharray="2 2" />
-                {/* Node 3: Requester */}
                 <line x1="100" y1="175" x2="100" y2="135" stroke="#0284C7" strokeWidth="2" strokeDasharray="2 2" />
-                {/* Node 4: Blood Bank */}
                 <line x1="25" y1="100" x2="65" y2="100" stroke="#0284C7" strokeWidth="2" strokeDasharray="2 2" />
               </svg>
 
