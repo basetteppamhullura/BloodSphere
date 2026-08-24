@@ -3,7 +3,6 @@ import { useApp } from '../context/AppContext';
 import {
   Heart,
   PlusCircle,
-  Bot,
   Bell,
   User,
   ShieldCheck,
@@ -22,7 +21,6 @@ export default function Navbar() {
     currentUser,
     notifications,
     setActiveAIPostModal,
-    setActiveAIChatbotDrawer,
     isDarkMode,
     toggleTheme
   } = useApp();
@@ -126,16 +124,6 @@ export default function Navbar() {
             <span className="flex items-center gap-1 text-[10px] bg-red-950/60 px-1.5 py-0.5 rounded text-red-200 border border-red-500/30">
               <Sparkles className="w-3 h-3 text-amber-300" /> AI
             </span>
-          </button>
-
-          {/* AI Lifesaver Chatbot Assistant Button */}
-          <button
-            onClick={() => setActiveAIChatbotDrawer(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm font-medium transition-all hover:border-indigo-500/50"
-            title="Ask AI Assistant"
-          >
-            <Bot className="w-4 h-4 text-indigo-400" />
-            <span className="hidden lg:inline text-xs">AI Assistant</span>
           </button>
 
           {/* Notifications Bell */}
