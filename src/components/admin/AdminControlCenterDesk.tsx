@@ -128,11 +128,72 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
     }
   ]);
 
-  // Join Socket.IO Room for Admin Control Center
+  // Real-Time Socket Connection Status State
+  const [connectionStatus, setConnectionStatus] = useState<'LIVE' | 'DISCONNECTED' | 'RECONNECTING'>(socketManager.getConnectionStatus());
+  const [onlineUserCount, setOnlineUserCount] = useState<number>(0);
+
+  // Fetch complete MongoDB database snapshot
+  const fetchDatabaseSnapshot = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/snapshot');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data) {
+          if (json.data.auditLogs && json.data.auditLogs.length > 0) {
+            setAuditLogs(json.data.auditLogs);
+          }
+          if (json.data.onlineUsersCount) {
+            setOnlineUserCount(json.data.onlineUsersCount);
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('[AdminControlCenter] Backend snapshot fetch fallback:', err);
+    }
+  };
+
+  // Join Socket.IO Room & Subscribe to Real-Time Admin Events
   useEffect(() => {
     socketManager.joinRoom('admin-dashboard', currentUser?.id || 'admin_user', 'admin');
+    fetchDatabaseSnapshot();
+
+    const unsubStatus = socketManager.onStatusChange((status) => {
+      setConnectionStatus(status);
+      if (status === 'LIVE') {
+        fetchDatabaseSnapshot();
+      }
+    });
+
+    const handleAuditLogCreated = (data: any) => {
+      if (data?.auditEntry) {
+        setAuditLogs(prev => [data.auditEntry, ...prev]);
+      } else if (data?.id) {
+        setAuditLogs(prev => [data, ...prev]);
+      }
+    };
+
+    const handleUserOnline = (data: any) => {
+      if (typeof data?.onlineCount === 'number') {
+        setOnlineUserCount(data.onlineCount);
+      }
+    };
+
+    const handleResync = () => {
+      fetchDatabaseSnapshot();
+    };
+
+    socketManager.on('auditLogCreated', handleAuditLogCreated);
+    socketManager.on('userOnline', handleUserOnline);
+    socketManager.on('userOffline', handleUserOnline);
+    socketManager.on('resyncData', handleResync);
+
     return () => {
       socketManager.leaveRoom('admin-dashboard', currentUser?.id || 'admin_user');
+      unsubStatus();
+      socketManager.off('auditLogCreated', handleAuditLogCreated);
+      socketManager.off('userOnline', handleUserOnline);
+      socketManager.off('userOffline', handleUserOnline);
+      socketManager.off('resyncData', handleResync);
     };
   }, [currentUser?.id]);
 
@@ -256,10 +317,24 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="px-3.5 py-2 rounded-2xl bg-emerald-50 text-emerald-800 font-extrabold border border-emerald-200 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-            <span>🟢 Socket.IO Room: admin-dashboard (LIVE)</span>
-          </div>
+          {connectionStatus === 'LIVE' && (
+            <div className="px-3.5 py-2 rounded-2xl bg-emerald-50 text-emerald-800 font-extrabold border border-emerald-200 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+              <span>🟢 Socket.IO Room: admin-dashboard (LIVE)</span>
+            </div>
+          )}
+          {connectionStatus === 'DISCONNECTED' && (
+            <div className="px-3.5 py-2 rounded-2xl bg-rose-50 text-rose-800 font-extrabold border border-rose-200 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse" />
+              <span>🔴 Connection Lost</span>
+            </div>
+          )}
+          {connectionStatus === 'RECONNECTING' && (
+            <div className="px-3.5 py-2 rounded-2xl bg-amber-50 text-amber-800 font-extrabold border border-amber-200 flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-spin" />
+              <span>🟡 Reconnecting...</span>
+            </div>
+          )}
         </div>
       </div>
 

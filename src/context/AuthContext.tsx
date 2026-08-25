@@ -282,6 +282,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     setPortalAccounts(prev => [created, ...prev]);
+
+    // Send API persistence to backend MongoDB & emit socket event
+    fetch('http://localhost:5000/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(created)
+    }).catch(err => {
+      console.warn('[AuthContext] Backend register sync fallback:', err.message);
+    });
+
     return created;
   };
 
@@ -289,6 +299,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setPortalAccounts(prev =>
       prev.map(acc => (acc.id === accountId ? { ...acc, status } : acc))
     );
+
+    // Send status update to Express API
+    fetch(`http://localhost:5000/api/accounts/${accountId}/status`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    }).catch(err => {
+      console.warn('[AuthContext] Backend status update fallback:', err.message);
+    });
   };
 
   const deleteAccountByAdmin = (accountId: string) => {

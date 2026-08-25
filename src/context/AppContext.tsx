@@ -602,16 +602,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     };
 
+    const handleNewEmergencyRequest = (data: any) => {
+      if (data?.request) {
+        setRequests(prev => {
+          if (prev.some(r => r.id === data.request.id)) return prev;
+          return [data.request, ...prev];
+        });
+      }
+    };
+
+    const handleAdminNotification = (data: any) => {
+      if (data?.title) {
+        setNotifications(prev => [{
+          id: data.id || `notif_${Date.now()}`,
+          title: data.title,
+          message: data.message,
+          time: data.time || 'Just now',
+          type: data.type || 'urgent',
+          read: false
+        }, ...prev]);
+      }
+    };
+
     socketManager.on('receiveMessage', handleSocketMessage);
     socketManager.on('typing', handleSocketTyping);
     socketManager.on('userOnline', handleSocketOnline);
     socketManager.on('userOffline', handleSocketOnline);
+    socketManager.on('newEmergencyRequest', handleNewEmergencyRequest);
+    socketManager.on('adminNotification', handleAdminNotification);
 
     return () => {
       socketManager.off('receiveMessage', handleSocketMessage);
       socketManager.off('typing', handleSocketTyping);
       socketManager.off('userOnline', handleSocketOnline);
       socketManager.off('userOffline', handleSocketOnline);
+      socketManager.off('newEmergencyRequest', handleNewEmergencyRequest);
+      socketManager.off('adminNotification', handleAdminNotification);
     };
   }, []);
 
