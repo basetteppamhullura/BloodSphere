@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { BloodGroup, ComponentType, EmergencyRequest, Donor, PortalAccount, AccountVerificationStatus } from '../../types';
@@ -44,7 +45,9 @@ import {
   TrendingUp,
   PieChart,
   Layers,
-  ArrowUpRight
+  ArrowUpRight,
+  Save,
+  SlidersHorizontal
 } from 'lucide-react';
 
 export interface AdminAuditEntry {
@@ -58,14 +61,16 @@ export interface AdminAuditEntry {
 }
 
 export interface AdminControlCenterDeskProps {
-  initialTab?: 'overview' | 'users' | 'donors' | 'requesters' | 'hospitals' | 'bloodbanks' | 'requests' | 'reports' | 'audit';
+  initialTab?: 'overview' | 'users' | 'donors' | 'requesters' | 'hospitals' | 'bloodbanks' | 'requests' | 'reports' | 'audit' | 'settings';
   initialRoleFilter?: string;
 }
 
 export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
-  initialTab = 'overview',
   initialRoleFilter = 'ALL'
 }) => {
+  const location = useLocation();
+  const params = useParams();
+
   const {
     requests,
     donors,
@@ -90,9 +95,22 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
 
   const adminName = currentUser?.name || 'Super Admin (System Control)';
 
-  const [activeTab, setActiveTab] = useState<
-    'overview' | 'users' | 'donors' | 'requesters' | 'hospitals' | 'bloodbanks' | 'requests' | 'reports' | 'audit'
-  >(initialTab);
+  // Determine active tab dynamically from URL path
+  const getActiveTabFromPath = (): 'overview' | 'users' | 'donors' | 'requesters' | 'hospitals' | 'bloodbanks' | 'requests' | 'reports' | 'audit' | 'settings' => {
+    const path = location.pathname;
+    if (path.includes('/admin/accounts') || path.includes('/admin/users')) return 'users';
+    if (path.includes('/admin/donors')) return 'donors';
+    if (path.includes('/admin/requesters')) return 'requesters';
+    if (path.includes('/admin/hospitals')) return 'hospitals';
+    if (path.includes('/admin/blood-banks') || path.includes('/admin/bloodbanks')) return 'bloodbanks';
+    if (path.includes('/admin/requests')) return 'requests';
+    if (path.includes('/admin/analytics') || path.includes('/admin/reports')) return 'reports';
+    if (path.includes('/admin/audit-logs') || path.includes('/admin/audit')) return 'audit';
+    if (path.includes('/admin/settings')) return 'settings';
+    return 'overview';
+  };
+
+  const activeTab = getActiveTabFromPath();
 
   // Search & Filter States
   const [searchQuery, setSearchQuery] = useState('');
@@ -1149,6 +1167,98 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* ================================================== */}
+      {/* 12. DEDICATED SYSTEM SETTINGS PAGE (/admin/settings) */}
+      {/* ================================================== */}
+      {activeTab === 'settings' && (
+        <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-6 shadow-sm">
+          <div className="flex items-center justify-between border-b border-sky-100 pb-4">
+            <div>
+              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                <SlidersHorizontal className="w-5 h-5 text-amber-600" /> System Governance Rules & Threshold Settings
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">Manage stock thresholds, emergency rules, verification workflows, and security policies. Changes save directly to MongoDB.</p>
+            </div>
+            <button
+              onClick={handleSaveSystemSettings}
+              disabled={isSavingSettings}
+              className="px-5 py-2.5 rounded-2xl bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs flex items-center gap-2 shadow-md shadow-amber-600/20 transition-all disabled:opacity-50"
+            >
+              <Save className="w-4 h-4" /> {isSavingSettings ? 'Saving...' : 'Save Settings to DB'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+            {/* Stock & Emergency Thresholds */}
+            <div className="p-5 rounded-2xl bg-sky-50/50 border border-sky-100 space-y-4">
+              <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <Package className="w-4 h-4 text-sky-600" /> Blood Inventory Thresholds
+              </h4>
+              <div className="space-y-3">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Low Stock Warning Threshold (Units)</label>
+                  <input
+                    type="number"
+                    value={systemSettings.lowStockThreshold}
+                    onChange={e => setSystemSettings({ ...systemSettings, lowStockThreshold: parseInt(e.target.value) || 5 })}
+                    className="w-full px-3 py-2 rounded-xl border border-sky-200 bg-white font-mono font-bold focus:ring-2 focus:ring-amber-500"
+                  />
+                  <span className="text-[10px] text-slate-400">Triggers automated system alert when blood group inventory drops below this count.</span>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Critical Shortage Red Line Threshold (Units)</label>
+                  <input
+                    type="number"
+                    value={systemSettings.criticalStockThreshold}
+                    onChange={e => setSystemSettings({ ...systemSettings, criticalStockThreshold: parseInt(e.target.value) || 2 })}
+                    className="w-full px-3 py-2 rounded-xl border border-sky-200 bg-white font-mono font-bold focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Verification Rules */}
+            <div className="p-5 rounded-2xl bg-emerald-50/40 border border-emerald-100 space-y-4">
+              <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <FileCheck className="w-4 h-4 text-emerald-600" /> Verification & Governance Policies
+              </h4>
+              <div className="space-y-3 font-semibold text-slate-700">
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={systemSettings.requireHospitalApproval}
+                    onChange={e => setSystemSettings({ ...systemSettings, requireHospitalApproval: e.target.checked })}
+                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>Mandatory Admin verification for Hospitals before accepting emergency requests</span>
+                </label>
+
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={systemSettings.autoBroadcastEmergency}
+                    onChange={e => setSystemSettings({ ...systemSettings, autoBroadcastEmergency: e.target.checked })}
+                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                  />
+                  <span>Auto-broadcast critical blood requests to nearby registered donors</span>
+                </label>
+
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Donor Cooldown Period (Days)</label>
+                  <input
+                    type="number"
+                    value={systemSettings.donorCooldownDays}
+                    onChange={e => setSystemSettings({ ...systemSettings, donorCooldownDays: parseInt(e.target.value) || 90 })}
+                    className="w-full px-3 py-2 rounded-xl border border-emerald-200 bg-white font-mono font-bold focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
