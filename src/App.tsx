@@ -158,15 +158,25 @@ export default function App() {
                 }
               >
                 <Route index element={<Navigate to="/admin/dashboard" replace />} />
-                <Route path="dashboard" element={<AdminControlCenterDesk initialTab="overview" />} />
-                <Route path="users" element={<AdminControlCenterDesk initialTab="users" initialRoleFilter="ALL" />} />
-                <Route path="donors" element={<AdminControlCenterDesk initialTab="donors" initialRoleFilter="donor" />} />
-                <Route path="requesters" element={<AdminControlCenterDesk initialTab="requesters" initialRoleFilter="requester" />} />
-                <Route path="hospitals" element={<AdminControlCenterDesk initialTab="hospitals" initialRoleFilter="hospital" />} />
-                <Route path="bloodbanks" element={<AdminControlCenterDesk initialTab="bloodbanks" initialRoleFilter="bloodbank" />} />
-                <Route path="requests" element={<AdminControlCenterDesk initialTab="requests" />} />
-                <Route path="reports" element={<AdminControlCenterDesk initialTab="reports" />} />
-                <Route path="settings" element={<AdminControlCenterDesk initialTab="audit" />} />
+                <Route path="dashboard" element={<AdminControlCenterDesk />} />
+                <Route path="accounts" element={<AdminControlCenterDesk />} />
+                <Route path="users" element={<Navigate to="/admin/accounts" replace />} />
+                <Route path="donors" element={<AdminControlCenterDesk />} />
+                <Route path="donors/:donorId" element={<AdminControlCenterDesk />} />
+                <Route path="requesters" element={<AdminControlCenterDesk />} />
+                <Route path="requesters/:requesterId" element={<AdminControlCenterDesk />} />
+                <Route path="hospitals" element={<AdminControlCenterDesk />} />
+                <Route path="hospitals/:hospitalId" element={<AdminControlCenterDesk />} />
+                <Route path="blood-banks" element={<AdminControlCenterDesk />} />
+                <Route path="bloodbanks" element={<Navigate to="/admin/blood-banks" replace />} />
+                <Route path="blood-banks/:bloodBankId" element={<AdminControlCenterDesk />} />
+                <Route path="requests" element={<AdminControlCenterDesk />} />
+                <Route path="requests/:requestId" element={<AdminControlCenterDesk />} />
+                <Route path="analytics" element={<AdminControlCenterDesk />} />
+                <Route path="reports" element={<Navigate to="/admin/analytics" replace />} />
+                <Route path="audit-logs" element={<AdminControlCenterDesk />} />
+                <Route path="audit" element={<Navigate to="/admin/audit-logs" replace />} />
+                <Route path="settings" element={<AdminControlCenterDesk />} />
               </Route>
 
               {/* Fallback redirect */}

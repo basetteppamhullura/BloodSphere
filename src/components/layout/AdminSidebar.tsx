@@ -46,7 +46,7 @@ export const AdminSidebar: React.FC = () => {
     {
       title: 'USER MANAGEMENT',
       items: [
-        { to: '/admin/users', label: 'All Accounts & Approvals', icon: Users, badge: pendingAccountsCount },
+        { to: '/admin/accounts', label: 'All Accounts & Approvals', icon: Users, badge: pendingAccountsCount },
         { to: '/admin/donors', label: 'Donors Management', icon: Heart },
         { to: '/admin/requesters', label: 'Requesters Management', icon: FileText }
       ]
@@ -55,20 +55,21 @@ export const AdminSidebar: React.FC = () => {
       title: 'VERIFICATION',
       items: [
         { to: '/admin/hospitals', label: 'Hospitals Verification', icon: Building2, badge: pendingHospitalsCount },
-        { to: '/admin/bloodbanks', label: 'Blood Banks Verification', icon: Droplet, badge: pendingBloodBanksCount }
+        { to: '/admin/blood-banks', label: 'Blood Banks Verification', icon: Droplet, badge: pendingBloodBanksCount }
       ]
     },
     {
       title: 'SYSTEM MANAGEMENT',
       items: [
         { to: '/admin/requests', label: 'System Requests Management', icon: ShieldAlert, badge: pendingSystemRequestsCount },
-        { to: '/admin/reports', label: 'Analytics & Compliance', icon: BarChart3 }
+        { to: '/admin/analytics', label: 'Analytics & Compliance', icon: BarChart3 }
       ]
     },
     {
       title: 'SECURITY',
       items: [
-        { to: '/admin/settings', label: 'Audit Logs & Settings', icon: Settings }
+        { to: '/admin/audit-logs', label: 'Audit Logs', icon: Settings },
+        { to: '/admin/settings', label: 'Settings', icon: Lock }
       ]
     }
   ];
