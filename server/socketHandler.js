@@ -2,14 +2,14 @@ export function initSocketHandler(io) {
   const onlineUsers = new Map(); // socketId -> { userId, role, roomName }
 
   io.on('connection', (socket) => {
-    console.log(`[Socket.IO Server] New client connected: ${socket.id}`);
+    console.log(`[Socket.IO Server] Client connected: ${socket.id}`);
 
-    // Join room event with auth check
+    // Join room event with role authorization check
     socket.on('joinRoom', (payload) => {
       const { roomName, userId, role } = payload || {};
       if (!roomName) return;
 
-      // Restrict admin-dashboard room to admin role
+      // Restrict admin-dashboard room to authorized admin role
       if (roomName === 'admin-dashboard' && role !== 'admin') {
         console.warn(`[Socket.IO Server] Unauthorized join attempt to admin-dashboard by user ${userId} (${role})`);
         return socket.emit('error', { message: 'Unauthorized room access' });
@@ -20,7 +20,7 @@ export function initSocketHandler(io) {
 
       console.log(`[Socket.IO Server] User ${userId} (${role}) joined room: ${roomName}`);
 
-      // Broadcast user online event to admin-dashboard
+      // Broadcast online status to admin-dashboard & room
       io.to('admin-dashboard').emit('userOnline', {
         socketId: socket.id,
         userId,
@@ -41,16 +41,17 @@ export function initSocketHandler(io) {
       }
     });
 
-    // Handle incoming chat messages over room
+    // Handle chat messages over emergency rooms
     socket.on('sendMessage', (data) => {
       const { roomName, message } = data || {};
       if (roomName) {
         io.to(roomName).emit('receiveMessage', data);
         io.to('admin-dashboard').emit('adminNotification', {
+          id: `notif-${Date.now()}`,
           title: '🚨 Emergency Chat Activity',
-          message: `New message in ${roomName}: ${message?.text?.substring(0, 50)}...`,
+          message: `Activity in ${roomName}: ${message?.message?.substring(0, 40) || 'New message'}`,
           type: 'urgent',
-          timestamp: new Date().toLocaleTimeString()
+          time: 'Just now'
         });
       }
     });
@@ -83,6 +84,13 @@ export function initSocketHandler(io) {
   return {
     broadcastAdminEvent: (event, data) => {
       io.to('admin-dashboard').emit(event, data);
+    },
+    broadcastToRoom: (roomName, event, data) => {
+      io.to(roomName).emit(event, data);
+      io.to('admin-dashboard').emit(event, data);
+    },
+    broadcastAll: (event, data) => {
+      io.emit(event, data);
     },
     getOnlineCount: () => onlineUsers.size
   };
