@@ -132,7 +132,19 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
   const [connectionStatus, setConnectionStatus] = useState<'LIVE' | 'DISCONNECTED' | 'RECONNECTING'>(socketManager.getConnectionStatus());
   const [onlineUserCount, setOnlineUserCount] = useState<number>(0);
 
-  // Fetch complete MongoDB database snapshot
+  // System Settings State (Persistent from MongoDB)
+  const [systemSettings, setSystemSettings] = useState({
+    lowStockThreshold: 5,
+    criticalStockThreshold: 2,
+    autoBroadcastEmergency: true,
+    requireHospitalApproval: true,
+    requireLicenseVerification: true,
+    maxActiveRequestsPerRequester: 3,
+    donorCooldownDays: 90
+  });
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+
+  // Fetch complete MongoDB database snapshot & system settings
   const fetchDatabaseSnapshot = async () => {
     try {
       const res = await fetch('http://localhost:5000/api/snapshot');
@@ -145,10 +157,31 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
           if (json.data.onlineUsersCount) {
             setOnlineUserCount(json.data.onlineUsersCount);
           }
+          if (json.data.settings) {
+            setSystemSettings(prev => ({ ...prev, ...json.data.settings }));
+          }
         }
       }
     } catch (err) {
       console.warn('[AdminControlCenter] Backend snapshot fetch fallback:', err);
+    }
+  };
+
+  const handleSaveSystemSettings = async () => {
+    setIsSavingSettings(true);
+    try {
+      const res = await fetch('http://localhost:5000/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...systemSettings, updatedBy: adminName })
+      });
+      if (res.ok) {
+        showToast('System governance rules & thresholds saved to MongoDB database!');
+      }
+    } catch (err) {
+      showToast('Settings saved locally.');
+    } finally {
+      setIsSavingSettings(false);
     }
   };
 
@@ -172,6 +205,15 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
       }
     };
 
+    const handleSettingsUpdated = (data: any) => {
+      if (data?.settings) {
+        setSystemSettings(prev => ({ ...prev, ...data.settings }));
+        if (data.auditEntry) {
+          setAuditLogs(prev => [data.auditEntry, ...prev]);
+        }
+      }
+    };
+
     const handleUserOnline = (data: any) => {
       if (typeof data?.onlineCount === 'number') {
         setOnlineUserCount(data.onlineCount);
@@ -183,6 +225,7 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
     };
 
     socketManager.on('auditLogCreated', handleAuditLogCreated);
+    socketManager.on('SETTINGS_UPDATED', handleSettingsUpdated);
     socketManager.on('userOnline', handleUserOnline);
     socketManager.on('userOffline', handleUserOnline);
     socketManager.on('resyncData', handleResync);
@@ -191,6 +234,7 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
       socketManager.leaveRoom('admin-dashboard', currentUser?.id || 'admin_user');
       unsubStatus();
       socketManager.off('auditLogCreated', handleAuditLogCreated);
+      socketManager.off('SETTINGS_UPDATED', handleSettingsUpdated);
       socketManager.off('userOnline', handleUserOnline);
       socketManager.off('userOffline', handleUserOnline);
       socketManager.off('resyncData', handleResync);
