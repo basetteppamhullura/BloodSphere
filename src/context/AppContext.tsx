@@ -1348,10 +1348,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       closeEmergencyChatSession(matchingChat.id);
     }
 
+    // Send API persistence to backend MongoDB & emit socket event
+    fetch(`http://localhost:5000/api/emergency-requests/${requestId}/stage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ stage: 'COMPLETED', updatedBy: 'Admin / Hospital' })
+    }).catch(err => {
+      console.warn('[AppContext] Backend stage update fallback:', err.message);
+    });
+
     showToast(`Emergency Blood Donation #${requestId} marked as COMPLETED!`);
   };
 
   const updateInventoryStock = (bankId: string, group: string, change: number) => {
+    fetch('http://localhost:5000/api/inventory/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bankId, bloodGroup: group, component: 'PRBC', change })
+    }).catch(err => {
+      console.warn('[AppContext] Backend inventory sync fallback:', err.message);
+    });
+
     showToast(`Inventory updated for ${group}: ${change > 0 ? '+' : ''}${change} units.`);
   };
 
