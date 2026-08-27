@@ -6,6 +6,7 @@ import dotenv from 'dotenv';
 import { connectDB } from './db.js';
 import { initSocketHandler } from './socketHandler.js';
 import { createAdminRouter } from './routes/adminRoutes.js';
+import { createBloodBankRouter } from './routes/bloodBankRoutes.js';
 
 dotenv.config();
 
@@ -27,8 +28,9 @@ const io = new Server(server, {
 // Initialize socket handler
 const socketHandler = initSocketHandler(io);
 
-// Mount Admin API router
+// Mount Admin & Blood Bank API routers
 app.use('/api', createAdminRouter(socketHandler));
+app.use('/api/bloodbank', createBloodBankRouter(socketHandler));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ONLINE', timestamp: new Date().toISOString() });
