@@ -136,14 +136,19 @@ export default function App() {
                 }
               >
                 <Route index element={<Navigate to="/bloodbank/dashboard" replace />} />
-                <Route path="dashboard" element={<BloodBankPortalDesk initialTab="dashboard" />} />
-                <Route path="requests" element={<BloodBankPortalDesk initialTab="queue" />} />
-                <Route path="inventory" element={<BloodBankPortalDesk initialTab="inventory" />} />
-                <Route path="reservations" element={<BloodBankPortalDesk initialTab="lifecycle" />} />
-                <Route path="issue-blood" element={<BloodBankPortalDesk initialTab="lifecycle" />} />
-                <Route path="alerts" element={<BloodBankPortalDesk initialTab="alerts" />} />
-                <Route path="activity-log" element={<BloodBankPortalDesk initialTab="activity" />} />
-                <Route path="reports" element={<BloodBankPortalDesk initialTab="reports" />} />
+                <Route path="dashboard" element={<BloodBankPortalDesk />} />
+                <Route path="requests" element={<BloodBankPortalDesk />} />
+                <Route path="requests/:requestId" element={<BloodBankPortalDesk />} />
+                <Route path="inventory" element={<BloodBankPortalDesk />} />
+                <Route path="units" element={<BloodBankPortalDesk />} />
+                <Route path="units/:unitId" element={<BloodBankPortalDesk />} />
+                <Route path="reservations" element={<BloodBankPortalDesk />} />
+                <Route path="issue" element={<BloodBankPortalDesk />} />
+                <Route path="issue-blood" element={<Navigate to="/bloodbank/issue" replace />} />
+                <Route path="alerts" element={<BloodBankPortalDesk />} />
+                <Route path="activity" element={<BloodBankPortalDesk />} />
+                <Route path="activity-log" element={<Navigate to="/bloodbank/activity" replace />} />
+                <Route path="reports" element={<BloodBankPortalDesk />} />
               </Route>
 
               {/* ================================================== */}

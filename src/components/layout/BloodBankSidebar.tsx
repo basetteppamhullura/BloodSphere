@@ -24,14 +24,15 @@ export const BloodBankSidebar: React.FC = () => {
   const expiredUnitsCount = bloodUnitsList.filter(u => u.status === 'EXPIRED').length;
 
   const navItems = [
-    { to: '/bloodbank/dashboard', label: 'Blood Bank Dashboard', icon: Droplet },
+    { to: '/bloodbank/dashboard', label: 'Dashboard', icon: Droplet },
     { to: '/bloodbank/requests', label: 'Requester Queue', icon: Package, badge: pendingRequestsCount },
-    { to: '/bloodbank/inventory', label: 'Inventory & Stock Matrix', icon: Boxes },
-    { to: '/bloodbank/reservations', label: 'Blood Unit Reservations', icon: FileText },
-    { to: '/bloodbank/issue-blood', label: 'Issue Blood Transfusion', icon: Send },
+    { to: '/bloodbank/inventory', label: 'Inventory Matrix', icon: Boxes },
+    { to: '/bloodbank/units', label: 'Blood Units Tracking', icon: Droplet },
+    { to: '/bloodbank/reservations', label: 'Reservations Queue', icon: FileText },
+    { to: '/bloodbank/issue', label: 'Issue Blood Transfusion', icon: Send },
     { to: '/bloodbank/alerts', label: 'Low Stock & Expiry Alerts', icon: AlertTriangle, badge: expiredUnitsCount },
-    { to: '/bloodbank/activity-log', label: 'Immutable Activity Log', icon: History },
-    { to: '/bloodbank/reports', label: 'Operational Reports', icon: BarChart3 }
+    { to: '/bloodbank/activity', label: 'Activity Log', icon: History },
+    { to: '/bloodbank/reports', label: 'Analytics & Reports', icon: BarChart3 }
   ];
 
   return (
