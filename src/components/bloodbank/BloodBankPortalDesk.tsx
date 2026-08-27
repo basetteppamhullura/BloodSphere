@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { BloodGroup, ComponentType, DetailedBloodUnit, BankNotificationItem, ImmutableActivityEntry } from '../../types';
+import { socketManager } from '../../utils/socketManager';
 import { calculateDistanceKm } from '../../utils/distanceCalculator';
 import {
   Droplet,
@@ -50,7 +52,10 @@ export interface BloodBankPortalDeskProps {
   initialTab?: 'dashboard' | 'queue' | 'inventory' | 'lifecycle' | 'expiry' | 'alerts' | 'activity' | 'reports' | 'nearby';
 }
 
-export const BloodBankPortalDesk: React.FC<BloodBankPortalDeskProps> = ({ initialTab = 'dashboard' }) => {
+export const BloodBankPortalDesk: React.FC<BloodBankPortalDeskProps> = () => {
+  const location = useLocation();
+  const params = useParams();
+
   const {
     requests,
     inventoryStockMap,
@@ -68,16 +73,21 @@ export const BloodBankPortalDesk: React.FC<BloodBankPortalDeskProps> = ({ initia
   const { currentUser } = useAuth();
   const staffName = currentUser?.name || 'Dr. Radhika Sen (Blood Bank Director)';
 
-  // Blood Bank GPS Coordinates
-  const [bankLocation, setBankLocation] = useState<{ lat: number; lng: number }>({
-    lat: 15.362,
-    lng: 75.122
-  });
+  // Determine active tab dynamically from URL path
+  const getActiveTabFromPath = (): 'dashboard' | 'queue' | 'inventory' | 'lifecycle' | 'expiry' | 'alerts' | 'activity' | 'reports' | 'nearby' => {
+    const path = location.pathname;
+    if (path.includes('/bloodbank/requests')) return 'queue';
+    if (path.includes('/bloodbank/inventory')) return 'inventory';
+    if (path.includes('/bloodbank/units')) return 'lifecycle';
+    if (path.includes('/bloodbank/reservations')) return 'lifecycle';
+    if (path.includes('/bloodbank/issue')) return 'lifecycle';
+    if (path.includes('/bloodbank/alerts')) return 'alerts';
+    if (path.includes('/bloodbank/activity')) return 'activity';
+    if (path.includes('/bloodbank/reports')) return 'reports';
+    return 'dashboard';
+  };
 
-  // Navigation Tab State
-  const [activeTab, setActiveTab] = useState<
-    'dashboard' | 'queue' | 'inventory' | 'lifecycle' | 'expiry' | 'alerts' | 'activity' | 'reports' | 'nearby'
-  >(initialTab);
+  const activeTab = getActiveTabFromPath();
 
   // Filters & Search State
   const [searchQuery, setSearchQuery] = useState<string>('');
