@@ -74,7 +74,7 @@ export const DonorSidebar: React.FC = () => {
               className={({ isActive }) =>
                 `w-full flex items-center justify-between px-3.5 py-3 rounded-2xl transition-all ${
                   isActive
-                    ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-red-500/20'
+                    ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
                     : 'text-slate-700 hover:text-slate-900 hover:bg-sky-50'
                 }`
               }
@@ -82,11 +82,11 @@ export const DonorSidebar: React.FC = () => {
               {({ isActive }) => (
                 <>
                   <div className="flex items-center gap-3 min-w-0">
-                    <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-red-500'}`} />
+                    <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-sky-600'}`} />
                     <span className="truncate">{item.label}</span>
                   </div>
                   {item.badge && item.badge > 0 ? (
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-white text-red-600' : 'bg-red-100 text-red-700'}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-white text-red-600' : 'bg-red-100 text-red-700 font-mono'}`}>
                       {item.badge}
                     </span>
                   ) : isActive ? (

@@ -59,9 +59,9 @@ export const RequesterSidebar: React.FC = () => {
               className={({ isActive }) =>
                 `w-full flex items-center justify-between px-3.5 py-3 rounded-2xl transition-all ${
                   isActive
-                    ? 'bg-rose-600 text-white shadow-md shadow-rose-500/20'
+                    ? 'bg-sky-600 text-white shadow-md shadow-sky-600/20'
                     : item.isHighlight
-                    ? 'bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200'
+                    ? 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 font-black'
                     : 'text-slate-700 hover:text-slate-900 hover:bg-sky-50'
                 }`
               }
@@ -69,11 +69,11 @@ export const RequesterSidebar: React.FC = () => {
               {({ isActive }) => (
                 <>
                   <div className="flex items-center gap-3 min-w-0">
-                    <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : item.isHighlight ? 'text-rose-600' : 'text-rose-500'}`} />
+                    <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : item.isHighlight ? 'text-red-600' : 'text-sky-600'}`} />
                     <span className="truncate">{item.label}</span>
                   </div>
                   {item.badge && item.badge > 0 ? (
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-white text-rose-600' : 'bg-rose-100 text-rose-700'}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-white text-sky-600' : 'bg-sky-100 text-sky-800'}`}>
                       {item.badge}
                     </span>
                   ) : isActive ? (
