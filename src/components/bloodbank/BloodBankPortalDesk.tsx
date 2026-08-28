@@ -339,14 +339,15 @@ export const BloodBankPortalDesk: React.FC<BloodBankPortalDeskProps> = () => {
                         <td className="py-3.5 px-4 text-slate-700 font-bold">{plateletsAvail} Units</td>
                         <td className="py-3.5 px-4 text-indigo-700 font-bold">{totalReserved} Units</td>
                         <td className="py-3.5 px-4 font-sans">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                            isCritical
-                              ? 'bg-red-100 text-red-700 border border-red-200 animate-pulse'
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 w-fit ${
+                            prbcAvail === 0
+                              ? 'bg-red-100 text-red-800 border border-red-300'
                               : isLow
-                              ? 'bg-amber-100 text-amber-800 border border-amber-200'
-                              : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                           }`}>
-                            {isCritical ? 'CRITICAL' : isLow ? 'LOW STOCK' : 'OPTIMAL'}
+                            <span>{prbcAvail === 0 ? '🔴' : isLow ? '🟡' : '🟢'}</span>
+                            <span>{prbcAvail === 0 ? 'UNAVAILABLE' : isLow ? 'LOW STOCK' : 'AVAILABLE'}</span>
                           </span>
                         </td>
                       </tr>
@@ -537,16 +538,25 @@ export const BloodBankPortalDesk: React.FC<BloodBankPortalDeskProps> = () => {
                     </td>
                     <td className="py-3.5 px-4 text-slate-600 font-sans">{unit.storageLocation}</td>
                     <td className="py-3.5 px-4 font-sans">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                        unit.status === 'STORED'
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 w-fit ${
+                        unit.status === 'STORED' || unit.status === 'AVAILABLE'
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                           : unit.status === 'RESERVED'
-                          ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                          : unit.status === 'ISSUED'
-                          ? 'bg-sky-100 text-sky-800 border border-sky-200'
-                          : 'bg-red-100 text-red-800 border border-red-200'
+                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                          : unit.status === 'TESTING' || unit.status === 'PROCESSING' || unit.status === 'ISSUED'
+                          ? 'bg-sky-100 text-sky-800 border border-sky-300'
+                          : 'bg-red-100 text-red-800 border border-red-300'
                       }`}>
-                        {unit.status}
+                        <span>
+                          {unit.status === 'STORED' || unit.status === 'AVAILABLE'
+                            ? '🟢'
+                            : unit.status === 'RESERVED'
+                            ? '🟡'
+                            : unit.status === 'TESTING' || unit.status === 'PROCESSING' || unit.status === 'ISSUED'
+                            ? '🔵'
+                            : '🔴'}
+                        </span>
+                        <span>{unit.status}</span>
                       </span>
                     </td>
                     <td className="py-3.5 px-4 text-slate-500">{unit.lastUpdated}</td>
