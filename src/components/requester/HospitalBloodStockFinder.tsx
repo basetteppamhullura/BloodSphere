@@ -305,19 +305,23 @@ export const HospitalBloodStockFinder: React.FC = () => {
 
                 {/* Stock Status Badge */}
                 <div className="shrink-0">
-                  {hosp.statusText === 'In Stock' && (
-                    <span className="px-3.5 py-1 rounded-full text-xs font-black bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1">
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" /> ✅ In Stock ({hosp.totalUnits} units)
+                  {hosp.totalUnits > 5 ? (
+                    <span className="px-3.5 py-1 rounded-full text-xs font-black bg-emerald-950 text-emerald-300 border border-emerald-800 flex items-center gap-1.5">
+                      <span>🟢</span>
+                      <span>AVAILABLE</span>
+                      <span className="font-mono text-[10px] text-emerald-400">({hosp.totalUnits} Units Available)</span>
                     </span>
-                  )}
-                  {hosp.statusText === 'Low Stock' && (
-                    <span className="px-3.5 py-1 rounded-full text-xs font-black bg-amber-950 text-amber-300 border border-amber-800 flex items-center gap-1">
-                      <AlertTriangle className="w-4 h-4 text-amber-400" /> ⚠️ Low Stock ({hosp.totalUnits} units)
+                  ) : hosp.totalUnits > 0 ? (
+                    <span className="px-3.5 py-1 rounded-full text-xs font-black bg-amber-950 text-amber-300 border border-amber-800 flex items-center gap-1.5">
+                      <span>🟡</span>
+                      <span>LOW STOCK</span>
+                      <span className="font-mono text-[10px] text-amber-400">({hosp.totalUnits} Units Available)</span>
                     </span>
-                  )}
-                  {hosp.statusText === 'Out of Stock' && (
-                    <span className="px-3.5 py-1 rounded-full text-xs font-black bg-red-950 text-red-300 border border-red-800 flex items-center gap-1">
-                      <XCircle className="w-4 h-4 text-red-400" /> ❌ Out of Stock
+                  ) : (
+                    <span className="px-3.5 py-1 rounded-full text-xs font-black bg-red-950 text-red-300 border border-red-800 flex items-center gap-1.5">
+                      <span>🔴</span>
+                      <span>UNAVAILABLE</span>
+                      <span className="font-mono text-[10px] text-red-400">(0 Units Available)</span>
                     </span>
                   )}
                 </div>
