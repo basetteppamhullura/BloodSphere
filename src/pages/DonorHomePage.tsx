@@ -6,14 +6,12 @@ import {
   Heart,
   LayoutDashboard,
   AlertTriangle,
-  Calendar,
   CheckCircle2,
   Bell,
   User,
   LogOut,
   Clock,
   ArrowRight,
-  Droplet,
   ShieldCheck,
   MapPin,
   Activity
@@ -201,14 +199,14 @@ export const DonorHomePage: React.FC = () => {
                   </div>
 
                   <div className="text-right font-mono">
-                    <span className="text-lg font-black text-red-600 block">{req.unitsRequired} Units</span>
+                    <span className="text-lg font-black text-red-600 block">{req.unitsNeeded} Units</span>
                     <span className="text-[10px] text-slate-400">{req.unitsFulfilled} Fulfilled</span>
                   </div>
                 </div>
 
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
                   <span className="text-slate-400 font-medium flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" /> Posted {req.createdAt || 'recently'}
+                    <Clock className="w-3.5 h-3.5 text-slate-400" /> Requested {req.requestedAt || 'recently'}
                   </span>
 
                   <button

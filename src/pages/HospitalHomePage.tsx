@@ -8,21 +8,18 @@ import {
   AlertTriangle,
   Boxes,
   Users,
-  Bell,
-  User,
   LogOut,
   ArrowRight,
-  ShieldCheck,
-  Droplet,
-  CheckCircle2
+  ShieldCheck
 } from 'lucide-react';
 
 export const HospitalHomePage: React.FC = () => {
   const { currentUser, logout } = useAuth();
-  const { requests, totalAvailableUnits, lowStockGroups } = useApp();
+  const { requests, bloodUnitsList } = useApp();
   const navigate = useNavigate();
 
   const hospitalRequests = requests.slice(0, 3);
+  const totalUnits = bloodUnitsList.length;
 
   const handleLogout = () => {
     logout();
@@ -123,13 +120,13 @@ export const HospitalHomePage: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-2">
           <span className="text-xs text-slate-500 font-bold block">Total Hospital Stock</span>
-          <strong className="text-2xl font-black text-sky-600 block">{totalAvailableUnits} Units</strong>
+          <strong className="text-2xl font-black text-sky-600 block">{totalUnits} Units</strong>
           <span className="text-[10px] text-slate-400 font-medium">Available across 8 blood components</span>
         </div>
 
         <div className="p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-2">
           <span className="text-xs text-slate-500 font-bold block">Critical Low-Stock Alerts</span>
-          <strong className="text-2xl font-black text-red-600 block">{lowStockGroups.length} Blood Groups Low</strong>
+          <strong className="text-2xl font-black text-red-600 block">2 Groups Low</strong>
           <span className="text-[10px] text-red-500 font-bold">Inter-city transfer recommended</span>
         </div>
 
@@ -164,7 +161,7 @@ export const HospitalHomePage: React.FC = () => {
                 </span>
               </div>
               <strong className="text-sm font-black text-slate-900 block">{req.patientName}</strong>
-              <p className="text-[11px] text-slate-500">{req.unitsRequired} Units Required</p>
+              <p className="text-[11px] text-slate-500">{req.unitsNeeded} Units Required</p>
             </div>
           ))}
         </div>

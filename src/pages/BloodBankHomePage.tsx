@@ -8,23 +8,20 @@ import {
   Boxes,
   Package,
   AlertTriangle,
-  Bell,
-  User,
   LogOut,
   ArrowRight,
   ShieldCheck,
-  CheckCircle2,
-  FileText
+  CheckCircle2
 } from 'lucide-react';
 
 export const BloodBankHomePage: React.FC = () => {
   const { currentUser, logout } = useAuth();
-  const { bloodUnitsList, requests } = useApp();
+  const { bloodUnitsList } = useApp();
   const navigate = useNavigate();
 
   const totalUnits = bloodUnitsList.length;
   const expiredCount = bloodUnitsList.filter(u => u.status === 'EXPIRED').length;
-  const availableCount = bloodUnitsList.filter(u => u.status === 'AVAILABLE').length;
+  const availableCount = bloodUnitsList.filter(u => u.status === 'APPROVED' || u.status === 'STORED' || u.status === 'COLLECTED').length;
 
   const handleLogout = () => {
     logout();

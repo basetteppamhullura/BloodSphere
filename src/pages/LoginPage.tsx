@@ -81,7 +81,7 @@ export const LoginPage: React.FC = () => {
       showToast(res.message);
     } else if (res.success) {
       showToast(res.message);
-      navigate(getDashboardPath(selectedRole), { replace: true });
+      navigate(getDashboardPath(res.userRole || selectedRole), { replace: true });
     } else {
       setLoginError(res.message);
     }
@@ -94,7 +94,7 @@ export const LoginPage: React.FC = () => {
     const res = verifyTwoFactorOtp(otpInput);
     if (res.success) {
       showToast(res.message);
-      navigate(getDashboardPath(selectedRole), { replace: true });
+      navigate(getDashboardPath(res.userRole || selectedRole), { replace: true });
     } else {
       setLoginError(res.message);
     }

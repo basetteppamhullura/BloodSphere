@@ -21,7 +21,8 @@ export const AdminLoginPage: React.FC = () => {
     const res = login(email, 'admin');
     if (res.success) {
       showToast(res.message);
-      navigate('/admin/home', { replace: true });
+      const targetRole = res.userRole || 'admin';
+      navigate(`/${targetRole}/home`, { replace: true });
     } else {
       setLoginError(res.message);
     }

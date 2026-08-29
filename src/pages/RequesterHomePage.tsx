@@ -7,15 +7,10 @@ import {
   LayoutDashboard,
   PlusCircle,
   Search,
-  Building2,
   AlertTriangle,
-  Bell,
   User,
   LogOut,
-  ArrowRight,
-  Clock,
-  CheckCircle2,
-  Droplet
+  ArrowRight
 } from 'lucide-react';
 
 export const RequesterHomePage: React.FC = () => {
@@ -24,7 +19,6 @@ export const RequesterHomePage: React.FC = () => {
   const navigate = useNavigate();
 
   const myRequests = requests.slice(0, 3);
-  const unreadNotifs = notifications.filter(n => !n.read);
 
   const handleLogout = () => {
     logout();
@@ -174,7 +168,7 @@ export const RequesterHomePage: React.FC = () => {
               <strong className="text-sm font-black text-slate-900 block">{req.patientName}</strong>
               <p className="text-[11px] text-slate-500">{req.hospitalName}</p>
               <div className="pt-2 border-t border-slate-200 flex items-center justify-between text-[11px] font-mono">
-                <span>{req.unitsRequired} Units Required</span>
+                <span>{req.unitsNeeded} Units Required</span>
                 <span className="text-emerald-600 font-bold">{req.unitsFulfilled} Responded</span>
               </div>
             </div>

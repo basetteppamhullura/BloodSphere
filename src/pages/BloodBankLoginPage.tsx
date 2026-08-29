@@ -23,7 +23,8 @@ export const BloodBankLoginPage: React.FC = () => {
     const res = login(email, 'bloodbank', licenseNumber);
     if (res.success) {
       showToast(res.message);
-      navigate('/bloodbank/home', { replace: true });
+      const targetRole = res.userRole || 'bloodbank';
+      navigate(`/${targetRole}/home`, { replace: true });
     } else {
       setLoginError(res.message);
     }
