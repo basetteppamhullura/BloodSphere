@@ -30,11 +30,8 @@ export const DonorRequesterLoginPage: React.FC = () => {
     const res = login(email, selectedRole);
     if (res.success) {
       showToast(res.message);
-      if (selectedRole === 'donor') {
-        navigate('/donor/home', { replace: true });
-      } else {
-        navigate('/requester/home', { replace: true });
-      }
+      const targetRole = res.userRole || selectedRole;
+      navigate(`/${targetRole}/home`, { replace: true });
     } else {
       setLoginError(res.message);
     }

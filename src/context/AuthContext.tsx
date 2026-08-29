@@ -6,8 +6,8 @@ interface AuthContextType {
   currentUser: User | null;
   currentRole: UserRole;
   switchRole: (role: UserRole) => void;
-  login: (email: string, role: UserRole, licenseNumber?: string) => { success: boolean; requires2FA?: boolean; message: string };
-  verifyTwoFactorOtp: (otp: string) => { success: boolean; message: string };
+  login: (email: string, role?: UserRole, licenseNumber?: string) => { success: boolean; requires2FA?: boolean; userRole?: UserRole; message: string };
+  verifyTwoFactorOtp: (otp: string) => { success: boolean; userRole?: UserRole; message: string };
   logout: () => void;
   isPageAllowedForRole: (page: PageTab, role: UserRole) => boolean;
   authorizeRole: (requiredRole: UserRole) => { isAuthorized: boolean; userRole: UserRole | null; redirectPath: string };
@@ -176,26 +176,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const login = (email: string, role: UserRole, licenseNumber?: string): { success: boolean; requires2FA?: boolean; message: string } => {
-    const accountKey = `${email}_${role}`;
+  const login = (email: string, roleInput?: UserRole, licenseNumber?: string): { success: boolean; requires2FA?: boolean; userRole?: UserRole; message: string } => {
+    const matchedAccount = portalAccounts.find(
+      a => a.email.toLowerCase().trim() === email.toLowerCase().trim()
+    );
+
+    const actualRole: UserRole = matchedAccount ? matchedAccount.role : (roleInput || 'donor');
+    const accountKey = `${email}_${actualRole}`;
     const attempts = failedAttemptsMap[accountKey] || 0;
 
     if (attempts >= 5) {
       return { success: false, message: 'Account locked due to 5 failed login attempts. Contact Admin to unlock.' };
     }
 
-    const account = portalAccounts.find(
-      a => a.email.toLowerCase().trim() === email.toLowerCase().trim() && a.role === role
-    );
+    const account = matchedAccount || portalAccounts.find(a => a.role === actualRole);
 
     // Validate License Number if Hospital or Blood Bank
-    if ((role === 'hospital' || role === 'bloodbank') && licenseNumber) {
+    if ((actualRole === 'hospital' || actualRole === 'bloodbank') && licenseNumber) {
       const matchLicense = portalAccounts.find(
-        a => a.role === role && a.licenseNumber?.toUpperCase().trim() === licenseNumber.toUpperCase().trim()
+        a => a.role === actualRole && a.licenseNumber?.toUpperCase().trim() === licenseNumber.toUpperCase().trim()
       );
       if (!matchLicense) {
         setFailedAttemptsMap(prev => ({ ...prev, [accountKey]: (prev[accountKey] || 0) + 1 }));
-        return { success: false, message: `${role.toUpperCase()} License Registration Number not recognized. Access denied.` };
+        return { success: false, message: `${actualRole.toUpperCase()} License Registration Number not recognized. Access denied.` };
       }
     }
 
@@ -209,28 +212,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     // High security 2FA OTP for Hospital / Blood Bank
-    if (role === 'hospital' || role === 'bloodbank') {
-      setPending2FAUser({ email, role, account: account || SEED_PORTAL_ACCOUNTS[1] });
-      return { success: true, requires2FA: true, message: 'Password accepted. 2FA OTP sent to registered phone number.' };
+    if (actualRole === 'hospital' || actualRole === 'bloodbank') {
+      setPending2FAUser({ email, role: actualRole, account: account || SEED_PORTAL_ACCOUNTS[1] });
+      return { success: true, requires2FA: true, userRole: actualRole, message: 'Password accepted. 2FA OTP sent to registered phone number.' };
     }
 
     // Reset failed attempts on success
     setFailedAttemptsMap(prev => ({ ...prev, [accountKey]: 0 }));
 
-    switchRole(role);
+    switchRole(actualRole);
     const newUser: User = {
       ...MOCK_CURRENT_USER,
       email,
-      role,
+      role: actualRole,
       name: account?.name || MOCK_CURRENT_USER.name
     };
     setCurrentUser(newUser);
     localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
 
-    return { success: true, message: `Logged in successfully as ${role.toUpperCase()}!` };
+    return { success: true, userRole: actualRole, message: `Logged in successfully as ${actualRole.toUpperCase()}!` };
   };
 
-  const verifyTwoFactorOtp = (otp: string): { success: boolean; message: string } => {
+  const verifyTwoFactorOtp = (otp: string): { success: boolean; userRole?: UserRole; message: string } => {
     if (!pending2FAUser) {
       return { success: false, message: 'No 2FA verification session active.' };
     }
@@ -250,7 +253,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentUser(newUser);
       localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(newUser));
       setPending2FAUser(null);
-      return { success: true, message: `2FA Verified! Welcome ${account.name}.` };
+      return { success: true, userRole: role, message: `2FA Verified! Welcome ${account.name}.` };
     }
 
     return { success: false, message: 'Invalid 2FA OTP code. Please enter 6-digit code sent to your phone.' };
