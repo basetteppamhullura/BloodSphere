@@ -448,34 +448,40 @@ export const AdminControlCenterDesk: React.FC<AdminControlCenterDeskProps> = ({
           </div>
 
           {/* Online Users Real-Time Tracker Banner */}
-          <div className="p-5 rounded-3xl bg-gradient-to-r from-slate-900 to-slate-800 text-white space-y-4 shadow-md">
-            <div className="flex items-center justify-between border-b border-slate-700 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-emerald-400 animate-ping" />
-                <h3 className="font-extrabold text-sm text-white">Live Online Users Tracker (Socket.IO Connection Monitor)</h3>
+          <div className="p-5 rounded-3xl bg-[#F7FAF8] border border-[#DDE8E2] space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#DDE8E2] pb-3 gap-2">
+              <div className="flex items-center gap-2.5">
+                <div className="relative flex items-center justify-center w-3 h-3">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-[#16A86B] opacity-75 animate-ping" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#16A86B] shadow-[0_0_8px_#16A86B]" />
+                </div>
+                <h3 className="font-extrabold text-sm text-[#18352A]">Live Online Users Tracker (Socket.IO Connection Monitor)</h3>
               </div>
-              <strong className="text-lg font-black text-emerald-400 font-mono">🟢 {totalOnlineUsersCount} Users Online</strong>
+              <div className="flex items-center gap-2 bg-[#E8F6EF] px-3 py-1.5 rounded-full border border-[#DDE8E2]/60 w-fit">
+                <span className="w-2 h-2 rounded-full bg-[#16A86B]" />
+                <strong className="text-sm sm:text-base font-black text-[#16A86B] font-mono">{totalOnlineUsersCount} Users Online</strong>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs font-mono">
-              <div className="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-sans block">Online Donors</span>
-                <strong className="text-base text-emerald-400 font-black">{onlineDonorsCount} / {totalDonorsCount}</strong>
+              <div className="p-3.5 rounded-2xl bg-[#FFFFFF] border border-[#DDE8E2] shadow-xs">
+                <span className="text-[10px] text-[#587067] font-sans font-medium block">Online Donors</span>
+                <strong className="text-base text-[#087443] font-black">{onlineDonorsCount} / {totalDonorsCount}</strong>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-sans block">Online Requesters</span>
-                <strong className="text-base text-sky-400 font-black">{onlineRequestersCount} / {totalRequestersCount}</strong>
+              <div className="p-3.5 rounded-2xl bg-[#FFFFFF] border border-[#DDE8E2] shadow-xs">
+                <span className="text-[10px] text-[#587067] font-sans font-medium block">Online Requesters</span>
+                <strong className="text-base text-[#087443] font-black">{onlineRequestersCount} / {totalRequestersCount}</strong>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-sans block">Online Hospitals</span>
-                <strong className="text-base text-indigo-400 font-black">{onlineHospitalsCount} / {totalHospitalsCount}</strong>
+              <div className="p-3.5 rounded-2xl bg-[#FFFFFF] border border-[#DDE8E2] shadow-xs">
+                <span className="text-[10px] text-[#587067] font-sans font-medium block">Online Hospitals</span>
+                <strong className="text-base text-[#087443] font-black">{onlineHospitalsCount} / {totalHospitalsCount}</strong>
               </div>
 
-              <div className="p-3 rounded-2xl bg-slate-800/70 border border-slate-700">
-                <span className="text-[10px] text-slate-400 font-sans block">Online Blood Banks</span>
-                <strong className="text-base text-amber-400 font-black">{onlineBloodBanksCount} / {totalBloodBanksCount}</strong>
+              <div className="p-3.5 rounded-2xl bg-[#FFFFFF] border border-[#DDE8E2] shadow-xs">
+                <span className="text-[10px] text-[#587067] font-sans font-medium block">Online Blood Banks</span>
+                <strong className="text-base text-[#087443] font-black">{onlineBloodBanksCount} / {totalBloodBanksCount}</strong>
               </div>
             </div>
           </div>
