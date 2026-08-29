@@ -21,7 +21,7 @@ export const AdminLoginPage: React.FC = () => {
     const res = login(email, 'admin');
     if (res.success) {
       showToast(res.message);
-      navigate('/admin/dashboard', { replace: true });
+      navigate('/admin/home', { replace: true });
     } else {
       setLoginError(res.message);
     }

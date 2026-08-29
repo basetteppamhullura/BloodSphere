@@ -27,17 +27,17 @@ export const LoginPage: React.FC = () => {
   const getDashboardPath = (role: UserRole) => {
     switch (role) {
       case 'donor':
-        return '/donor/dashboard';
+        return '/donor/home';
       case 'requester':
-        return '/requester/dashboard';
+        return '/requester/home';
       case 'hospital':
-        return '/hospital/dashboard';
+        return '/hospital/home';
       case 'bloodbank':
-        return '/bloodbank/dashboard';
+        return '/bloodbank/home';
       case 'admin':
-        return '/admin/dashboard';
+        return '/admin/home';
       default:
-        return '/donor/dashboard';
+        return '/donor/home';
     }
   };
 
