@@ -18,7 +18,7 @@ export const RoleProtectedRoute: React.FC<RoleProtectedRouteProps> = ({ required
 
   useEffect(() => {
     if (!authCheck.isAuthorized && authCheck.userRole) {
-      showToast(`Unauthorized access. Redirecting to your ${authCheck.userRole.toUpperCase()} dashboard.`);
+      showToast(`Unauthorized access. Redirecting to your ${authCheck.userRole.toUpperCase()} home page.`);
     } else if (!authCheck.isAuthorized && !authCheck.userRole) {
       showToast(`Authentication required. Redirecting to ${requiredRole.toUpperCase()} login.`);
     }

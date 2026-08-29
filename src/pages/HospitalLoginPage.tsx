@@ -28,7 +28,7 @@ export const HospitalLoginPage: React.FC = () => {
       showToast(res.message);
     } else if (res.success) {
       showToast(res.message);
-      navigate('/hospital/dashboard', { replace: true });
+      navigate('/hospital/home', { replace: true });
     } else {
       setLoginError(res.message);
     }
@@ -41,7 +41,7 @@ export const HospitalLoginPage: React.FC = () => {
     const res = verifyTwoFactorOtp(otpInput);
     if (res.success) {
       showToast(res.message);
-      navigate('/hospital/dashboard', { replace: true });
+      navigate('/hospital/home', { replace: true });
     } else {
       setLoginError(res.message);
     }

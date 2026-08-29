@@ -29,6 +29,13 @@ import { DonorSearchPage } from './pages/DonorSearchPage';
 import { LeaderboardPage } from './pages/LeaderboardPage';
 import { ProfilePage } from './pages/ProfilePage';
 
+// Role Home Pages
+import { DonorHomePage } from './pages/DonorHomePage';
+import { RequesterHomePage } from './pages/RequesterHomePage';
+import { HospitalHomePage } from './pages/HospitalHomePage';
+import { BloodBankHomePage } from './pages/BloodBankHomePage';
+import { AdminHomePage } from './pages/AdminHomePage';
+
 // Role Portal Specific Views & Desks
 import { RealtimeDonorPortal } from './components/donor/RealtimeDonorPortal';
 import { RealtimeRequesterPortal } from './components/requester/RealtimeRequesterPortal';
@@ -74,7 +81,8 @@ export default function App() {
                   </RoleProtectedRoute>
                 }
               >
-                <Route index element={<Navigate to="/donor/dashboard" replace />} />
+                <Route index element={<Navigate to="/donor/home" replace />} />
+                <Route path="home" element={<DonorHomePage />} />
                 <Route path="dashboard" element={<RealtimeDonorPortal />} />
                 <Route path="emergency" element={<EmergencyRequestsPage />} />
                 <Route path="rare-blood" element={<RareRegistryPage />} />
@@ -95,7 +103,8 @@ export default function App() {
                   </RoleProtectedRoute>
                 }
               >
-                <Route index element={<Navigate to="/requester/dashboard" replace />} />
+                <Route index element={<Navigate to="/requester/home" replace />} />
+                <Route path="home" element={<RequesterHomePage />} />
                 <Route path="dashboard" element={<RealtimeRequesterPortal />} />
                 <Route path="create-request" element={<RequesterActionHub />} />
                 <Route path="requests" element={<EmergencyRequestsPage />} />
@@ -115,7 +124,8 @@ export default function App() {
                   </RoleProtectedRoute>
                 }
               >
-                <Route index element={<Navigate to="/hospital/dashboard" replace />} />
+                <Route index element={<Navigate to="/hospital/home" replace />} />
+                <Route path="home" element={<HospitalHomePage />} />
                 <Route path="dashboard" element={<HospitalMonitorDesk initialTab="monitor" />} />
                 <Route path="requests" element={<HospitalEmergencyBoard />} />
                 <Route path="blood-availability" element={<HospitalBloodStockFinder />} />
@@ -135,7 +145,8 @@ export default function App() {
                   </RoleProtectedRoute>
                 }
               >
-                <Route index element={<Navigate to="/bloodbank/dashboard" replace />} />
+                <Route index element={<Navigate to="/bloodbank/home" replace />} />
+                <Route path="home" element={<BloodBankHomePage />} />
                 <Route path="dashboard" element={<BloodBankPortalDesk />} />
                 <Route path="requests" element={<BloodBankPortalDesk />} />
                 <Route path="requests/:requestId" element={<BloodBankPortalDesk />} />
@@ -162,7 +173,8 @@ export default function App() {
                   </RoleProtectedRoute>
                 }
               >
-                <Route index element={<Navigate to="/admin/dashboard" replace />} />
+                <Route index element={<Navigate to="/admin/home" replace />} />
+                <Route path="home" element={<AdminHomePage />} />
                 <Route path="dashboard" element={<AdminControlCenterDesk />} />
                 <Route path="accounts" element={<AdminControlCenterDesk />} />
                 <Route path="users" element={<Navigate to="/admin/accounts" replace />} />

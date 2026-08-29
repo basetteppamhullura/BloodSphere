@@ -339,11 +339,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     if (currentRole !== requiredRole) {
       const defaultRolePath: Record<UserRole, string> = {
-        donor: '/donor/dashboard',
-        requester: '/requester/dashboard',
-        hospital: '/hospital/dashboard',
-        bloodbank: '/bloodbank/dashboard',
-        admin: '/admin/dashboard'
+        donor: '/donor/home',
+        requester: '/requester/home',
+        hospital: '/hospital/home',
+        bloodbank: '/bloodbank/home',
+        admin: '/admin/home'
       };
       return { isAuthorized: false, userRole: currentRole, redirectPath: defaultRolePath[currentRole] || '/login' };
     }

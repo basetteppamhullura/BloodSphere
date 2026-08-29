@@ -31,9 +31,9 @@ export const DonorRequesterLoginPage: React.FC = () => {
     if (res.success) {
       showToast(res.message);
       if (selectedRole === 'donor') {
-        navigate('/donor/dashboard', { replace: true });
+        navigate('/donor/home', { replace: true });
       } else {
-        navigate('/requester/dashboard', { replace: true });
+        navigate('/requester/home', { replace: true });
       }
     } else {
       setLoginError(res.message);
