@@ -22,6 +22,7 @@ export const RequesterSidebar: React.FC = () => {
   const unreadNotifs = notifications.filter(n => !n.read).length;
 
   const navItems = [
+    { to: '/requester/home', label: 'Requester Home', icon: LifeBuoy },
     { to: '/requester/dashboard', label: 'Requester Overview', icon: LayoutDashboard },
     { to: '/requester/create-request', label: 'Create Emergency Request', icon: PlusCircle, isHighlight: true },
     { to: '/requester/requests', label: 'Active Requests', icon: AlertTriangle },

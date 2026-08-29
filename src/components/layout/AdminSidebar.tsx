@@ -40,6 +40,7 @@ export const AdminSidebar: React.FC = () => {
     {
       title: 'OVERVIEW',
       items: [
+        { to: '/admin/home', label: 'Admin Home', icon: ShieldCheck },
         { to: '/admin/dashboard', label: 'Control Overview', icon: ShieldCheck }
       ]
     },

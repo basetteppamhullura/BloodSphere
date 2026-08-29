@@ -24,6 +24,7 @@ export const BloodBankSidebar: React.FC = () => {
   const expiredUnitsCount = bloodUnitsList.filter(u => u.status === 'EXPIRED').length;
 
   const navItems = [
+    { to: '/bloodbank/home', label: 'Blood Bank Home', icon: Droplet },
     { to: '/bloodbank/dashboard', label: 'Dashboard', icon: Droplet },
     { to: '/bloodbank/requests', label: 'Requester Queue', icon: Package, badge: pendingRequestsCount },
     { to: '/bloodbank/inventory', label: 'Inventory Matrix', icon: Boxes },

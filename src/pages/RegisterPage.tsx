@@ -35,11 +35,11 @@ export const RegisterPage: React.FC = () => {
     if (createdAcc) {
       showToast(`Account registered successfully for ${name}!`);
       const defaultRolePath: Record<UserRole, string> = {
-        donor: '/donor/dashboard',
-        requester: '/requester/dashboard',
-        hospital: '/hospital/dashboard',
-        bloodbank: '/bloodbank/dashboard',
-        admin: '/admin/dashboard'
+        donor: '/donor/home',
+        requester: '/requester/home',
+        hospital: '/hospital/home',
+        bloodbank: '/bloodbank/home',
+        admin: '/admin/home'
       };
       navigate(defaultRolePath[role] || '/login', { replace: true });
     }

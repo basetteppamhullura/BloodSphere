@@ -23,6 +23,7 @@ export const HospitalSidebar: React.FC = () => {
   ).length;
 
   const navItems = [
+    { to: '/hospital/home', label: 'Hospital Home', icon: Building2 },
     { to: '/hospital/dashboard', label: 'Hospital Dashboard', icon: Building2 },
     { to: '/hospital/requests', label: 'Patient Requests Board', icon: AlertTriangle, badge: criticalCount },
     { to: '/hospital/blood-availability', label: 'Blood Availability Search', icon: Droplet },

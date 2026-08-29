@@ -25,6 +25,7 @@ export const DonorSidebar: React.FC = () => {
   ).length;
 
   const navItems = [
+    { to: '/donor/home', label: 'Donor Home', icon: Heart },
     { to: '/donor/dashboard', label: 'Donor Overview', icon: LayoutDashboard },
     { to: '/donor/emergency', label: 'Emergency Requests', icon: AlertTriangle, badge: criticalCount },
     { to: '/donor/rare-blood', label: 'Rare Blood Registry', icon: ShieldCheck },

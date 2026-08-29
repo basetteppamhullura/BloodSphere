@@ -12,38 +12,38 @@ export const MobileNav: React.FC = () => {
     switch (currentRole) {
       case 'donor':
         return [
-          { to: '/donor/dashboard', label: 'Home', icon: LayoutDashboard },
+          { to: '/donor/home', label: 'Home', icon: Home },
+          { to: '/donor/dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { to: '/donor/emergency', label: 'Requests', icon: AlertTriangle },
-          { to: '/donor/directory', label: 'Donors', icon: Search },
           { to: '/donor/profile', label: 'Profile', icon: User }
         ];
       case 'requester':
         return [
-          { to: '/requester/dashboard', label: 'Home', icon: LayoutDashboard },
+          { to: '/requester/home', label: 'Home', icon: Home },
+          { to: '/requester/dashboard', label: 'Dashboard', icon: LayoutDashboard },
           { to: '/requester/requests', label: 'Requests', icon: AlertTriangle },
-          { to: '/requester/find-blood', label: 'Find Stock', icon: Search },
           { to: '/requester/profile', label: 'Profile', icon: User }
         ];
       case 'hospital':
         return [
-          { to: '/hospital/dashboard', label: 'Home', icon: Building2 },
+          { to: '/hospital/home', label: 'Home', icon: Home },
+          { to: '/hospital/dashboard', label: 'Dashboard', icon: Building2 },
           { to: '/hospital/requests', label: 'Requests', icon: AlertTriangle },
-          { to: '/hospital/blood-banks', label: 'Supplies', icon: Search },
           { to: '/hospital/reports', label: 'Reports', icon: User }
         ];
       case 'bloodbank':
         return [
-          { to: '/bloodbank/dashboard', label: 'Home', icon: Droplet },
+          { to: '/bloodbank/home', label: 'Home', icon: Home },
+          { to: '/bloodbank/dashboard', label: 'Dashboard', icon: Droplet },
           { to: '/bloodbank/requests', label: 'Queue', icon: AlertTriangle },
-          { to: '/bloodbank/inventory', label: 'Stock', icon: Search },
           { to: '/bloodbank/reports', label: 'Reports', icon: User }
         ];
       case 'admin':
         return [
-          { to: '/admin/dashboard', label: 'Admin', icon: ShieldCheck },
+          { to: '/admin/home', label: 'Home', icon: Home },
+          { to: '/admin/dashboard', label: 'Dashboard', icon: ShieldCheck },
           { to: '/admin/users', label: 'Users', icon: User },
-          { to: '/admin/requests', label: 'Requests', icon: AlertTriangle },
-          { to: '/admin/reports', label: 'Reports', icon: Search }
+          { to: '/admin/requests', label: 'Requests', icon: AlertTriangle }
         ];
       default:
         return [
