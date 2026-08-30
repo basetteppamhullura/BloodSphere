@@ -1,7 +1,8 @@
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
-import { HospitalHeaderNav } from './HospitalHeaderNav';
+import { Header } from './Header';
+import { HospitalSidebar } from './HospitalSidebar';
 import { Footer } from './Footer';
 import { MobileNav } from './MobileNav';
 import { EmergencyPostModal } from '../modals/EmergencyPostModal';
@@ -22,12 +23,16 @@ export const HospitalLayout: React.FC = () => {
         </div>
       )}
 
-      {/* Top Hospital Horizontal Navigation Header */}
-      <HospitalHeaderNav />
+      {/* Main Global Header */}
+      <Header />
 
-      <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
-        {/* Main Content Viewport - Full Width Horizontal Layout */}
-        <main className="w-full min-w-0 pb-16 md:pb-0">
+      {/* Layout Grid: Left Vertical Sidebar + Right Content Viewport */}
+      <div className="flex-1 flex max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 gap-6 relative z-10">
+        {/* Hospital Portal Vertical Sidebar */}
+        <HospitalSidebar />
+
+        {/* Main Content Viewport */}
+        <main className="flex-1 min-w-0 pb-16 md:pb-0">
           <Outlet />
         </main>
       </div>
