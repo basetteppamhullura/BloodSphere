@@ -16,7 +16,8 @@ import {
   Clock,
   ChevronRight,
   RefreshCw,
-  Boxes
+  Boxes,
+  Truck
 } from 'lucide-react';
 
 interface HospitalEntry {
@@ -98,6 +99,15 @@ const SEED_HOSPITALS: HospitalEntry[] = [
   }
 ];
 
+// Helper function to get minimum required safety threshold per component & blood group
+function getMinimumThreshold(bloodGroup: string, component: string): number {
+  if (bloodGroup === 'O+' || bloodGroup === 'A+') {
+    if (component === 'PRBC' || component === 'Whole Blood') return 5;
+  }
+  if (component === 'PRBC' || component === 'Whole Blood') return 4;
+  return 3;
+}
+
 // Haversine Distance Calculation (km)
 function calculateHaversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -161,6 +171,49 @@ export const HospitalBloodStockFinder: React.FC = () => {
     });
   });
 
+  // Calculate Critical Low Stock Alert Items dynamically
+  const lowStockAlertItems: {
+    bloodGroup: BloodGroup;
+    component: string;
+    available: number;
+    minimum: number;
+    shortage: number;
+    severity: 'Critical' | 'Low' | 'Normal';
+    dotColor: string;
+    nearbyBanks: { name: string; units: number }[];
+  }[] = [];
+
+  groupsOrder.forEach(group => {
+    const groupData = inventoryStockMap[group] || {};
+    ['PRBC', 'Whole Blood', 'Plasma', 'Platelets'].forEach(comp => {
+      const typedItem = (groupData as any)[comp] as { available?: number };
+      const avail = typedItem?.available || 0;
+      const minRequired = getMinimumThreshold(group, comp);
+
+      if (avail < minRequired) {
+        const shortage = minRequired - avail;
+        const severity = avail <= 2 || avail === 0 ? 'Critical' : 'Low';
+        const dotColor = severity === 'Critical' ? '🔴' : '🟡';
+
+        const nearbyBanks = SEED_HOSPITALS.map(h => ({
+          name: h.name,
+          units: (h.stock[group]?.rbc || 0) + (h.stock[group]?.whole || 0)
+        })).filter(b => b.units > 0);
+
+        lowStockAlertItems.push({
+          bloodGroup: group,
+          component: comp,
+          available: avail,
+          minimum: minRequired,
+          shortage,
+          severity,
+          dotColor,
+          nearbyBanks
+        });
+      }
+    });
+  });
+
   // Fallback demo rows matching specification if database initialized fresh
   if (inventoryRows.length === 0) {
     inventoryRows.push(
@@ -192,6 +245,16 @@ export const HospitalBloodStockFinder: React.FC = () => {
         showToast('GPS access denied. City search active.');
       }
     );
+  };
+
+  const handleRequestTransfer = (group: BloodGroup, component: string) => {
+    showToast(`Initiated inter-city stock transfer request for ${group} (${component})!`);
+  };
+
+  const handleCreateEmergencyRequest = (group: BloodGroup) => {
+    setSelectedBloodGroup(group);
+    setActiveEmergencyPostModal(true);
+    showToast(`Opening Emergency Broadcast form for ${group}!`);
   };
 
   const handleRequestFromHospital = (hosp: HospitalEntry) => {
@@ -243,14 +306,14 @@ export const HospitalBloodStockFinder: React.FC = () => {
         <div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-black text-[#18352A] tracking-tight">
-              Hospital Blood <span className="text-[#087443]">Inventory & Availability</span>
+              Hospital Blood <span className="text-[#087443]">Inventory & Alerts</span>
             </h2>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#E8F6EF] text-[#087443] border border-[#DDE8E2] flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[#16A86B] animate-ping" /> REAL-TIME DATABASE ACTIVE
             </span>
           </div>
           <p className="text-xs text-[#587067] mt-1">
-            Real-time blood stock calculation and availability search across hospital vaults & connected blood banks.
+            Real-time blood stock calculation, critical low-stock shortage alerts, and regional bank transfer requests.
           </p>
         </div>
 
@@ -264,7 +327,85 @@ export const HospitalBloodStockFinder: React.FC = () => {
         </button>
       </div>
 
-      {/* DETAILED HOSPITAL INVENTORY MATRIX TABLE (REQUIREMENT 3) */}
+      {/* CRITICAL LOW-STOCK ALERTS & SHORTAGE BOARD (REQUIREMENT 3 & 6) */}
+      <div className="p-6 rounded-3xl bg-white border border-red-200 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-red-100 pb-3">
+          <div>
+            <h3 className="font-black text-sm text-red-900 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse" /> Critical Low-Stock Alerts & Shortage Matrix
+            </h3>
+            <p className="text-xs text-red-700 mt-0.5">
+              Live database alert system comparing available stock against clinical safety minimums.
+            </p>
+          </div>
+          <span className="px-3 py-1 rounded-xl bg-red-100 text-red-800 font-extrabold text-xs border border-red-300">
+            {lowStockAlertItems.length} Component Alert(s) Active
+          </span>
+        </div>
+
+        {lowStockAlertItems.length === 0 ? (
+          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-2.5 font-bold">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
+            <span>🟢 All Hospital Blood Stock Levels are Normal. All safety thresholds met!</span>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {lowStockAlertItems.map((alert, idx) => (
+              <div key={idx} className="p-4 rounded-2xl bg-red-50/70 border border-red-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <span className="px-2.5 py-0.5 rounded-md bg-red-600 text-white font-black text-xs">
+                      🩸 {alert.bloodGroup}
+                    </span>
+                    <strong className="font-extrabold text-slate-900 text-sm">{alert.component}</strong>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${
+                      alert.severity === 'Critical' ? 'bg-red-200 text-red-900 border-red-400' : 'bg-amber-100 text-amber-900 border-amber-300'
+                    }`}>
+                      {alert.dotColor} {alert.severity.toUpperCase()} SHORTAGE
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-xs font-mono text-slate-700">
+                    <span>Available: <strong className="text-red-700 font-black">{alert.available} u</strong></span>
+                    <span>Required Min: <strong className="text-slate-900 font-bold">{alert.minimum} u</strong></span>
+                    <span>Shortage: <strong className="text-red-600 font-black">-{alert.shortage} u</strong></span>
+                  </div>
+
+                  {/* NEARBY BLOOD BANKS AVAILABILITY */}
+                  {alert.nearbyBanks.length > 0 && (
+                    <div className="pt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-600 font-medium">
+                      <span className="font-bold text-slate-800">Available at nearby banks:</span>
+                      {alert.nearbyBanks.slice(0, 3).map((bank, bIdx) => (
+                        <span key={bIdx} className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 font-bold text-slate-800">
+                          {bank.name.split(' ')[0]}: <strong className="text-[#087443]">{bank.units}u</strong>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* ACTION BUTTONS */}
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    onClick={() => handleRequestTransfer(alert.bloodGroup, alert.component)}
+                    className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-xs transition-all flex items-center gap-1"
+                  >
+                    <Truck className="w-3.5 h-3.5" /> Request Transfer
+                  </button>
+                  <button
+                    onClick={() => handleCreateEmergencyRequest(alert.bloodGroup)}
+                    className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-xs transition-all flex items-center gap-1"
+                  >
+                    <PlusCircle className="w-3.5 h-3.5" /> Create Emergency Request
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* DETAILED HOSPITAL INVENTORY MATRIX TABLE */}
       <div className="p-6 rounded-3xl bg-white border border-[#DDE8E2] shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#DDE8E2] pb-3">
           <div>

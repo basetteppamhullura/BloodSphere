@@ -14,6 +14,15 @@ import {
   ArrowUpRight
 } from 'lucide-react';
 
+// Helper function to get minimum required safety threshold per component & blood group
+function getMinimumThreshold(bloodGroup: string, component: string): number {
+  if (bloodGroup === 'O+' || bloodGroup === 'A+') {
+    if (component === 'PRBC' || component === 'Whole Blood') return 5;
+  }
+  if (component === 'PRBC' || component === 'Whole Blood') return 4;
+  return 3;
+}
+
 export const HospitalHomePage: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const { requests, bloodUnitsList, inventoryStockMap } = useApp();
@@ -36,6 +45,28 @@ export const HospitalHomePage: React.FC = () => {
     });
   });
   const activeComponentsCount = activeComponentsSet.size || 4;
+
+  // 3. Calculate Critical Low-Stock Groups dynamically based on minimum safety thresholds
+  const lowStockGroupSet = new Set<string>();
+  (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as string[]).forEach(group => {
+    const groupComps = inventoryStockMap[group as any] || {};
+    let isGroupLow = false;
+
+    ['PRBC', 'Whole Blood', 'Plasma (FFP)', 'Platelets (PRP)', 'Plasma', 'Platelets'].forEach(comp => {
+      const item = (groupComps as any)[comp];
+      const avail = item?.available || 0;
+      const minRequired = getMinimumThreshold(group, comp);
+      if (avail < minRequired) {
+        isGroupLow = true;
+      }
+    });
+
+    if (isGroupLow) {
+      lowStockGroupSet.add(group);
+    }
+  });
+
+  const criticalLowGroupCount = lowStockGroupSet.size;
 
   const handleLogout = () => {
     logout();
@@ -87,7 +118,7 @@ export const HospitalHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Hospital Summary Matrix (Blood Availability & Alerts) */}
+      {/* 2. Hospital Summary Matrix (Blood Availability & Critical Low Stock Alerts) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         
         {/* CLICKABLE TOTAL HOSPITAL STOCK CARD */}
@@ -110,10 +141,34 @@ export const HospitalHomePage: React.FC = () => {
           </span>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-2">
-          <span className="text-xs text-slate-500 font-bold block">Critical Low-Stock Alerts</span>
-          <strong className="text-2xl font-black text-red-600 block">2 Groups Low</strong>
-          <span className="text-[10px] text-red-500 font-bold">Inter-city transfer recommended</span>
+        {/* CLICKABLE DYNAMIC CRITICAL LOW-STOCK ALERTS CARD */}
+        <div
+          onClick={() => navigate('/hospital/blood-availability')}
+          className={`p-5 rounded-2xl bg-white border shadow-xs space-y-2 cursor-pointer transition-all group ${
+            criticalLowGroupCount > 0
+              ? 'border-red-200 hover:border-red-500 hover:shadow-md'
+              : 'border-[#DDE8E2] hover:border-emerald-500 hover:shadow-md'
+          }`}
+          title="Click to view critical low-stock alerts & nearby blood bank transfers"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-600 font-bold block">🚨 Critical Low-Stock Alerts</span>
+            <span className={`text-xs font-extrabold group-hover:translate-x-1 transition-transform flex items-center gap-0.5 ${
+              criticalLowGroupCount > 0 ? 'text-red-600' : 'text-emerald-600'
+            }`}>
+              View Alerts <ArrowUpRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+          <strong className={`text-3xl font-black block tracking-tight ${
+            criticalLowGroupCount > 0 ? 'text-red-600' : 'text-emerald-600'
+          }`}>
+            {criticalLowGroupCount > 0 ? `${criticalLowGroupCount} Group${criticalLowGroupCount !== 1 ? 's' : ''} Low` : 'All Stock Normal'}
+          </strong>
+          <span className={`text-[11px] font-bold block ${
+            criticalLowGroupCount > 0 ? 'text-red-600' : 'text-emerald-700'
+          }`}>
+            {criticalLowGroupCount > 0 ? 'Inter-city transfer / blood bank order recommended' : '🟢 All safety thresholds met'}
+          </span>
         </div>
 
         <div className="p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-2">
