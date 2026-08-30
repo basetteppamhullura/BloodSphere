@@ -1,16 +1,16 @@
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import {
   Building2,
   LayoutDashboard,
   AlertTriangle,
-  Boxes,
-  Users,
   LogOut,
   ArrowRight,
-  ShieldCheck
+  ShieldCheck,
+  CheckCircle2,
+  Activity
 } from 'lucide-react';
 
 export const HospitalHomePage: React.FC = () => {
@@ -29,7 +29,7 @@ export const HospitalHomePage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in">
       
-      {/* 1. Hero Welcome Header */}
+      {/* 1. Welcome & Hospital Overview Header */}
       <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-sky-700 via-sky-800 to-slate-900 text-white shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 opacity-10 pointer-events-none">
           <Building2 className="w-96 h-96 fill-white" />
@@ -71,52 +71,7 @@ export const HospitalHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Primary Navigation Bar */}
-      <div className="p-3 rounded-2xl bg-white border border-sky-100 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs font-extrabold">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to="/hospital/home"
-            className="px-4 py-2 rounded-xl bg-sky-600 text-white shadow-sm font-black flex items-center gap-1.5"
-          >
-            <Building2 className="w-4 h-4" /> Home
-          </Link>
-
-          <Link
-            to="/hospital/dashboard"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-sky-50 flex items-center gap-1.5 transition-colors"
-          >
-            <LayoutDashboard className="w-4 h-4 text-sky-600" /> Dashboard
-          </Link>
-
-          <Link
-            to="/hospital/requests"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-sky-50 flex items-center gap-1.5 transition-colors"
-          >
-            <AlertTriangle className="w-4 h-4 text-amber-600" /> Patient Requests
-          </Link>
-
-          <Link
-            to="/hospital/blood-banks"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-sky-50 flex items-center gap-1.5 transition-colors"
-          >
-            <Boxes className="w-4 h-4 text-emerald-600" /> Blood Banks
-          </Link>
-
-          <Link
-            to="/hospital/donors"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-sky-50 flex items-center gap-1.5 transition-colors"
-          >
-            <Users className="w-4 h-4 text-indigo-600" /> Donation Drives
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-2 pr-2">
-          <span className="text-[11px] text-slate-400 font-mono">Role: HOSPITAL</span>
-          <span className="w-2 h-2 rounded-full bg-sky-500" />
-        </div>
-      </div>
-
-      {/* 3. Hospital Summary Matrix */}
+      {/* 2. Hospital Summary Matrix (Blood Availability & Alerts) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-2">
           <span className="text-xs text-slate-500 font-bold block">Total Hospital Stock</span>
@@ -137,7 +92,7 @@ export const HospitalHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 4. Patient Emergency Board Preview */}
+      {/* 3. Emergency Information & Trauma Patient Requests Preview */}
       <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-sky-100 pb-3">
           <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
@@ -164,6 +119,43 @@ export const HospitalHomePage: React.FC = () => {
               <p className="text-[11px] text-slate-500">{req.unitsNeeded} Units Required</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* 4. Recent Activity & Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-xs space-y-3">
+          <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-sky-600" /> Hospital Operational Activity
+          </h3>
+          <div className="space-y-2.5 text-xs">
+            <div className="p-3 rounded-2xl bg-sky-50/60 border border-sky-100 space-y-0.5">
+              <span className="font-bold text-slate-800 block">Emergency Blood Transfusion Dispatched</span>
+              <span className="text-[10px] text-slate-500">ICU Bed #4 • 2 Units O- PRBC Transfused</span>
+            </div>
+            <div className="p-3 rounded-2xl bg-sky-50/60 border border-sky-100 space-y-0.5">
+              <span className="font-bold text-slate-800 block">Blood Bank Stock Transfer Approved</span>
+              <span className="text-[10px] text-slate-500">Rotary Regional Blood Center • 5 Units Received</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-6 rounded-3xl bg-emerald-50/60 border border-emerald-200 flex flex-col justify-between space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 font-black text-emerald-800 text-sm">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600" /> Live Hospital Network Connected
+            </div>
+            <p className="text-xs text-emerald-950 leading-relaxed font-medium">
+              Your hospital center is synced with the BloodSphere emergency broadcast system and regional blood banks.
+            </p>
+          </div>
+
+          <button
+            onClick={() => navigate('/hospital/dashboard')}
+            className="w-full py-3 rounded-2xl bg-[#087443] hover:bg-[#065b34] text-white font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-2"
+          >
+            <LayoutDashboard className="w-4 h-4" /> Open Full Hospital Dashboard
+          </button>
         </div>
       </div>
 
