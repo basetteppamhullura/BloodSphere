@@ -309,13 +309,24 @@ export interface GroupCircle {
 
 export interface InterCityTransfer {
   id: string;
-  sourceCity: string;
-  targetCity: string;
+  sourceHospital?: string;
+  sourceCity?: string;
+  targetHospital?: string;
+  targetCity?: string;
   bloodGroup: BloodGroup;
+  component?: ComponentType;
   units: number;
-  urgency: UrgencyLevel;
-  courierStatus: 'In Transit' | 'Dispatch Pending' | 'Delivered';
-  etaMinutes: number;
+  urgency?: UrgencyLevel;
+  courierStatus?: 'In Transit' | 'Dispatch Pending' | 'Delivered' | string;
+  status?: string;
+  etaMinutes?: number;
+  courierEtaMins?: number;
+  fromCity?: string;
+  toCity?: string;
+  fromHospital?: string;
+  toHospital?: string;
+  estimatedTimeMins?: number;
+  urgencyReason?: string;
 }
 
 // ==================================================

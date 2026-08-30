@@ -106,6 +106,8 @@ export interface AppContextType {
   groupCircles: GroupCircle[];
   toggleCircleJoin: (circleId: string) => void;
   interCityTransfers: InterCityTransfer[];
+  createInterCityTransfer: (data: Partial<InterCityTransfer>) => void;
+  updateInterCityTransferStatus: (id: string, status: string) => void;
   leaderboard: { monthly: LeaderboardItem[]; allTime: LeaderboardItem[] };
   notifications: NotificationItem[];
   toastMessage: string | null;
@@ -412,7 +414,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [bankNotifications, setBankNotifications] = useState<BankNotificationItem[]>([]);
   const [camps, setCamps] = useState<DonationCamp[]>(MOCK_CAMPS);
   const [groupCircles, setGroupCircles] = useState<GroupCircle[]>(MOCK_GROUP_CIRCLES);
-  const [interCityTransfers] = useState<InterCityTransfer[]>(MOCK_INTERCITY_TRANSFERS);
+  const [interCityTransfers, setInterCityTransfers] = useState<InterCityTransfer[]>(MOCK_INTERCITY_TRANSFERS);
   const [leaderboard] = useState(MOCK_LEADERBOARD);
 
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
@@ -1328,6 +1330,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(`Scheduled appointment for ${requestId} at ${venue} (${date} ${time})`);
   };
 
+  const createInterCityTransfer = (data: Partial<InterCityTransfer>) => {
+    const newTrf: InterCityTransfer = {
+      id: `TRF-${Math.floor(1000 + Math.random() * 9000)}`,
+      sourceHospital: data.sourceHospital || 'Rotary Regional Blood Center',
+      sourceCity: data.sourceCity || 'Hubballi',
+      targetHospital: data.targetHospital || 'KIMS Teaching Hospital',
+      targetCity: data.targetCity || 'Hubballi',
+      bloodGroup: data.bloodGroup || 'O+',
+      component: data.component || 'PRBC',
+      units: data.units || 2,
+      urgency: data.urgency || 'HIGH',
+      courierStatus: 'Dispatch Pending',
+      status: 'Pending',
+      etaMinutes: data.courierEtaMins || 30,
+      courierEtaMins: data.courierEtaMins || 30
+    };
+
+    setInterCityTransfers(prev => [newTrf, ...prev]);
+
+    const newLog: ImmutableActivityEntry = {
+      activityId: `ACT-${Date.now()}`,
+      staff: 'Hospital Trauma Desk',
+      action: 'Inter-City Transfer Requested',
+      requestId: newTrf.id,
+      bloodGroup: newTrf.bloodGroup,
+      component: newTrf.component,
+      units: newTrf.units,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      details: `Created transfer request from ${newTrf.sourceHospital} to ${newTrf.targetHospital} for ${newTrf.units} u of ${newTrf.bloodGroup}.`
+    };
+
+    setActivityLogs(prev => [newLog, ...prev]);
+    showToast(`Created inter-city stock transfer ${newTrf.id}! Status: Pending`);
+  };
+
+  const updateInterCityTransferStatus = (id: string, status: string) => {
+    setInterCityTransfers(prev =>
+      prev.map(t => (t.id === id ? { ...t, status, courierStatus: status as any } : t))
+    );
+
+    const newLog: ImmutableActivityEntry = {
+      activityId: `ACT-${Date.now()}`,
+      staff: 'Regional Logistics System',
+      action: 'Transfer Status Updated',
+      requestId: id,
+      date: new Date().toISOString().split('T')[0],
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      details: `Transfer ${id} status updated to: ${status}.`
+    };
+
+    setActivityLogs(prev => [newLog, ...prev]);
+    showToast(`Inter-City Transfer ${id} updated to: ${status}!`);
+  };
+
   const markDonationCompleted = (requestId: string, donorId?: string) => {
     setRequests(prev =>
       prev.map(r => {
@@ -1458,6 +1515,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         groupCircles,
         toggleCircleJoin,
         interCityTransfers,
+        createInterCityTransfer,
+        updateInterCityTransferStatus,
         leaderboard,
         notifications,
         toastMessage,
