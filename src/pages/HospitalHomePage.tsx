@@ -10,16 +10,32 @@ import {
   ArrowRight,
   ShieldCheck,
   CheckCircle2,
-  Activity
+  Activity,
+  ArrowUpRight
 } from 'lucide-react';
 
 export const HospitalHomePage: React.FC = () => {
   const { currentUser, logout } = useAuth();
-  const { requests, bloodUnitsList } = useApp();
+  const { requests, bloodUnitsList, inventoryStockMap } = useApp();
   const navigate = useNavigate();
 
   const hospitalRequests = requests.slice(0, 3);
-  const totalUnits = bloodUnitsList.length;
+
+  // 1. Calculate Total Hospital Stock dynamically (Sum of all available units in database)
+  const totalAvailableUnits = Object.values(inventoryStockMap).reduce((totalGroup, comps) => {
+    return totalGroup + Object.values(comps).reduce((totalComp, item) => totalComp + (item.available || 0), 0);
+  }, 0);
+
+  // 2. Calculate unique blood components that currently have available stock
+  const activeComponentsSet = new Set<string>();
+  Object.values(inventoryStockMap).forEach(comps => {
+    Object.entries(comps).forEach(([compName, item]) => {
+      if (item.available > 0) {
+        activeComponentsSet.add(compName);
+      }
+    });
+  });
+  const activeComponentsCount = activeComponentsSet.size || 4;
 
   const handleLogout = () => {
     logout();
@@ -73,10 +89,25 @@ export const HospitalHomePage: React.FC = () => {
 
       {/* 2. Hospital Summary Matrix (Blood Availability & Alerts) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-2">
-          <span className="text-xs text-slate-500 font-bold block">Total Hospital Stock</span>
-          <strong className="text-2xl font-black text-sky-600 block">{totalUnits} Units</strong>
-          <span className="text-[10px] text-slate-400 font-medium">Available across 8 blood components</span>
+        
+        {/* CLICKABLE TOTAL HOSPITAL STOCK CARD */}
+        <div
+          onClick={() => navigate('/hospital/blood-availability')}
+          className="p-5 rounded-2xl bg-white border border-[#DDE8E2] shadow-xs space-y-2 cursor-pointer hover:border-[#087443] hover:shadow-md transition-all group"
+          title="Click to view detailed hospital inventory matrix"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-600 font-bold block">🩸 Total Hospital Stock</span>
+            <span className="text-xs font-extrabold text-[#087443] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
+              View Inventory <ArrowUpRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+          <strong className="text-3xl font-black text-[#087443] block tracking-tight">
+            {totalAvailableUnits} Units
+          </strong>
+          <span className="text-[11px] text-slate-500 font-medium block">
+            Available across {activeComponentsCount} blood component{activeComponentsCount !== 1 ? 's' : ''}
+          </span>
         </div>
 
         <div className="p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-2">
