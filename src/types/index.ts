@@ -260,6 +260,8 @@ export interface BloodBank {
   inventory: InventoryItem[];
   lat: number;
   lng: number;
+  licenseNo?: string;
+  verified?: boolean;
 }
 
 export interface DonationCamp {

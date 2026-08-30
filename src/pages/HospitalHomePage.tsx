@@ -25,7 +25,7 @@ function getMinimumThreshold(bloodGroup: string, component: string): number {
 
 export const HospitalHomePage: React.FC = () => {
   const { currentUser, logout } = useAuth();
-  const { requests, bloodUnitsList, inventoryStockMap } = useApp();
+  const { requests, bloodUnitsList, inventoryStockMap, bloodBanks } = useApp();
   const navigate = useNavigate();
 
   const hospitalRequests = requests.slice(0, 3);
@@ -67,6 +67,9 @@ export const HospitalHomePage: React.FC = () => {
   });
 
   const criticalLowGroupCount = lowStockGroupSet.size;
+
+  // 4. Calculate Active Connected Regional Blood Banks dynamically from database
+  const activeConnectedBanksCount = (bloodBanks || []).filter(b => b.verified !== false).length;
 
   const handleLogout = () => {
     logout();
@@ -118,7 +121,7 @@ export const HospitalHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Hospital Summary Matrix (Blood Availability & Critical Low Stock Alerts) */}
+      {/* 2. Hospital Summary Matrix */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         
         {/* CLICKABLE TOTAL HOSPITAL STOCK CARD */}
@@ -171,11 +174,27 @@ export const HospitalHomePage: React.FC = () => {
           </span>
         </div>
 
-        <div className="p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-2">
-          <span className="text-xs text-slate-500 font-bold block">Connected Regional Banks</span>
-          <strong className="text-2xl font-black text-emerald-600 block">4 Active Banks</strong>
-          <span className="text-[10px] text-emerald-600 font-bold">Real-time sync enabled</span>
+        {/* CLICKABLE DYNAMIC CONNECTED REGIONAL BANKS CARD */}
+        <div
+          onClick={() => navigate('/hospital/blood-banks')}
+          className="p-5 rounded-2xl bg-white border border-[#DDE8E2] shadow-xs space-y-2 cursor-pointer hover:border-emerald-500 hover:shadow-md transition-all group"
+          title="Click to view connected regional blood banks & real-time inventory"
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-slate-600 font-bold block">🏥 Connected Regional Banks</span>
+            <span className="text-xs font-extrabold text-emerald-700 group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
+              View Blood Banks <ArrowUpRight className="w-3.5 h-3.5" />
+            </span>
+          </div>
+          <strong className="text-3xl font-black text-emerald-600 block tracking-tight">
+            {activeConnectedBanksCount} Active Bank{activeConnectedBanksCount !== 1 ? 's' : ''}
+          </strong>
+          <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full bg-[#16A86B] animate-ping" />
+            <span>Real-time sync enabled</span>
+          </span>
         </div>
+
       </div>
 
       {/* 3. Emergency Information & Trauma Patient Requests Preview */}
