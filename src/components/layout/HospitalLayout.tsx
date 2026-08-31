@@ -13,8 +13,14 @@ export const HospitalLayout: React.FC = () => {
   const { toastMessage } = useApp();
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-[#087443] selection:text-white relative water-bubble-bg">
+    <div className="min-h-screen bg-gradient-to-b from-[#EAF7FF] via-[#F4F9FC] to-slate-50 text-slate-900 flex flex-col font-sans selection:bg-[#087443] selection:text-white relative overflow-x-hidden">
       <WaterBubbleBackground />
+
+      {/* Subtle Low-Opacity Background Decorative Orbs */}
+      <div className="pointer-events-none absolute -top-24 left-1/4 w-[500px] h-[500px] bg-sky-200/35 rounded-full blur-3xl opacity-70 z-0" />
+      <div className="pointer-events-none absolute top-1/3 -right-20 w-[450px] h-[450px] bg-blue-200/25 rounded-full blur-3xl opacity-60 z-0" />
+      <div className="pointer-events-none absolute bottom-1/4 -left-20 w-[400px] h-[400px] bg-sky-300/20 rounded-full blur-3xl opacity-50 z-0" />
+
       {/* Toast Notification Container */}
       {toastMessage && (
         <div className="fixed bottom-20 sm:bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-white text-xs font-extrabold shadow-2xl animate-in slide-in-from-bottom-5 flex items-center gap-2">

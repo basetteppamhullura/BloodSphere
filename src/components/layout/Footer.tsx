@@ -6,11 +6,11 @@ import { Heart, PhoneCall, ShieldCheck, ExternalLink, MapPin, Mail, Droplet } fr
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-white border-t border-sky-100 text-slate-600 text-xs mt-12 shadow-xs">
+    <footer className="bg-[#EEF6FA] border-t border-sky-200/80 text-slate-600 text-xs mt-12 shadow-2xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         
         {/* TOP ROW: BRAND & EMERGENCY HELPLINE */}
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-sky-100 pb-8">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border-b border-sky-200/60 pb-8">
           <div>
             <BloodNetLogo size="lg" showTagline={true} />
             <p className="text-slate-500 text-xs mt-3 max-w-md leading-relaxed">
@@ -81,9 +81,9 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* BOTTOM ROW: COPYRIGHT */}
-        <div className="pt-6 border-t border-sky-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400 font-mono">
+        <div className="pt-6 border-t border-sky-200/60 flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-slate-400 font-mono">
           <span>© 2026 Blood Net. Connecting Lives Through Blood. All Rights Reserved.</span>
-          <span className="flex items-center gap-1">
+          <span className="flex items-center gap-1 text-slate-500">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Real-Time Database Protected
           </span>
         </div>

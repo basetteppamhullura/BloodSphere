@@ -134,7 +134,7 @@ export const HospitalHomePage: React.FC = () => {
     <div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in">
       
       {/* 1. WELCOME & HOSPITAL OVERVIEW HERO BANNER */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-sky-900 to-slate-950 text-white shadow-xl relative overflow-hidden border border-sky-800/40">
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-950 via-sky-950 to-slate-900 text-white shadow-xl relative overflow-hidden border border-sky-800/40">
         
         {/* Subtle Decorative Geometric Backdrop Motif */}
         <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 opacity-15 pointer-events-none">
@@ -178,11 +178,11 @@ export const HospitalHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. 🚨 TRAUMA EMERGENCY REQUESTS QUEUE (COMPACT HOME PAGE WIDGET) */}
-      <div className="p-6 rounded-3xl bg-white border border-red-100 shadow-sm space-y-4">
+      {/* 2. 🚨 TRAUMA EMERGENCY REQUESTS QUEUE (PRIORITY ZONE) */}
+      <div className="p-6 rounded-3xl bg-gradient-to-br from-red-50/40 via-white to-amber-50/20 border border-red-100/90 shadow-sm space-y-4">
         
         {/* Header Row */}
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="flex items-center justify-between border-b border-red-100/80 pb-3">
           <div>
             <h2 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2 tracking-tight">
               <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse" /> Trauma Emergency Requests
@@ -192,7 +192,7 @@ export const HospitalHomePage: React.FC = () => {
 
           <button
             onClick={() => navigate('/hospital/dashboard')}
-            className="px-3.5 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 font-extrabold text-xs transition-all flex items-center gap-1 shrink-0"
+            className="px-3.5 py-1.5 rounded-xl bg-red-100/80 hover:bg-red-200/80 text-red-800 border border-red-200 font-extrabold text-xs transition-all flex items-center gap-1 shrink-0"
           >
             Manage Desk →
           </button>
@@ -200,20 +200,20 @@ export const HospitalHomePage: React.FC = () => {
 
         {/* Counter Pill Row */}
         <div className="flex flex-wrap items-center gap-3 text-xs font-bold pt-1 pb-1">
-          <span className="px-3 py-1 rounded-xl bg-red-50 text-red-700 border border-red-200 flex items-center gap-1.5 shadow-2xs">
+          <span className="px-3 py-1 rounded-xl bg-red-100/80 text-red-800 border border-red-200 flex items-center gap-1.5 shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-red-600" /> 🔴 Critical <strong className="font-black text-slate-900">{criticalCount}</strong>
           </span>
-          <span className="px-3 py-1 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-1.5 shadow-2xs">
+          <span className="px-3 py-1 rounded-xl bg-amber-100/80 text-amber-900 border border-amber-200 flex items-center gap-1.5 shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-amber-500" /> 🟠 Urgent <strong className="font-black text-slate-900">{urgentCount}</strong>
           </span>
-          <span className="px-3 py-1 rounded-xl bg-sky-50 text-sky-900 border border-sky-200 flex items-center gap-1.5 shadow-2xs">
+          <span className="px-3 py-1 rounded-xl bg-sky-100/80 text-sky-900 border border-sky-200 flex items-center gap-1.5 shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-sky-500" /> 🟡 Pending <strong className="font-black text-slate-900">{pendingCount}</strong>
           </span>
         </div>
 
         {/* Active Emergency Request Cards */}
         {sortedActiveRequests.length === 0 ? (
-          <div className="p-8 rounded-2xl bg-[#F7FAF8] border border-[#DDE8E2] text-center space-y-2">
+          <div className="p-8 rounded-2xl bg-white border border-[#DDE8E2] text-center space-y-2">
             <CheckCircle2 className="w-8 h-8 text-[#087443] mx-auto" />
             <strong className="text-sm font-black text-slate-900 block">🟢 No Active Emergency Requests</strong>
             <p className="text-xs text-slate-500">All emergency blood requests are currently under control.</p>
@@ -229,12 +229,12 @@ export const HospitalHomePage: React.FC = () => {
                 return (
                   <div
                     key={req.id}
-                    className={`p-4 rounded-2xl bg-white border space-y-3 flex flex-col justify-between transition-all hover:shadow-md ${
+                    className={`p-4 rounded-2xl border space-y-3 flex flex-col justify-between transition-all hover:shadow-md ${
                       isCritical
-                        ? 'border-l-4 border-l-red-500 border-red-200 bg-gradient-to-b from-red-50/30 to-white'
+                        ? 'border-l-4 border-l-red-500 border-red-200/90 bg-gradient-to-br from-red-50/60 via-white to-rose-50/20'
                         : isUrgent
-                        ? 'border-l-4 border-l-amber-500 border-amber-200 bg-gradient-to-b from-amber-50/20 to-white'
-                        : 'border-l-4 border-l-sky-500 border-slate-200 bg-gradient-to-b from-sky-50/20 to-white'
+                        ? 'border-l-4 border-l-amber-500 border-amber-200/90 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/20'
+                        : 'border-l-4 border-l-sky-500 border-sky-200/90 bg-gradient-to-br from-sky-50/50 via-white to-blue-50/20'
                     }`}
                   >
                     <div className="space-y-2">
@@ -268,7 +268,7 @@ export const HospitalHomePage: React.FC = () => {
                       <span className="font-mono text-slate-400">BR-{req.id}</span>
                       <button
                         onClick={() => navigate('/hospital/dashboard')}
-                        className="px-3 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-700 font-extrabold text-[11px] border border-sky-200 transition-all flex items-center gap-1"
+                        className="px-3 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-800 font-extrabold text-[11px] border border-slate-200 shadow-2xs transition-all flex items-center gap-1"
                       >
                         View Request →
                       </button>
@@ -285,9 +285,9 @@ export const HospitalHomePage: React.FC = () => {
         )}
       </div>
 
-      {/* 3. 📥 INCOMING PATIENT BLOOD REQUESTS QUEUE */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      {/* 3. 📥 INCOMING PATIENT BLOOD REQUESTS QUEUE (PATIENT INCOMING ZONE) */}
+      <div className="p-6 rounded-3xl bg-gradient-to-br from-sky-50/60 via-slate-50/30 to-blue-50/40 border border-sky-100/90 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-sky-100/80 pb-3">
           <div>
             <h3 className="font-extrabold text-base sm:text-lg text-slate-900 flex items-center gap-2 tracking-tight">
               <Droplet className="w-5 h-5 text-red-600" /> 📥 Incoming Patient Blood Requests Queue
@@ -297,14 +297,14 @@ export const HospitalHomePage: React.FC = () => {
 
           <button
             onClick={() => navigate('/hospital/dashboard')}
-            className="px-3.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-all border border-slate-200"
+            className="px-3.5 py-1.5 rounded-xl bg-sky-100/80 hover:bg-sky-200/80 text-sky-800 font-extrabold text-xs transition-all border border-sky-200"
           >
             View All Requests →
           </button>
         </div>
 
         {sortedActiveRequests.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-[#F7FAF8] text-center border border-[#DDE8E2] space-y-1">
+          <div className="p-6 rounded-2xl bg-white text-center border border-[#DDE8E2] space-y-1">
             <CheckCircle2 className="w-6 h-6 text-[#087443] mx-auto" />
             <span className="text-xs font-bold text-slate-800 block">No Incoming Patient Requests</span>
             <p className="text-[11px] text-slate-500">All patient blood requirements are up to date.</p>
@@ -317,8 +317,12 @@ export const HospitalHomePage: React.FC = () => {
               return (
                 <div
                   key={`inc-${req.id}`}
-                  className={`p-4 rounded-2xl bg-[#F7FAF8] border border-slate-200 space-y-3 flex flex-col justify-between hover:shadow-md transition-all ${
-                    isCrit ? 'border-l-4 border-l-red-500' : isUrg ? 'border-l-4 border-l-amber-500' : 'border-l-4 border-l-sky-500'
+                  className={`p-4 rounded-2xl border space-y-3 flex flex-col justify-between hover:shadow-md transition-all ${
+                    isCrit
+                      ? 'border-l-4 border-l-red-500 border-red-200/80 bg-gradient-to-br from-red-50/50 via-white to-rose-50/20'
+                      : isUrg
+                      ? 'border-l-4 border-l-amber-500 border-amber-200/80 bg-gradient-to-br from-amber-50/40 via-white to-orange-50/20'
+                      : 'border-l-4 border-l-sky-500 border-sky-200/80 bg-gradient-to-br from-sky-50/40 via-white to-blue-50/20'
                   }`}
                 >
                   <div className="space-y-2">
@@ -355,18 +359,18 @@ export const HospitalHomePage: React.FC = () => {
         )}
       </div>
 
-      {/* 4. 🩸 BLOOD AVAILABILITY SUMMARY MATRIX */}
+      {/* 4. 🩸 BLOOD AVAILABILITY SUMMARY MATRIX (KPI METRICS ZONE) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         
         {/* TOTAL HOSPITAL STOCK CARD */}
         <div
           onClick={() => navigate('/hospital/blood-availability')}
-          className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-3 cursor-pointer hover:border-[#087443] hover:shadow-md transition-all group"
+          className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/40 via-white to-white border border-emerald-100 shadow-sm space-y-3 cursor-pointer hover:border-[#087443] hover:shadow-md transition-all group"
           title="Click to view detailed hospital inventory matrix"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-emerald-50 text-[#087443] border border-emerald-100 shrink-0">
+              <div className="p-2.5 rounded-xl bg-emerald-100/80 text-[#087443] border border-emerald-200/80 shrink-0 shadow-2xs">
                 <Droplet className="w-5 h-5 text-[#087443]" />
               </div>
               <span className="text-xs text-slate-700 font-bold block">Total Hospital Stock</span>
@@ -389,17 +393,17 @@ export const HospitalHomePage: React.FC = () => {
         {/* CRITICAL LOW-STOCK ALERTS CARD */}
         <div
           onClick={() => navigate('/hospital/blood-availability')}
-          className={`p-5 rounded-2xl bg-white border shadow-sm space-y-3 cursor-pointer transition-all group ${
+          className={`p-5 rounded-2xl bg-gradient-to-br via-white to-white border shadow-sm space-y-3 cursor-pointer transition-all group ${
             criticalLowGroupCount > 0
-              ? 'border-red-200 hover:border-red-400 hover:shadow-md'
-              : 'border-slate-200/80 hover:border-emerald-500 hover:shadow-md'
+              ? 'from-red-50/40 border-red-200 hover:border-red-400 hover:shadow-md'
+              : 'from-emerald-50/40 border-emerald-100 hover:border-emerald-500 hover:shadow-md'
           }`}
           title="Click to view critical low-stock alerts & nearby blood bank transfers"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className={`p-2 rounded-xl border shrink-0 ${
-                criticalLowGroupCount > 0 ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'
+              <div className={`p-2.5 rounded-xl border shrink-0 shadow-2xs ${
+                criticalLowGroupCount > 0 ? 'bg-red-100/80 text-red-700 border-red-200/80' : 'bg-emerald-100/80 text-emerald-700 border-emerald-200/80'
               }`}>
                 <AlertTriangle className="w-5 h-5" />
               </div>
@@ -430,12 +434,12 @@ export const HospitalHomePage: React.FC = () => {
         {/* CONNECTED REGIONAL BANKS CARD */}
         <div
           onClick={() => navigate('/hospital/blood-banks')}
-          className="p-5 rounded-2xl bg-white border border-slate-200/80 shadow-sm space-y-3 cursor-pointer hover:border-sky-500 hover:shadow-md transition-all group"
+          className="p-5 rounded-2xl bg-gradient-to-br from-sky-50/40 via-white to-white border border-sky-100 shadow-sm space-y-3 cursor-pointer hover:border-sky-500 hover:shadow-md transition-all group"
           title="Click to view connected regional blood banks & real-time inventory"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-sky-50 text-sky-600 border border-sky-100 shrink-0">
+              <div className="p-2.5 rounded-xl bg-sky-100/80 text-sky-700 border border-sky-200/80 shrink-0 shadow-2xs">
                 <Building2 className="w-5 h-5" />
               </div>
               <span className="text-xs text-slate-700 font-bold block">Connected Banks</span>
@@ -458,7 +462,7 @@ export const HospitalHomePage: React.FC = () => {
 
       </div>
 
-      {/* 5. 📦 HOSPITAL BLOOD STOCK MONITOR */}
+      {/* 5. 📦 HOSPITAL BLOOD STOCK MONITOR (INVENTORY MONITORING ZONE) */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
@@ -489,10 +493,10 @@ export const HospitalHomePage: React.FC = () => {
                 key={group}
                 className={`p-3.5 rounded-2xl border space-y-2 transition-all ${
                   isCrit
-                    ? 'border-t-2 border-t-red-500 border-slate-200 bg-red-50/20'
+                    ? 'border-t-2 border-t-red-500 border-red-200/60 bg-gradient-to-br from-red-50/50 to-white shadow-2xs'
                     : isLimited
-                    ? 'border-t-2 border-t-amber-500 border-slate-200 bg-amber-50/20'
-                    : 'border-t-2 border-t-emerald-500 border-slate-200 bg-emerald-50/20'
+                    ? 'border-t-2 border-t-amber-500 border-amber-200/60 bg-gradient-to-br from-amber-50/50 to-white shadow-2xs'
+                    : 'border-t-2 border-t-emerald-500 border-emerald-200/60 bg-gradient-to-br from-emerald-50/50 to-white shadow-2xs'
                 }`}
               >
                 <div className="flex items-center justify-between">
@@ -502,7 +506,7 @@ export const HospitalHomePage: React.FC = () => {
                       ? 'bg-red-100 text-red-800 border-red-200'
                       : isLimited
                       ? 'bg-amber-100 text-amber-900 border-amber-300'
-                      : 'bg-emerald-100/80 text-emerald-800 border border-emerald-200/80'
+                      : 'bg-emerald-100/90 text-emerald-800 border border-emerald-200/90'
                   }`}>
                     {isCrit ? '🔴 Critical' : isLimited ? '🟡 Limited' : '🟢 Available'}
                   </span>
@@ -528,7 +532,7 @@ export const HospitalHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 6. TODAY'S HOSPITAL OPERATIONS */}
+      {/* 6. TODAY'S HOSPITAL OPERATIONS (OPERATIONS ZONE) */}
       <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
@@ -550,7 +554,7 @@ export const HospitalHomePage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
           
           {/* CARD 1: EMERGENCY REQUESTS */}
-          <div className="p-4 rounded-2xl bg-[#F7FAF8] border border-slate-200 space-y-3 flex flex-col justify-between hover:border-red-400 transition-all">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-red-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between hover:border-red-400 transition-all">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-black text-slate-900 flex items-center gap-1.5">
@@ -584,7 +588,7 @@ export const HospitalHomePage: React.FC = () => {
           </div>
 
           {/* CARD 2: INVENTORY & STOCK ALERTS */}
-          <div className="p-4 rounded-2xl bg-[#F7FAF8] border border-slate-200 space-y-3 flex flex-col justify-between hover:border-amber-400 transition-all">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between hover:border-amber-400 transition-all">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-black text-slate-900 flex items-center gap-1.5">
@@ -618,7 +622,7 @@ export const HospitalHomePage: React.FC = () => {
           </div>
 
           {/* CARD 3: INTER-CITY TRANSFERS */}
-          <div className="p-4 rounded-2xl bg-[#F7FAF8] border border-slate-200 space-y-3 flex flex-col justify-between hover:border-sky-400 transition-all">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-sky-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between hover:border-sky-400 transition-all">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-black text-slate-900 flex items-center gap-1.5">
@@ -652,7 +656,7 @@ export const HospitalHomePage: React.FC = () => {
           </div>
 
           {/* CARD 4: TODAY'S COMPLETED INTAKES & ISSUES */}
-          <div className="p-4 rounded-2xl bg-[#F7FAF8] border border-slate-200 space-y-3 flex flex-col justify-between">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <span className="font-black text-slate-900 flex items-center gap-1.5">
