@@ -133,21 +133,48 @@ export const HospitalHomePage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in">
       
-      {/* 1. WELCOME & HOSPITAL OVERVIEW HERO BANNER (DEEPER SKY BLUE -> PRIMARY SKY BLUE GRADIENT) */}
+      {/* 1. WELCOME & HOSPITAL OVERVIEW HERO BANNER (SKY BLUE GRADIENT WITH LAYERED MEDICAL / HOSPITAL ARTWORK) */}
       <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#0284C7] via-[#0369A1] to-[#0EA5E9] text-white shadow-xl relative overflow-hidden border border-sky-400/30">
         
-        {/* Subtle Decorative Geometric Backdrop Motif */}
-        <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 opacity-20 pointer-events-none">
-          <svg width="400" height="400" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="100" cy="100" r="80" stroke="white" strokeWidth="2" strokeDasharray="6 6" />
-            <circle cx="100" cy="100" r="50" stroke="white" strokeWidth="1" />
-            <path d="M100 20 V180 M20 100 H180" stroke="white" strokeWidth="1.5" strokeOpacity="0.5" />
+        {/* Layer 1: Subtle ECG Heartbeat Pulse Line Along Bottom Right */}
+        <div className="absolute right-0 bottom-0 w-full md:w-3/5 h-24 pointer-events-none opacity-20 z-0">
+          <svg className="w-full h-full" viewBox="0 0 500 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path
+              d="M 0 60 L 140 60 L 155 25 L 175 90 L 195 10 L 215 75 L 230 45 L 245 60 L 500 60"
+              stroke="white"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle cx="195" cy="10" r="4" fill="white" className="animate-ping" />
           </svg>
         </div>
-        <div className="absolute right-6 bottom-6 opacity-15 pointer-events-none">
-          <Building2 className="w-64 h-64 fill-white" />
+
+        {/* Layer 2: Medical Cross & Geometric Network Backdrop Motif (Right Side) */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-15 pointer-events-none z-0 hidden sm:block">
+          <svg width="340" height="240" viewBox="0 0 340 240" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Concentric Medical Network Rings */}
+            <circle cx="240" cy="120" r="100" stroke="white" strokeWidth="1.5" strokeDasharray="4 4" />
+            <circle cx="240" cy="120" r="65" stroke="white" strokeWidth="1" />
+            
+            {/* Medical Cross Graphic */}
+            <rect x="225" y="70" width="30" height="100" rx="6" fill="white" />
+            <rect x="190" y="105" width="100" height="30" rx="6" fill="white" />
+
+            {/* Stethoscope & Care Line Accents */}
+            <path d="M 60 120 C 100 60, 160 60, 190 105" stroke="white" strokeWidth="2" strokeDasharray="3 3" />
+            <circle cx="60" cy="120" r="6" fill="white" />
+            <circle cx="280" cy="50" r="4" fill="white" />
+            <circle cx="310" cy="170" r="5" fill="white" />
+          </svg>
         </div>
 
+        {/* Layer 3: Faint Hospital Building Silhouette (Far Right) */}
+        <div className="absolute right-6 bottom-4 opacity-12 pointer-events-none z-0">
+          <Building2 className="w-56 h-56 fill-white text-white" />
+        </div>
+
+        {/* Banner Content Container */}
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
             {/* Polished Verification Pill Badge */}
@@ -156,19 +183,19 @@ export const HospitalHomePage: React.FC = () => {
               <span>Verified Hospital Medical Portal</span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight">
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight drop-shadow-xs">
               Welcome, {currentUser?.name || 'KIMS Teaching Hospital'} 🏥
             </h1>
 
-            <p className="text-xs sm:text-sm text-sky-100 font-medium leading-relaxed">
+            <p className="text-xs sm:text-sm text-sky-100 font-medium leading-relaxed drop-shadow-2xs">
               Manage trauma center blood inventory, broadcast emergency patient requests, and coordinate with connected regional blood banks.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 relative z-20">
             <button
               onClick={handleLogout}
-              className="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all shadow-sm active:scale-95"
+              className="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer backdrop-blur-xs"
               title="Logout"
             >
               <LogOut className="w-4 h-4" />
