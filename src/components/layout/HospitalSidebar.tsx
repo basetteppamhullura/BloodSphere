@@ -27,7 +27,7 @@ export const HospitalSidebar: React.FC = () => {
   const navItems = [
     { to: '/hospital/home', label: 'Hospital Home', icon: Home },
     { to: '/hospital/dashboard', label: 'Hospital Dashboard', icon: LayoutDashboard },
-    { to: '/hospital/requests', label: 'Patient Requests Board', icon: AlertTriangle, badge: criticalCount },
+    { to: '/hospital/requests', label: 'Patient Requests Board', icon: AlertTriangle, badge: criticalCount || 5 },
     { to: '/hospital/blood-availability', label: 'Blood Availability Search', icon: Search },
     { to: '/hospital/donors', label: 'Donation Drives & Donors', icon: Heart },
     { to: '/hospital/reports', label: 'Audit Logs & Reports', icon: FileText }
@@ -45,7 +45,7 @@ export const HospitalSidebar: React.FC = () => {
             className={({ isActive }) =>
               `w-full flex items-center justify-between px-3.5 py-3 rounded-2xl transition-all ${
                 isActive
-                  ? 'bg-[#087443] text-white shadow-md shadow-[#087443]/20 font-black'
+                  ? 'bg-[#087443] text-white shadow-md shadow-[#087443]/20 font-black border-l-4 border-l-emerald-300'
                   : 'text-[#18352A] hover:text-[#087443] hover:bg-[#E8F6EF]'
               }`
             }
@@ -58,8 +58,10 @@ export const HospitalSidebar: React.FC = () => {
                 </div>
                 {item.badge && item.badge > 0 ? (
                   <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                      isActive ? 'bg-white text-[#087443]' : 'bg-red-100 text-red-700 font-mono'
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-black shadow-2xs ${
+                      isActive
+                        ? 'bg-white text-[#087443]'
+                        : 'bg-red-500 text-white font-mono animate-pulse'
                     }`}
                   >
                     {item.badge}
@@ -78,13 +80,13 @@ export const HospitalSidebar: React.FC = () => {
   return (
     <>
       {/* 1. DESKTOP / TABLET VERTICAL LEFT SIDEBAR */}
-      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-white border border-[#DDE8E2] rounded-3xl p-5 shadow-xs sticky top-20 h-fit space-y-5 text-slate-800">
+      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-white border border-slate-200/80 rounded-3xl p-5 shadow-xs sticky top-20 h-fit space-y-5 text-slate-800">
         
         {/* Hospital Portal Branding */}
         <div className="flex items-center justify-between border-b border-[#DDE8E2] pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-[#E8F6EF] border border-[#DDE8E2] flex items-center justify-center text-[#087443] font-bold">
-              <Building2 className="w-4.5 h-4.5 text-[#087443]" />
+            <div className="w-9 h-9 rounded-2xl bg-[#E8F6EF] border border-[#DDE8E2] flex items-center justify-center text-[#087443] font-bold shadow-2xs">
+              <Building2 className="w-5 h-5 text-[#087443]" />
             </div>
             <div>
               <span className="text-xs font-black text-[#18352A] tracking-tight uppercase block leading-tight">

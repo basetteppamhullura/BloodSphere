@@ -18,16 +18,16 @@ export const Footer: React.FC = () => {
             </p>
           </div>
 
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-red-50 to-rose-50 border border-red-200 flex items-center gap-4 text-xs">
-            <div className="w-12 h-12 rounded-xl bg-red-600 text-white flex items-center justify-center shadow-md shadow-red-500/20 shrink-0">
-              <PhoneCall className="w-6 h-6 animate-pulse" />
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-red-600 via-red-700 to-rose-800 text-white border border-red-500/30 shadow-md shadow-red-600/20 flex items-center gap-4 text-xs">
+            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center shadow-inner border border-white/30 shrink-0">
+              <PhoneCall className="w-6 h-6 animate-pulse text-white" />
             </div>
             <div>
-              <span className="text-[10px] font-black text-red-600 uppercase tracking-wider block">
+              <span className="text-[10px] font-black text-red-200 uppercase tracking-wider block">
                 NATIONAL BLOOD EMERGENCY HELPLINE
               </span>
-              <strong className="text-xl font-black text-slate-900 block mt-0.5">108 / 104</strong>
-              <span className="text-[10px] text-slate-500 font-mono">24x7 Real-Time Emergency Response</span>
+              <strong className="text-xl font-black text-white block mt-0.5 tracking-tight">108 / 104</strong>
+              <span className="text-[10px] text-red-100 font-mono">24x7 Real-Time Emergency Response</span>
             </div>
           </div>
         </div>
@@ -37,30 +37,30 @@ export const Footer: React.FC = () => {
           <div className="space-y-2">
             <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">Portals & Login Routes</h4>
             <ul className="space-y-1.5 font-medium text-slate-600">
-              <li><Link to="/login" className="hover:text-red-600 transition-colors">Donor & Requester Portal</Link></li>
-              <li><Link to="/login/hospital" className="hover:text-sky-600 transition-colors">Hospital Trauma Center</Link></li>
-              <li><Link to="/login/bloodbank" className="hover:text-emerald-600 transition-colors">Blood Bank Operations</Link></li>
-              <li><Link to="/login/admin" className="hover:text-amber-600 transition-colors">Super Admin Control</Link></li>
+              <li><Link to="/login" className="hover:text-red-600 hover:translate-x-0.5 transition-all inline-block">Donor & Requester Portal</Link></li>
+              <li><Link to="/login/hospital" className="hover:text-sky-600 hover:translate-x-0.5 transition-all inline-block">Hospital Trauma Center</Link></li>
+              <li><Link to="/login/bloodbank" className="hover:text-emerald-600 hover:translate-x-0.5 transition-all inline-block">Blood Bank Operations</Link></li>
+              <li><Link to="/login/admin" className="hover:text-amber-600 hover:translate-x-0.5 transition-all inline-block">Super Admin Control</Link></li>
             </ul>
           </div>
 
           <div className="space-y-2">
             <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">Emergency Network</h4>
             <ul className="space-y-1.5 font-medium text-slate-600">
-              <li><Link to="/donor/emergency" className="hover:text-red-600 transition-colors">🚨 Emergency Request Board</Link></li>
-              <li><Link to="/donor/rare-blood" className="hover:text-sky-600 transition-colors">🛡️ Rare Blood Registry</Link></li>
-              <li><Link to="/donor/family" className="hover:text-sky-600 transition-colors">Family & Circles</Link></li>
-              <li><Link to="/donor/directory" className="hover:text-sky-600 transition-colors">Donor Directory Search</Link></li>
+              <li><Link to="/donor/emergency" className="hover:text-red-600 hover:translate-x-0.5 transition-all inline-block">🚨 Emergency Request Board</Link></li>
+              <li><Link to="/donor/rare-blood" className="hover:text-sky-600 hover:translate-x-0.5 transition-all inline-block">🛡️ Rare Blood Registry</Link></li>
+              <li><Link to="/donor/family" className="hover:text-sky-600 hover:translate-x-0.5 transition-all inline-block">Family & Circles</Link></li>
+              <li><Link to="/donor/directory" className="hover:text-sky-600 hover:translate-x-0.5 transition-all inline-block">Donor Directory Search</Link></li>
             </ul>
           </div>
 
           <div className="space-y-2">
             <h4 className="font-extrabold text-slate-900 uppercase tracking-wider text-[11px]">Regional Centers</h4>
             <ul className="space-y-1.5 font-medium text-slate-600">
-              <li className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-red-500" /> Hubballi KIMS Blood Center</li>
-              <li className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-red-500" /> Dharwad SDM Medical Center</li>
-              <li className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-red-500" /> Belagavi KLE Hospital Center</li>
-              <li className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-red-500" /> Bengaluru Regional Hub</li>
+              <li className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" /> Hubballi KIMS Blood Center</li>
+              <li className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" /> Dharwad SDM Medical Center</li>
+              <li className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" /> Belagavi KLE Hospital Center</li>
+              <li className="flex items-center gap-1"><MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" /> Bengaluru Regional Hub</li>
             </ul>
           </div>
 
