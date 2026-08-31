@@ -251,121 +251,112 @@ export const HospitalHomePage: React.FC = () => {
 
       </div>
 
-      {/* 3. TRAUMA EMERGENCY REQUESTS QUEUE (ACTIVE REAL-TIME WORKFLOW) */}
+      {/* 3. TRAUMA EMERGENCY REQUESTS QUEUE (COMPACT HOME PAGE WIDGET) */}
       <div className="p-6 rounded-3xl bg-white border border-red-100 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+        
+        {/* Header Row */}
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse" /> TRAUMA EMERGENCY REQUESTS QUEUE
-              </h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-black border border-red-200">
-                {sortedActiveRequests.length} Active
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 mt-0.5">Real-time trauma center blood requirements requiring immediate staff action.</p>
+            <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse" /> Trauma Emergency Requests
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">Active emergency requests requiring attention</p>
           </div>
 
-          {/* Real-time Dynamic Severity Counters & Manage Desk Button */}
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-1 rounded-xl bg-red-50 text-red-700 text-xs font-extrabold border border-red-200">
-              🔴 {criticalCount} Critical
-            </span>
-            <span className="px-2.5 py-1 rounded-xl bg-amber-50 text-amber-800 text-xs font-extrabold border border-amber-200">
-              🟠 {urgentCount} Urgent
-            </span>
-            <span className="px-2.5 py-1 rounded-xl bg-sky-50 text-sky-800 text-xs font-extrabold border border-sky-200">
-              🟡 {pendingCount} Pending
-            </span>
-            <button
-              onClick={() => navigate('/hospital/dashboard')}
-              className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-xs transition-colors flex items-center gap-1 shrink-0 ml-1"
-            >
-              Manage Desk <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <button
+            onClick={() => navigate('/hospital/dashboard')}
+            className="text-xs text-sky-600 font-extrabold hover:text-sky-800 flex items-center gap-1 shrink-0"
+          >
+            Manage Desk →
+          </button>
         </div>
 
-        {/* Active Emergency Request Cards List */}
+        {/* Counter Pill Row */}
+        <div className="flex flex-wrap items-center gap-3 text-xs font-bold pt-1 pb-1">
+          <span className="px-3 py-1 rounded-xl bg-red-50 text-red-700 border border-red-200 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-red-600" /> 🔴 Critical <strong className="font-black text-slate-900">{criticalCount}</strong>
+          </span>
+          <span className="px-3 py-1 rounded-xl bg-amber-50 text-amber-900 border border-amber-200 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-amber-500" /> 🟠 Urgent <strong className="font-black text-slate-900">{urgentCount}</strong>
+          </span>
+          <span className="px-3 py-1 rounded-xl bg-sky-50 text-sky-900 border border-sky-200 flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-sky-500" /> 🟡 Pending <strong className="font-black text-slate-900">{pendingCount}</strong>
+          </span>
+        </div>
+
+        {/* Active Emergency Request Cards (Top 3–5 Most Urgent Active Requests Only) */}
         {sortedActiveRequests.length === 0 ? (
           <div className="p-8 rounded-2xl bg-[#F7FAF8] border border-[#DDE8E2] text-center space-y-2">
-            <CheckCircle2 className="w-10 h-10 text-[#087443] mx-auto" />
-            <strong className="text-base font-black text-slate-900 block">🟢 No active emergency blood requests</strong>
-            <p className="text-xs text-slate-500">All emergency requests are currently under control or fulfilled.</p>
+            <CheckCircle2 className="w-8 h-8 text-[#087443] mx-auto" />
+            <strong className="text-sm font-black text-slate-900 block">🟢 No Active Emergency Requests</strong>
+            <p className="text-xs text-slate-500">All emergency blood requests are currently under control.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            {sortedActiveRequests.slice(0, 6).map(req => {
-              const rank = getPriorityRank(req);
-              const isCritical = rank === 1;
-              const isUrgent = rank === 2;
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+              {sortedActiveRequests.slice(0, 3).map(req => {
+                const rank = getPriorityRank(req);
+                const isCritical = rank === 1;
+                const isUrgent = rank === 2;
 
-              return (
-                <div
-                  key={req.id}
-                  className={`p-4 rounded-2xl bg-white border space-y-3 flex flex-col justify-between transition-all hover:shadow-md ${
-                    isCritical
-                      ? 'border-red-200 hover:border-red-400 bg-gradient-to-b from-red-50/30 to-white'
-                      : isUrgent
-                      ? 'border-amber-200 hover:border-amber-400'
-                      : 'border-slate-200 hover:border-sky-400'
-                  }`}
-                >
-                  <div className="space-y-2">
-                    {/* Header Pill */}
-                    <div className="flex items-center justify-between">
-                      <span className="font-black text-sm text-red-600 flex items-center gap-1">
-                        🩸 {req.bloodGroup} <span className="text-xs font-semibold text-slate-500">({req.bloodComponent || 'PRBC'})</span>
-                      </span>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase ${
-                        isCritical
-                          ? 'bg-red-100 text-red-800 border-red-200'
-                          : isUrgent
-                          ? 'bg-amber-100 text-amber-900 border-amber-300'
-                          : 'bg-sky-100 text-sky-900 border-sky-200'
-                      }`}>
-                        {isCritical ? '🔴 CRITICAL' : isUrgent ? '🟠 URGENT' : '🟡 PENDING'}
-                      </span>
-                    </div>
-
-                    {/* Patient & Request Details */}
-                    <div className="space-y-1">
-                      <strong className="text-sm font-black text-slate-900 block leading-tight">
-                        Patient: {req.patientName}
-                      </strong>
-                      <p className="text-xs font-extrabold text-slate-700">
-                        {req.unitsNeeded} Units Required
-                      </p>
-                      <div className="text-[11px] text-slate-500 space-y-0.5 pt-1">
-                        <span className="block flex items-center gap-1 font-medium">
-                          <Building2 className="w-3 h-3 text-slate-400" />
-                          ICU / Emergency Ward ({req.city || 'Trauma Desk'})
+                return (
+                  <div
+                    key={req.id}
+                    className={`p-4 rounded-2xl bg-white border space-y-3 flex flex-col justify-between transition-all hover:shadow-md ${
+                      isCritical
+                        ? 'border-red-200 hover:border-red-400 bg-gradient-to-b from-red-50/20 to-white'
+                        : isUrgent
+                        ? 'border-amber-200 hover:border-amber-400'
+                        : 'border-slate-200 hover:border-sky-400'
+                    }`}
+                  >
+                    <div className="space-y-2">
+                      {/* Top Pill Row */}
+                      <div className="flex items-center justify-between">
+                        <span className="font-black text-sm text-red-600 flex items-center gap-1">
+                          🩸 {req.bloodGroup} <span className="text-xs font-semibold text-slate-500">({req.bloodComponent || 'PRBC'})</span>
                         </span>
-                        <span className="block flex items-center gap-1 font-mono text-slate-600">
-                          <Clock className="w-3 h-3 text-slate-400" />
-                          Required: {req.requiredDate || 'Within 2 Hours'}
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase ${
+                          isCritical
+                            ? 'bg-red-100 text-red-800 border-red-200'
+                            : isUrgent
+                            ? 'bg-amber-100 text-amber-900 border-amber-300'
+                            : 'bg-sky-100 text-sky-900 border-sky-200'
+                        }`}>
+                          {isCritical ? '🔴 CRITICAL' : isUrgent ? '🟠 URGENT' : '🟡 PENDING'}
                         </span>
                       </div>
+
+                      {/* Request Info */}
+                      <div className="space-y-1">
+                        <strong className="text-sm font-black text-slate-900 block">
+                          {req.unitsNeeded} Units Required
+                        </strong>
+                        <p className="text-[11px] text-slate-500 flex items-center gap-1 font-medium">
+                          <Building2 className="w-3 h-3 text-slate-400" />
+                          ICU • Required: {req.requiredDate || 'Within 2 hours'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Footer Row */}
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                      <span className="font-mono text-slate-400">Request {req.id}</span>
+                      <button
+                        onClick={() => navigate('/hospital/dashboard')}
+                        className="text-sky-700 font-extrabold hover:text-sky-900 flex items-center gap-1 hover:translate-x-0.5 transition-transform"
+                      >
+                        View Request →
+                      </button>
                     </div>
                   </div>
+                );
+              })}
+            </div>
 
-                  {/* Card Footer Info & Action Button */}
-                  <div className="pt-2 border-t border-slate-100 space-y-2">
-                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
-                      <span>Request ID: {req.id}</span>
-                      <span className="font-bold text-red-600 uppercase">🔴 Action Required</span>
-                    </div>
-
-                    <button
-                      onClick={() => navigate('/hospital/dashboard')}
-                      className="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-[11px] shadow-xs transition-all flex items-center justify-center gap-1"
-                    >
-                      View Request <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+            <span className="text-[11px] text-slate-400 font-medium block text-center pt-1">
+              Showing the most urgent active requests
+            </span>
           </div>
         )}
       </div>
