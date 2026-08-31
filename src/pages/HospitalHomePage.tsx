@@ -133,45 +133,48 @@ export const HospitalHomePage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in">
       
-      {/* 1. WELCOME & HOSPITAL OVERVIEW HERO BANNER (SKY BLUE GRADIENT WITH LAYERED MEDICAL / HOSPITAL ARTWORK) */}
+      {/* 1. WELCOME & HOSPITAL OVERVIEW HERO BANNER (SKY BLUE GRADIENT WITH CLEAN STROKE LINE-ART BACKDROP) */}
       <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#0284C7] via-[#0369A1] to-[#0EA5E9] text-white shadow-xl relative overflow-hidden border border-sky-400/30">
         
-        {/* Layer 1: Subtle ECG Heartbeat Pulse Line Along Bottom Right */}
-        <div className="absolute right-0 bottom-0 w-full md:w-3/5 h-24 pointer-events-none opacity-20 z-0">
-          <svg className="w-full h-full" viewBox="0 0 500 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        {/* Layer 1: ECG Heartbeat Pulse Line Wave Across Bottom */}
+        <div className="absolute right-0 bottom-0 w-full md:w-3/5 h-20 pointer-events-none opacity-20 z-0">
+          <svg className="w-full h-full" viewBox="0 0 500 80" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path
-              d="M 0 60 L 140 60 L 155 25 L 175 90 L 195 10 L 215 75 L 230 45 L 245 60 L 500 60"
+              d="M 0 50 L 140 50 L 155 20 L 175 75 L 195 10 L 215 65 L 230 40 L 245 50 L 500 50"
               stroke="white"
-              strokeWidth="2.5"
+              strokeWidth="2"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-            <circle cx="195" cy="10" r="4" fill="white" className="animate-ping" />
           </svg>
         </div>
 
-        {/* Layer 2: Medical Cross & Geometric Network Backdrop Motif (Right Side) */}
+        {/* Layer 2: Clean Line-Art Medical Cross & Network Rings Motif (Pure Stroke, NO Solid Fills) */}
         <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-15 pointer-events-none z-0 hidden sm:block">
-          <svg width="340" height="240" viewBox="0 0 340 240" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Concentric Medical Network Rings */}
-            <circle cx="240" cy="120" r="100" stroke="white" strokeWidth="1.5" strokeDasharray="4 4" />
-            <circle cx="240" cy="120" r="65" stroke="white" strokeWidth="1" />
+          <svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+            {/* Concentric Network Rings */}
+            <circle cx="220" cy="100" r="85" stroke="white" strokeWidth="1.5" strokeDasharray="4 4" fill="none" />
+            <circle cx="220" cy="100" r="55" stroke="white" strokeWidth="1" fill="none" />
             
-            {/* Medical Cross Graphic */}
-            <rect x="225" y="70" width="30" height="100" rx="6" fill="white" />
-            <rect x="190" y="105" width="100" height="30" rx="6" fill="white" />
+            {/* Outline Medical Cross (Pure Stroke, No Solid Fill Box) */}
+            <path
+              d="M 210 60 H 230 V 90 H 260 V 110 H 230 V 140 H 210 V 110 H 180 V 90 H 210 Z"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinejoin="round"
+              fill="none"
+            />
 
             {/* Stethoscope & Care Line Accents */}
-            <path d="M 60 120 C 100 60, 160 60, 190 105" stroke="white" strokeWidth="2" strokeDasharray="3 3" />
-            <circle cx="60" cy="120" r="6" fill="white" />
-            <circle cx="280" cy="50" r="4" fill="white" />
-            <circle cx="310" cy="170" r="5" fill="white" />
+            <path d="M 60 100 C 100 50, 150 50, 180 90" stroke="white" strokeWidth="1.5" strokeDasharray="3 3" fill="none" />
+            <circle cx="60" cy="100" r="4" stroke="white" strokeWidth="1.5" fill="none" />
+            <circle cx="270" cy="40" r="3" stroke="white" strokeWidth="1.5" fill="none" />
           </svg>
         </div>
 
-        {/* Layer 3: Faint Hospital Building Silhouette (Far Right) */}
-        <div className="absolute right-6 bottom-4 opacity-12 pointer-events-none z-0">
-          <Building2 className="w-56 h-56 fill-white text-white" />
+        {/* Layer 3: Translucent Hospital Building Outline (Stroke Only) */}
+        <div className="absolute right-8 bottom-3 opacity-15 pointer-events-none z-0">
+          <Building2 className="w-36 h-36 text-white stroke-[1.2]" />
         </div>
 
         {/* Banner Content Container */}
