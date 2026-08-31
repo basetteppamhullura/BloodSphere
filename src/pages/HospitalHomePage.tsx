@@ -19,7 +19,8 @@ import {
   History,
   Check,
   Search,
-  ExternalLink
+  ExternalLink,
+  MapPin
 } from 'lucide-react';
 
 // Helper function to get minimum required safety threshold per component & blood group
@@ -42,8 +43,6 @@ export const HospitalHomePage: React.FC = () => {
   } = useApp();
 
   const navigate = useNavigate();
-
-  const hospitalRequests = requests.slice(0, 3);
 
   // 1. Calculate Total Hospital Stock dynamically (Sum of all available units in database)
   const totalAvailableUnits = Object.values(inventoryStockMap).reduce((totalGroup, comps) => {
@@ -86,8 +85,39 @@ export const HospitalHomePage: React.FC = () => {
   // 4. Calculate Active Connected Regional Blood Banks dynamically from database
   const activeConnectedBanksCount = (bloodBanks || []).filter(b => b.verified !== false).length;
 
-  // 5. Active Emergency Requests Count
-  const pendingEmergencyRequests = requests.filter(r => (r.urgency as string) === 'HIGH' || (r.urgency as string) === 'CRITICAL' || (r.urgency as string) === 'EMERGENCY');
+  // 5. TRAUMA EMERGENCY REQUESTS QUEUE - Filter ONLY ACTIVE Requests (exclude fulfilled/completed/cancelled)
+  const inactiveStatuses = ['FULFILLED', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'REJECTED'];
+  const activeRequests = (requests || []).filter(r => !inactiveStatuses.includes(r.status));
+
+  // Deduplicate by Request ID (Ensure no duplicate Request IDs appear)
+  const activeMap = new Map<string, typeof requests[0]>();
+  activeRequests.forEach(r => {
+    if (!activeMap.has(r.id)) {
+      activeMap.set(r.id, r);
+    }
+  });
+  const uniqueActiveRequests = Array.from(activeMap.values());
+
+  // Priority Rank Helper (1: Critical, 2: Urgent, 3: Pending)
+  const getPriorityRank = (r: typeof requests[0]) => {
+    const urg = String(r.urgency || '').toUpperCase();
+    if (urg === 'HIGH' || urg === 'CRITICAL' || urg === 'EMERGENCY') return 1;
+    if (urg === 'MODERATE' || urg === 'URGENT') return 2;
+    return 3;
+  };
+
+  // Sort Active Emergency Queue: Priority Rank Ascending -> Required Date/Time Earliest First
+  const sortedActiveRequests = uniqueActiveRequests.sort((a, b) => {
+    const pA = getPriorityRank(a);
+    const pB = getPriorityRank(b);
+    if (pA !== pB) return pA - pB;
+    return (a.requiredByDate || '').localeCompare(b.requiredByDate || '');
+  });
+
+  // Calculate Real-Time Severity Counters from actual active requests
+  const criticalCount = sortedActiveRequests.filter(r => getPriorityRank(r) === 1).length;
+  const urgentCount = sortedActiveRequests.filter(r => getPriorityRank(r) === 2).length;
+  const pendingCount = sortedActiveRequests.filter(r => getPriorityRank(r) === 3).length;
 
   // 6. Active Transfers In-Transit
   const activeTransfers = (interCityTransfers || []).filter(t => t.status === 'In Transit' || t.status === 'Dispatched' || t.status === 'Pending');
@@ -221,34 +251,123 @@ export const HospitalHomePage: React.FC = () => {
 
       </div>
 
-      {/* 3. Emergency Information & Trauma Patient Requests Preview */}
-      <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-sky-100 pb-3">
-          <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-red-600" /> Trauma Emergency Requests Queue
-          </h2>
-          <button
-            onClick={() => navigate('/hospital/dashboard')}
-            className="text-xs text-sky-600 font-bold hover:underline"
-          >
-            Manage Desk
-          </button>
+      {/* 3. TRAUMA EMERGENCY REQUESTS QUEUE (ACTIVE REAL-TIME WORKFLOW) */}
+      <div className="p-6 rounded-3xl bg-white border border-red-100 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse" /> TRAUMA EMERGENCY REQUESTS QUEUE
+              </h2>
+              <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-black border border-red-200">
+                {sortedActiveRequests.length} Active
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">Real-time trauma center blood requirements requiring immediate staff action.</p>
+          </div>
+
+          {/* Real-time Dynamic Severity Counters & Manage Desk Button */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2.5 py-1 rounded-xl bg-red-50 text-red-700 text-xs font-extrabold border border-red-200">
+              🔴 {criticalCount} Critical
+            </span>
+            <span className="px-2.5 py-1 rounded-xl bg-amber-50 text-amber-800 text-xs font-extrabold border border-amber-200">
+              🟠 {urgentCount} Urgent
+            </span>
+            <span className="px-2.5 py-1 rounded-xl bg-sky-50 text-sky-800 text-xs font-extrabold border border-sky-200">
+              🟡 {pendingCount} Pending
+            </span>
+            <button
+              onClick={() => navigate('/hospital/dashboard')}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-xs transition-colors flex items-center gap-1 shrink-0 ml-1"
+            >
+              Manage Desk <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-          {hospitalRequests.map(req => (
-            <div key={req.id} className="p-4 rounded-2xl bg-sky-50/50 border border-sky-100 space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="font-extrabold text-red-600">{req.bloodGroup}</span>
-                <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold">
-                  {req.urgency}
-                </span>
-              </div>
-              <strong className="text-sm font-black text-slate-900 block">{req.patientName}</strong>
-              <p className="text-[11px] text-slate-500">{req.unitsNeeded} Units Required</p>
-            </div>
-          ))}
-        </div>
+        {/* Active Emergency Request Cards List */}
+        {sortedActiveRequests.length === 0 ? (
+          <div className="p-8 rounded-2xl bg-[#F7FAF8] border border-[#DDE8E2] text-center space-y-2">
+            <CheckCircle2 className="w-10 h-10 text-[#087443] mx-auto" />
+            <strong className="text-base font-black text-slate-900 block">🟢 No active emergency blood requests</strong>
+            <p className="text-xs text-slate-500">All emergency requests are currently under control or fulfilled.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            {sortedActiveRequests.slice(0, 6).map(req => {
+              const rank = getPriorityRank(req);
+              const isCritical = rank === 1;
+              const isUrgent = rank === 2;
+
+              return (
+                <div
+                  key={req.id}
+                  className={`p-4 rounded-2xl bg-white border space-y-3 flex flex-col justify-between transition-all hover:shadow-md ${
+                    isCritical
+                      ? 'border-red-200 hover:border-red-400 bg-gradient-to-b from-red-50/30 to-white'
+                      : isUrgent
+                      ? 'border-amber-200 hover:border-amber-400'
+                      : 'border-slate-200 hover:border-sky-400'
+                  }`}
+                >
+                  <div className="space-y-2">
+                    {/* Header Pill */}
+                    <div className="flex items-center justify-between">
+                      <span className="font-black text-sm text-red-600 flex items-center gap-1">
+                        🩸 {req.bloodGroup} <span className="text-xs font-semibold text-slate-500">({req.bloodComponent || 'PRBC'})</span>
+                      </span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase ${
+                        isCritical
+                          ? 'bg-red-100 text-red-800 border-red-200'
+                          : isUrgent
+                          ? 'bg-amber-100 text-amber-900 border-amber-300'
+                          : 'bg-sky-100 text-sky-900 border-sky-200'
+                      }`}>
+                        {isCritical ? '🔴 CRITICAL' : isUrgent ? '🟠 URGENT' : '🟡 PENDING'}
+                      </span>
+                    </div>
+
+                    {/* Patient & Request Details */}
+                    <div className="space-y-1">
+                      <strong className="text-sm font-black text-slate-900 block leading-tight">
+                        Patient: {req.patientName}
+                      </strong>
+                      <p className="text-xs font-extrabold text-slate-700">
+                        {req.unitsNeeded} Units Required
+                      </p>
+                      <div className="text-[11px] text-slate-500 space-y-0.5 pt-1">
+                        <span className="block flex items-center gap-1 font-medium">
+                          <Building2 className="w-3 h-3 text-slate-400" />
+                          ICU / Emergency Ward ({req.city || 'Trauma Desk'})
+                        </span>
+                        <span className="block flex items-center gap-1 font-mono text-slate-600">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          Required: {req.requiredByDate || 'Within 2 Hours'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Footer Info & Action Button */}
+                  <div className="pt-2 border-t border-slate-100 space-y-2">
+                    <div className="flex items-center justify-between text-[10px] font-mono text-slate-400">
+                      <span>Request ID: {req.id}</span>
+                      <span className="font-bold text-red-600 uppercase">🔴 Action Required</span>
+                    </div>
+
+                    <button
+                      onClick={() => navigate('/hospital/dashboard')}
+                      className="w-full py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-[11px] shadow-xs transition-all flex items-center justify-center gap-1"
+                    >
+                      View Request <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* 4. TODAY'S HOSPITAL OPERATIONS (COMPACT ACTION-ORIENTED SUMMARY GRID) */}
@@ -280,19 +399,19 @@ export const HospitalHomePage: React.FC = () => {
                   🚨 Emergency
                 </span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase ${
-                  pendingEmergencyRequests.length > 0 ? 'bg-red-100 text-red-800 border-red-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                  criticalCount > 0 ? 'bg-red-100 text-red-800 border-red-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200'
                 }`}>
-                  {pendingEmergencyRequests.length > 0 ? '🔴 ACTION REQUIRED' : '🟢 NORMAL'}
+                  {criticalCount > 0 ? '🔴 ACTION REQUIRED' : '🟢 NORMAL'}
                 </span>
               </div>
 
               <div>
                 <strong className="text-lg font-black text-slate-900 block">
-                  {pendingEmergencyRequests.length} Request{pendingEmergencyRequests.length !== 1 ? 's' : ''}
+                  {sortedActiveRequests.length} Request{sortedActiveRequests.length !== 1 ? 's' : ''}
                 </strong>
                 <span className="text-[11px] text-slate-500 block mt-0.5">
-                  {pendingEmergencyRequests.length > 0
-                    ? `${pendingEmergencyRequests[0].bloodGroup} (${pendingEmergencyRequests[0].unitsNeeded}u) for ${pendingEmergencyRequests[0].patientName}`
+                  {sortedActiveRequests.length > 0
+                    ? `${sortedActiveRequests[0].bloodGroup} (${sortedActiveRequests[0].unitsNeeded}u) for ${sortedActiveRequests[0].patientName}`
                     : 'No emergency trauma requests pending'}
                 </span>
               </div>
