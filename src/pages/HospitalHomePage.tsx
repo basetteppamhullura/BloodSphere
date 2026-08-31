@@ -111,7 +111,7 @@ export const HospitalHomePage: React.FC = () => {
     const pA = getPriorityRank(a);
     const pB = getPriorityRank(b);
     if (pA !== pB) return pA - pB;
-    return (a.requiredByDate || '').localeCompare(b.requiredByDate || '');
+    return (a.requiredDate || '').localeCompare(b.requiredDate || '');
   });
 
   // Calculate Real-Time Severity Counters from actual active requests
@@ -343,7 +343,7 @@ export const HospitalHomePage: React.FC = () => {
                         </span>
                         <span className="block flex items-center gap-1 font-mono text-slate-600">
                           <Clock className="w-3 h-3 text-slate-400" />
-                          Required: {req.requiredByDate || 'Within 2 Hours'}
+                          Required: {req.requiredDate || 'Within 2 Hours'}
                         </span>
                       </div>
                     </div>
