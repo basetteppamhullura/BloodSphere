@@ -133,26 +133,26 @@ export const HospitalHomePage: React.FC = () => {
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in">
       
-      {/* 1. WELCOME & HOSPITAL OVERVIEW HERO BANNER */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-950 via-sky-950 to-slate-900 text-white shadow-xl relative overflow-hidden border border-sky-800/40">
+      {/* 1. WELCOME & HOSPITAL OVERVIEW HERO BANNER (DEEPER SKY BLUE -> PRIMARY SKY BLUE GRADIENT) */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#0284C7] via-[#0369A1] to-[#0EA5E9] text-white shadow-xl relative overflow-hidden border border-sky-400/30">
         
         {/* Subtle Decorative Geometric Backdrop Motif */}
-        <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 opacity-15 pointer-events-none">
+        <div className="absolute right-0 top-0 translate-x-12 -translate-y-12 opacity-20 pointer-events-none">
           <svg width="400" height="400" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
             <circle cx="100" cy="100" r="80" stroke="white" strokeWidth="2" strokeDasharray="6 6" />
             <circle cx="100" cy="100" r="50" stroke="white" strokeWidth="1" />
             <path d="M100 20 V180 M20 100 H180" stroke="white" strokeWidth="1.5" strokeOpacity="0.5" />
           </svg>
         </div>
-        <div className="absolute right-6 bottom-6 opacity-10 pointer-events-none">
+        <div className="absolute right-6 bottom-6 opacity-15 pointer-events-none">
           <Building2 className="w-64 h-64 fill-white" />
         </div>
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
             {/* Polished Verification Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-emerald-500/15 backdrop-blur-md text-emerald-300 border border-emerald-400/30 text-xs font-black shadow-sm shadow-emerald-500/20">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30 text-xs font-black shadow-sm">
+              <ShieldCheck className="w-4 h-4 text-emerald-300" />
               <span>Verified Hospital Medical Portal</span>
             </div>
 
@@ -160,7 +160,7 @@ export const HospitalHomePage: React.FC = () => {
               Welcome, {currentUser?.name || 'KIMS Teaching Hospital'} 🏥
             </h1>
 
-            <p className="text-xs sm:text-sm text-sky-100/90 font-medium leading-relaxed">
+            <p className="text-xs sm:text-sm text-sky-100 font-medium leading-relaxed">
               Manage trauma center blood inventory, broadcast emergency patient requests, and coordinate with connected regional blood banks.
             </p>
           </div>
@@ -184,7 +184,7 @@ export const HospitalHomePage: React.FC = () => {
         {/* Header Row */}
         <div className="flex items-center justify-between border-b border-red-100/80 pb-3">
           <div>
-            <h2 className="text-base sm:text-lg font-extrabold text-slate-900 flex items-center gap-2 tracking-tight">
+            <h2 className="text-base sm:text-lg font-extrabold text-[#0D2B45] flex items-center gap-2 tracking-tight">
               <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse" /> Trauma Emergency Requests
             </h2>
             <p className="text-xs text-slate-500 font-medium mt-0.5">Active emergency requests requiring immediate attention</p>
@@ -192,7 +192,7 @@ export const HospitalHomePage: React.FC = () => {
 
           <button
             onClick={() => navigate('/hospital/dashboard')}
-            className="px-3.5 py-1.5 rounded-xl bg-red-100/80 hover:bg-red-200/80 text-red-800 border border-red-200 font-extrabold text-xs transition-all flex items-center gap-1 shrink-0"
+            className="px-3.5 py-1.5 rounded-xl bg-[#E0F2FE] hover:bg-sky-200 text-[#0284C7] border border-sky-200 font-extrabold text-xs transition-all flex items-center gap-1 shrink-0"
           >
             Manage Desk →
           </button>
@@ -206,8 +206,8 @@ export const HospitalHomePage: React.FC = () => {
           <span className="px-3 py-1 rounded-xl bg-amber-100/80 text-amber-900 border border-amber-200 flex items-center gap-1.5 shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-amber-500" /> 🟠 Urgent <strong className="font-black text-slate-900">{urgentCount}</strong>
           </span>
-          <span className="px-3 py-1 rounded-xl bg-sky-100/80 text-sky-900 border border-sky-200 flex items-center gap-1.5 shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-sky-500" /> 🟡 Pending <strong className="font-black text-slate-900">{pendingCount}</strong>
+          <span className="px-3 py-1 rounded-xl bg-[#E0F2FE] text-[#0284C7] border border-sky-200 flex items-center gap-1.5 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#0EA5E9]" /> 🟡 Pending <strong className="font-black text-[#0D2B45]">{pendingCount}</strong>
           </span>
         </div>
 
@@ -215,7 +215,7 @@ export const HospitalHomePage: React.FC = () => {
         {sortedActiveRequests.length === 0 ? (
           <div className="p-8 rounded-2xl bg-white border border-[#DDE8E2] text-center space-y-2">
             <CheckCircle2 className="w-8 h-8 text-[#087443] mx-auto" />
-            <strong className="text-sm font-black text-slate-900 block">🟢 No Active Emergency Requests</strong>
+            <strong className="text-sm font-black text-[#0D2B45] block">🟢 No Active Emergency Requests</strong>
             <p className="text-xs text-slate-500">All emergency blood requests are currently under control.</p>
           </div>
         ) : (
@@ -234,7 +234,7 @@ export const HospitalHomePage: React.FC = () => {
                         ? 'border-l-4 border-l-red-500 border-red-200/90 bg-gradient-to-br from-red-50/60 via-white to-rose-50/20'
                         : isUrgent
                         ? 'border-l-4 border-l-amber-500 border-amber-200/90 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/20'
-                        : 'border-l-4 border-l-sky-500 border-sky-200/90 bg-gradient-to-br from-sky-50/50 via-white to-blue-50/20'
+                        : 'border-l-4 border-l-[#0EA5E9] border-sky-200/90 bg-gradient-to-br from-[#E0F2FE]/50 via-white to-sky-50/20'
                     }`}
                   >
                     <div className="space-y-2">
@@ -247,14 +247,14 @@ export const HospitalHomePage: React.FC = () => {
                             ? 'bg-red-100 text-red-800 border-red-200'
                             : isUrgent
                             ? 'bg-amber-100 text-amber-900 border-amber-300'
-                            : 'bg-sky-100 text-sky-900 border-sky-200'
+                            : 'bg-[#E0F2FE] text-[#0284C7] border border-sky-200'
                         }`}>
                           {isCritical ? '🔴 CRITICAL' : isUrgent ? '🟠 URGENT' : '🟡 PENDING'}
                         </span>
                       </div>
 
                       <div className="space-y-1">
-                        <strong className="text-sm font-black text-slate-900 block">
+                        <strong className="text-sm font-black text-[#0D2B45] block">
                           {req.unitsNeeded} Units Required
                         </strong>
                         <p className="text-[11px] text-slate-500 flex items-center gap-1 font-medium">
@@ -268,7 +268,7 @@ export const HospitalHomePage: React.FC = () => {
                       <span className="font-mono text-slate-400">BR-{req.id}</span>
                       <button
                         onClick={() => navigate('/hospital/dashboard')}
-                        className="px-3 py-1 rounded-lg bg-white hover:bg-slate-50 text-slate-800 font-extrabold text-[11px] border border-slate-200 shadow-2xs transition-all flex items-center gap-1"
+                        className="px-3 py-1 rounded-lg bg-white hover:bg-[#E0F2FE] text-[#0284C7] font-extrabold text-[11px] border border-sky-200 shadow-2xs transition-all flex items-center gap-1"
                       >
                         View Request →
                       </button>
@@ -285,11 +285,11 @@ export const HospitalHomePage: React.FC = () => {
         )}
       </div>
 
-      {/* 3. 📥 INCOMING PATIENT BLOOD REQUESTS QUEUE (PATIENT INCOMING ZONE) */}
-      <div className="p-6 rounded-3xl bg-gradient-to-br from-sky-50/60 via-slate-50/30 to-blue-50/40 border border-sky-100/90 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-sky-100/80 pb-3">
+      {/* 3. 📥 INCOMING PATIENT BLOOD REQUESTS QUEUE (LIGHT SKY BLUE ZONE) */}
+      <div className="p-6 rounded-3xl bg-gradient-to-br from-[#E0F2FE]/70 via-[#F0F9FF]/50 to-white border border-sky-200/90 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-sky-200/80 pb-3">
           <div>
-            <h3 className="font-extrabold text-base sm:text-lg text-slate-900 flex items-center gap-2 tracking-tight">
+            <h3 className="font-extrabold text-base sm:text-lg text-[#0D2B45] flex items-center gap-2 tracking-tight">
               <Droplet className="w-5 h-5 text-red-600" /> 📥 Incoming Patient Blood Requests Queue
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-0.5">Real-time incoming active patient blood requests from Blood Net system</p>
@@ -297,7 +297,7 @@ export const HospitalHomePage: React.FC = () => {
 
           <button
             onClick={() => navigate('/hospital/dashboard')}
-            className="px-3.5 py-1.5 rounded-xl bg-sky-100/80 hover:bg-sky-200/80 text-sky-800 font-extrabold text-xs transition-all border border-sky-200"
+            className="px-3.5 py-1.5 rounded-xl bg-[#E0F2FE] hover:bg-sky-200 text-[#0284C7] font-extrabold text-xs transition-all border border-sky-200"
           >
             View All Requests →
           </button>
@@ -306,7 +306,7 @@ export const HospitalHomePage: React.FC = () => {
         {sortedActiveRequests.length === 0 ? (
           <div className="p-6 rounded-2xl bg-white text-center border border-[#DDE8E2] space-y-1">
             <CheckCircle2 className="w-6 h-6 text-[#087443] mx-auto" />
-            <span className="text-xs font-bold text-slate-800 block">No Incoming Patient Requests</span>
+            <span className="text-xs font-bold text-[#0D2B45] block">No Incoming Patient Requests</span>
             <p className="text-[11px] text-slate-500">All patient blood requirements are up to date.</p>
           </div>
         ) : (
@@ -322,20 +322,20 @@ export const HospitalHomePage: React.FC = () => {
                       ? 'border-l-4 border-l-red-500 border-red-200/80 bg-gradient-to-br from-red-50/50 via-white to-rose-50/20'
                       : isUrg
                       ? 'border-l-4 border-l-amber-500 border-amber-200/80 bg-gradient-to-br from-amber-50/40 via-white to-orange-50/20'
-                      : 'border-l-4 border-l-sky-500 border-sky-200/80 bg-gradient-to-br from-sky-50/40 via-white to-blue-50/20'
+                      : 'border-l-4 border-l-[#0EA5E9] border-sky-200/80 bg-gradient-to-br from-[#E0F2FE]/50 via-white to-sky-50/20'
                   }`}
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${
-                        isCrit ? 'bg-red-100 text-red-800 border-red-200' : isUrg ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-sky-100 text-sky-900 border-sky-200'
+                        isCrit ? 'bg-red-100 text-red-800 border-red-200' : isUrg ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-[#E0F2FE] text-[#0284C7] border border-sky-200'
                       }`}>
                         {isCrit ? '🔴 CRITICAL' : isUrg ? '🟠 URGENT' : '🟡 PENDING'}
                       </span>
                       <span className="text-[10px] font-mono text-slate-400">BR-{req.id}</span>
                     </div>
 
-                    <strong className="text-sm font-black text-slate-900 block">
+                    <strong className="text-sm font-black text-[#0D2B45] block">
                       {req.bloodGroup} {req.bloodComponent || 'PRBC'} • {req.unitsNeeded} Units Required
                     </strong>
 
@@ -359,7 +359,7 @@ export const HospitalHomePage: React.FC = () => {
         )}
       </div>
 
-      {/* 4. 🩸 BLOOD AVAILABILITY SUMMARY MATRIX (KPI METRICS ZONE) */}
+      {/* 4. 🩸 BLOOD AVAILABILITY SUMMARY MATRIX (SKY BLUE KPI ACCENTS) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         
         {/* TOTAL HOSPITAL STOCK CARD */}
@@ -373,7 +373,7 @@ export const HospitalHomePage: React.FC = () => {
               <div className="p-2.5 rounded-xl bg-emerald-100/80 text-[#087443] border border-emerald-200/80 shrink-0 shadow-2xs">
                 <Droplet className="w-5 h-5 text-[#087443]" />
               </div>
-              <span className="text-xs text-slate-700 font-bold block">Total Hospital Stock</span>
+              <span className="text-xs text-[#0D2B45] font-bold block">Total Hospital Stock</span>
             </div>
             <span className="text-xs font-extrabold text-[#087443] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
               View <ArrowUpRight className="w-3.5 h-3.5" />
@@ -381,7 +381,7 @@ export const HospitalHomePage: React.FC = () => {
           </div>
 
           <div>
-            <strong className="text-3xl sm:text-4xl font-black text-slate-900 block tracking-tight">
+            <strong className="text-3xl sm:text-4xl font-black text-[#0D2B45] block tracking-tight">
               {totalAvailableUnits} <span className="text-sm font-bold text-slate-500">Units</span>
             </strong>
             <span className="text-[11px] text-slate-500 font-medium block mt-1">
@@ -407,7 +407,7 @@ export const HospitalHomePage: React.FC = () => {
               }`}>
                 <AlertTriangle className="w-5 h-5" />
               </div>
-              <span className="text-xs text-slate-700 font-bold block">Critical Stock Alerts</span>
+              <span className="text-xs text-[#0D2B45] font-bold block">Critical Stock Alerts</span>
             </div>
 
             <span className={`text-xs font-extrabold group-hover:translate-x-1 transition-transform flex items-center gap-0.5 ${
@@ -431,26 +431,26 @@ export const HospitalHomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* CONNECTED REGIONAL BANKS CARD */}
+        {/* CONNECTED REGIONAL BANKS CARD (SKY BLUE ACCENT) */}
         <div
           onClick={() => navigate('/hospital/blood-banks')}
-          className="p-5 rounded-2xl bg-gradient-to-br from-sky-50/40 via-white to-white border border-sky-100 shadow-sm space-y-3 cursor-pointer hover:border-sky-500 hover:shadow-md transition-all group"
+          className="p-5 rounded-2xl bg-gradient-to-br from-[#E0F2FE]/60 via-white to-white border border-sky-200 shadow-sm space-y-3 cursor-pointer hover:border-[#0EA5E9] hover:shadow-md transition-all group"
           title="Click to view connected regional blood banks & real-time inventory"
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="p-2.5 rounded-xl bg-sky-100/80 text-sky-700 border border-sky-200/80 shrink-0 shadow-2xs">
+              <div className="p-2.5 rounded-xl bg-[#E0F2FE] text-[#0EA5E9] border border-sky-200 shrink-0 shadow-2xs">
                 <Building2 className="w-5 h-5" />
               </div>
-              <span className="text-xs text-slate-700 font-bold block">Connected Banks</span>
+              <span className="text-xs text-[#0D2B45] font-bold block">Connected Banks</span>
             </div>
-            <span className="text-xs font-extrabold text-sky-700 group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
+            <span className="text-xs font-extrabold text-[#0284C7] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
               Banks <ArrowUpRight className="w-3.5 h-3.5" />
             </span>
           </div>
 
           <div>
-            <strong className="text-3xl sm:text-4xl font-black text-slate-900 block tracking-tight">
+            <strong className="text-3xl sm:text-4xl font-black text-[#0D2B45] block tracking-tight">
               {activeConnectedBanksCount} <span className="text-sm font-bold text-slate-500">Active</span>
             </strong>
             <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1 mt-1">
@@ -462,11 +462,11 @@ export const HospitalHomePage: React.FC = () => {
 
       </div>
 
-      {/* 5. 📦 HOSPITAL BLOOD STOCK MONITOR (INVENTORY MONITORING ZONE) */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      {/* 5. 📦 HOSPITAL BLOOD STOCK MONITOR */}
+      <div className="p-6 rounded-3xl bg-white border border-sky-100/90 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-sky-100 pb-3">
           <div>
-            <h3 className="font-extrabold text-base sm:text-lg text-slate-900 flex items-center gap-2 tracking-tight">
+            <h3 className="font-extrabold text-base sm:text-lg text-[#0D2B45] flex items-center gap-2 tracking-tight">
               <PackageCheck className="w-5 h-5 text-[#087443]" /> 🩸 Hospital Blood Stock Monitor
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-0.5">Real-time authorized blood inventory storage & availability status</p>
@@ -474,7 +474,7 @@ export const HospitalHomePage: React.FC = () => {
 
           <button
             onClick={() => navigate('/hospital/blood-availability')}
-            className="px-3.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#087443] font-extrabold text-xs transition-all border border-emerald-200 flex items-center gap-1"
+            className="px-3.5 py-1.5 rounded-xl bg-[#E0F2FE] hover:bg-sky-200 text-[#0284C7] font-extrabold text-xs transition-all border border-sky-200 flex items-center gap-1"
           >
             View Matrix →
           </button>
@@ -500,7 +500,7 @@ export const HospitalHomePage: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-black text-slate-900 text-base">{group}</span>
+                  <span className="font-black text-[#0D2B45] text-base">{group}</span>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${
                     isCrit
                       ? 'bg-red-100 text-red-800 border-red-200'
@@ -515,7 +515,7 @@ export const HospitalHomePage: React.FC = () => {
                 <div className="text-[11px] text-slate-600 space-y-0.5 font-medium">
                   <div className="flex items-center justify-between">
                     <span>Available:</span>
-                    <strong className="font-black text-slate-900">{availableUnits} units</strong>
+                    <strong className="font-black text-[#0D2B45]">{availableUnits} units</strong>
                   </div>
                   <div className="flex items-center justify-between text-slate-500">
                     <span>Reserved:</span>
@@ -532,11 +532,11 @@ export const HospitalHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 6. TODAY'S HOSPITAL OPERATIONS (OPERATIONS ZONE) */}
-      <div className="p-6 rounded-3xl bg-white border border-slate-200/80 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+      {/* 6. TODAY'S HOSPITAL OPERATIONS */}
+      <div className="p-6 rounded-3xl bg-white border border-sky-100/90 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-sky-100 pb-3">
           <div>
-            <h3 className="font-extrabold text-base sm:text-lg text-slate-900 flex items-center gap-2 tracking-tight">
+            <h3 className="font-extrabold text-base sm:text-lg text-[#0D2B45] flex items-center gap-2 tracking-tight">
               <Activity className="w-5 h-5 text-[#087443]" /> TODAY'S HOSPITAL OPERATIONS
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-0.5">Monitor today's important blood operations and actions.</p>
@@ -544,7 +544,7 @@ export const HospitalHomePage: React.FC = () => {
 
           <button
             onClick={() => navigate('/hospital/reports')}
-            className="px-4 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#087443] font-extrabold text-xs border border-emerald-200 transition-colors flex items-center gap-1.5 shrink-0"
+            className="px-4 py-2 rounded-xl bg-[#E0F2FE] hover:bg-sky-200 text-[#0284C7] font-extrabold text-xs border border-sky-200 transition-colors flex items-center gap-1.5 shrink-0"
           >
             <History className="w-4 h-4" /> View Activity History →
           </button>
@@ -557,7 +557,7 @@ export const HospitalHomePage: React.FC = () => {
           <div className="p-4 rounded-2xl bg-gradient-to-br from-red-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between hover:border-red-400 transition-all">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-black text-slate-900 flex items-center gap-1.5">
+                <span className="font-black text-[#0D2B45] flex items-center gap-1.5">
                   🚨 Emergency
                 </span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${
@@ -568,7 +568,7 @@ export const HospitalHomePage: React.FC = () => {
               </div>
 
               <div>
-                <strong className="text-lg font-black text-slate-900 block">
+                <strong className="text-lg font-black text-[#0D2B45] block">
                   {sortedActiveRequests.length} Request{sortedActiveRequests.length !== 1 ? 's' : ''}
                 </strong>
                 <span className="text-[11px] text-slate-500 block mt-0.5">
@@ -591,7 +591,7 @@ export const HospitalHomePage: React.FC = () => {
           <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between hover:border-amber-400 transition-all">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-black text-slate-900 flex items-center gap-1.5">
+                <span className="font-black text-[#0D2B45] flex items-center gap-1.5">
                   📦 Stock Updates
                 </span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${
@@ -602,7 +602,7 @@ export const HospitalHomePage: React.FC = () => {
               </div>
 
               <div>
-                <strong className="text-lg font-black text-slate-900 block">
+                <strong className="text-lg font-black text-[#0D2B45] block">
                   {criticalLowGroupCount > 0 ? `${criticalLowGroupCount} Group(s) Low` : `${totalAvailableUnits} Units Vault`}
                 </strong>
                 <span className="text-[11px] text-slate-500 block mt-0.5">
@@ -621,22 +621,22 @@ export const HospitalHomePage: React.FC = () => {
             </button>
           </div>
 
-          {/* CARD 3: INTER-CITY TRANSFERS */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-sky-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between hover:border-sky-400 transition-all">
+          {/* CARD 3: INTER-CITY TRANSFERS (PRIMARY SKY BLUE BUTTON) */}
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-sky-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between hover:border-[#0EA5E9] transition-all">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-black text-slate-900 flex items-center gap-1.5">
+                <span className="font-black text-[#0D2B45] flex items-center gap-1.5">
                   🚚 Blood Transfers
                 </span>
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${
-                  activeTransfers.length > 0 ? 'bg-sky-100 text-sky-900 border-sky-300' : 'bg-slate-100 text-slate-700 border-slate-200'
+                  activeTransfers.length > 0 ? 'bg-[#E0F2FE] text-[#0284C7] border-sky-300' : 'bg-slate-100 text-slate-700 border-slate-200'
                 }`}>
                   {activeTransfers.length > 0 ? '🔵 IN TRANSIT' : 'ACTIVE'}
                 </span>
               </div>
 
               <div>
-                <strong className="text-lg font-black text-slate-900 block">
+                <strong className="text-lg font-black text-[#0D2B45] block">
                   {activeTransfers.length} Transfer{activeTransfers.length !== 1 ? 's' : ''}
                 </strong>
                 <span className="text-[11px] text-slate-500 block mt-0.5">
@@ -649,7 +649,7 @@ export const HospitalHomePage: React.FC = () => {
 
             <button
               onClick={() => navigate('/hospital/blood-banks')}
-              className="w-full py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-[11px] shadow-sm transition-all flex items-center justify-center gap-1 active:scale-[0.98]"
+              className="w-full py-2.5 rounded-xl bg-[#0EA5E9] hover:bg-[#0284C7] text-white font-extrabold text-[11px] shadow-sm transition-all flex items-center justify-center gap-1 active:scale-[0.98]"
             >
               Track Transfers <ArrowRight className="w-3.5 h-3.5" />
             </button>
@@ -659,7 +659,7 @@ export const HospitalHomePage: React.FC = () => {
           <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-black text-slate-900 flex items-center gap-1.5">
+                <span className="font-black text-[#0D2B45] flex items-center gap-1.5">
                   🩸 Today's Activity
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase shadow-2xs">
@@ -668,7 +668,7 @@ export const HospitalHomePage: React.FC = () => {
               </div>
 
               <div>
-                <strong className="text-lg font-black text-slate-900 block">
+                <strong className="text-lg font-black text-[#0D2B45] block">
                   {todayCompletedLogs.length} Operation{todayCompletedLogs.length !== 1 ? 's' : ''}
                 </strong>
                 <span className="text-[11px] text-slate-500 block mt-0.5">
