@@ -155,15 +155,6 @@ export const HospitalHomePage: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             <button
-              onClick={() => navigate('/hospital/dashboard')}
-              className="px-6 py-3.5 rounded-2xl bg-white text-sky-700 hover:bg-sky-50 font-black text-sm shadow-lg flex items-center gap-2 transition-all hover:scale-105"
-            >
-              <LayoutDashboard className="w-5 h-5 text-sky-700" />
-              <span>Open Hospital Dashboard</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-
-            <button
               onClick={handleLogout}
               className="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all"
               title="Logout"
@@ -285,14 +276,14 @@ export const HospitalHomePage: React.FC = () => {
         )}
       </div>
 
-      {/* 3. 📥 INCOMING PATIENT REQUESTS QUEUE */}
+      {/* 3. 📥 INCOMING PATIENT BLOOD REQUESTS QUEUE */}
       <div className="p-6 rounded-3xl bg-white border border-[#DDE8E2] shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-[#DDE8E2] pb-3">
           <div>
             <h3 className="font-extrabold text-base text-[#18352A] flex items-center gap-2">
-              <Droplet className="w-5 h-5 text-red-600" /> 📥 Incoming Patient Requests
+              <Droplet className="w-5 h-5 text-red-600" /> 📥 Incoming Patient Blood Requests Queue
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">Real-time incoming patient blood requests from Blood Net system</p>
+            <p className="text-xs text-slate-500 mt-0.5">Real-time incoming active patient blood requests from Blood Net system</p>
           </div>
 
           <button
@@ -426,12 +417,12 @@ export const HospitalHomePage: React.FC = () => {
 
       </div>
 
-      {/* 5. 📦 BLOOD BANK STORAGE (DETAILED HOSPITAL INVENTORY STORAGE GRID) */}
+      {/* 5. 📦 HOSPITAL BLOOD STOCK MONITOR */}
       <div className="p-6 rounded-3xl bg-white border border-[#DDE8E2] shadow-xs space-y-4">
         <div className="flex items-center justify-between border-b border-[#DDE8E2] pb-3">
           <div>
             <h3 className="font-extrabold text-base text-[#18352A] flex items-center gap-2">
-              <PackageCheck className="w-5 h-5 text-[#087443]" /> 📦 BLOOD BANK STORAGE
+              <PackageCheck className="w-5 h-5 text-[#087443]" /> 🩸 Hospital Blood Stock Monitor
             </h3>
             <p className="text-xs text-[#587067] mt-0.5">Real-time authorized blood inventory storage & availability status</p>
           </div>
