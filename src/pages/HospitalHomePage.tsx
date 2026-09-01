@@ -502,12 +502,20 @@ export const HospitalHomePage: React.FC = () => {
             <p className="text-xs text-slate-500 font-medium mt-0.5">Real-time authorized blood inventory storage & availability status</p>
           </div>
 
-          <button
-            onClick={() => navigate('/hospital/blood-availability')}
-            className="px-3.5 py-1.5 rounded-xl bg-[#E0F2FE] hover:bg-sky-200 text-[#0284C7] font-extrabold text-xs transition-all border border-sky-200 flex items-center gap-1"
-          >
-            View Matrix →
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => navigate('/hospital/unit-details')}
+              className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs transition-all flex items-center gap-1 shadow-xs"
+            >
+              Unit Details →
+            </button>
+            <button
+              onClick={() => navigate('/hospital/blood-availability')}
+              className="px-3.5 py-1.5 rounded-xl bg-[#E0F2FE] hover:bg-sky-200 text-[#0284C7] font-extrabold text-xs transition-all border border-sky-200 flex items-center gap-1"
+            >
+              View Matrix →
+            </button>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
