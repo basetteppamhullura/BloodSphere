@@ -213,8 +213,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // High security 2FA OTP for Hospital / Blood Bank
     if (actualRole === 'hospital' || actualRole === 'bloodbank') {
-      setPending2FAUser({ email, role: actualRole, account: account || SEED_PORTAL_ACCOUNTS[1] });
-      return { success: true, requires2FA: true, userRole: actualRole, message: 'Password accepted. 2FA OTP sent to registered phone number.' };
+      const fallbackAcc = portalAccounts.find(a => a.role === actualRole) || (actualRole === 'bloodbank' ? SEED_PORTAL_ACCOUNTS[2] : SEED_PORTAL_ACCOUNTS[1]);
+      setPending2FAUser({ email, role: actualRole, account: account || fallbackAcc });
+      return { success: true, requires2FA: true, userRole: actualRole, message: 'Password accepted. 2FA OTP sent to registered authorization device.' };
     }
 
     // Reset failed attempts on success
