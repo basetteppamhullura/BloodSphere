@@ -125,6 +125,9 @@ export interface DetailedBloodUnit {
   donorRef: string;
   createdDate: string;
   lastUpdated: string;
+  source?: string;
+  receivedDate?: string;
+  quantity?: number;
 }
 
 export interface BankNotificationItem {
