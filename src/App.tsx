@@ -46,6 +46,7 @@ import { HospitalMonitorDesk } from './components/hospital/HospitalMonitorDesk';
 import { HospitalEmergencyBoard } from './components/hospital/HospitalEmergencyBoard';
 import { HospitalDonationDrives } from './components/hospital/HospitalDonationDrives';
 import { HospitalInterCitySupply } from './components/hospital/HospitalInterCitySupply';
+import { HospitalBloodUnitDetails } from './components/hospital/HospitalBloodUnitDetails';
 
 import { BloodBankPortalDesk } from './components/bloodbank/BloodBankPortalDesk';
 import { AdminControlCenterDesk } from './components/admin/AdminControlCenterDesk';
@@ -129,6 +130,8 @@ export default function App() {
                 <Route path="dashboard" element={<HospitalMonitorDesk initialTab="monitor" />} />
                 <Route path="requests" element={<HospitalEmergencyBoard />} />
                 <Route path="blood-availability" element={<HospitalBloodStockFinder />} />
+                <Route path="unit-details" element={<HospitalBloodUnitDetails />} />
+                <Route path="units/:unitId" element={<HospitalBloodUnitDetails />} />
                 <Route path="donors" element={<HospitalDonationDrives />} />
                 <Route path="blood-banks" element={<HospitalInterCitySupply />} />
                 <Route path="reports" element={<HospitalMonitorDesk initialTab="audit_log" />} />
