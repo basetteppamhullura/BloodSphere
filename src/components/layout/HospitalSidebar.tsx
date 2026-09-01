@@ -28,6 +28,7 @@ export const HospitalSidebar: React.FC = () => {
     { to: '/hospital/home', label: 'Hospital Home', icon: Home },
     { to: '/hospital/dashboard', label: 'Hospital Dashboard', icon: LayoutDashboard },
     { to: '/hospital/requests', label: 'Patient Requests Board', icon: AlertTriangle, badge: criticalCount || 5 },
+    { to: '/hospital/unit-details', label: 'Hospital Blood Unit Details', icon: Search },
     { to: '/hospital/blood-availability', label: 'Blood Availability Search', icon: Search },
     { to: '/hospital/donors', label: 'Donation Drives & Donors', icon: Heart },
     { to: '/hospital/reports', label: 'Audit Logs & Reports', icon: FileText }
