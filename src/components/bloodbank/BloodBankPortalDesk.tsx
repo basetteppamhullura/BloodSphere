@@ -86,9 +86,9 @@ export const BloodBankPortalDesk: React.FC = () => {
   });
 
   // Determine active tab dynamically from URL path
-  const getActiveTabFromPath = (): 'dashboard' | 'queue' | 'inventory' | 'lifecycle' | 'preservation' | 'issue' | 'alerts' | 'activity' | 'reports' => {
+  const getActiveTabFromPath = (): 'dashboard' | 'queue' | 'inventory' | 'lifecycle' | 'preservation' | 'issue' | 'alerts' | 'activity' | 'reports' | 'settings' => {
     const path = location.pathname;
-    if (path.includes('/bloodbank/requests')) return 'queue';
+    if (path.includes('/bloodbank/requests') || path.includes('/bloodbank/reservations')) return 'queue';
     if (path.includes('/bloodbank/inventory')) return 'inventory';
     if (path.includes('/bloodbank/units')) return 'lifecycle';
     if (path.includes('/bloodbank/preservation')) return 'preservation';
@@ -96,6 +96,7 @@ export const BloodBankPortalDesk: React.FC = () => {
     if (path.includes('/bloodbank/alerts')) return 'alerts';
     if (path.includes('/bloodbank/activity')) return 'activity';
     if (path.includes('/bloodbank/reports')) return 'reports';
+    if (path.includes('/bloodbank/settings')) return 'settings';
     return 'dashboard';
   };
 
@@ -823,6 +824,40 @@ export const BloodBankPortalDesk: React.FC = () => {
               <span className="text-xs text-amber-900 font-bold block">Requests Processed</span>
               <strong className="text-3xl font-black text-amber-700 block tracking-tight">9 Requests</strong>
               <span className="text-[11px] text-amber-600 font-medium">100% fulfillment rate</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 10: SETTINGS */}
+      {activeTab === 'settings' && (
+        <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-xs space-y-6">
+          <div className="border-b border-sky-100 pb-4">
+            <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-emerald-600" /> Blood Center Account & System Settings
+            </h3>
+            <p className="text-xs text-slate-500 font-medium">Manage blood bank license information, emergency thresholds, and notification protocols.</p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <strong className="font-black text-slate-900 text-sm block">Institution Details</strong>
+              <div className="space-y-1 text-slate-700 font-medium">
+                <p>Name: <strong className="font-extrabold text-slate-900">{staffName}</strong></p>
+                <p>License No: <span className="font-mono text-slate-800">BB-HUB-2026-8812</span></p>
+                <p>City: <span className="text-slate-800">Hubballi, Karnataka</span></p>
+                <p>Verification: <span className="text-emerald-700 font-bold">✓ Verified Regional Center</span></p>
+              </div>
+            </div>
+
+            <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+              <strong className="font-black text-slate-900 text-sm block">Alert Protocols & Sync</strong>
+              <div className="space-y-1 text-slate-700 font-medium">
+                <p>Safety Stock Threshold: <strong className="font-extrabold text-slate-900">{minStockThreshold} Units</strong></p>
+                <p>Realtime Database Sync: <span className="text-emerald-700 font-bold">ACTIVE</span></p>
+                <p>Socket Protocol: <span className="font-mono text-slate-800">WebSocket / Polling Fallback</span></p>
+                <p>Status: <span className="text-emerald-700 font-bold">● Connected</span></p>
+              </div>
             </div>
           </div>
         </div>

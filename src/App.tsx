@@ -156,6 +156,7 @@ export default function App() {
                 <Route path="inventory" element={<BloodBankPortalDesk />} />
                 <Route path="units" element={<BloodBankPortalDesk />} />
                 <Route path="units/:unitId" element={<BloodBankPortalDesk />} />
+                <Route path="preservation" element={<BloodBankPortalDesk />} />
                 <Route path="reservations" element={<BloodBankPortalDesk />} />
                 <Route path="issue" element={<BloodBankPortalDesk />} />
                 <Route path="issue-blood" element={<Navigate to="/bloodbank/issue" replace />} />
@@ -163,6 +164,7 @@ export default function App() {
                 <Route path="activity" element={<BloodBankPortalDesk />} />
                 <Route path="activity-log" element={<Navigate to="/bloodbank/activity" replace />} />
                 <Route path="reports" element={<BloodBankPortalDesk />} />
+                <Route path="settings" element={<BloodBankPortalDesk />} />
               </Route>
 
               {/* ================================================== */}

@@ -73,52 +73,7 @@ export const BloodBankHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Primary Navigation Bar */}
-      <div className="p-3 rounded-2xl bg-white border border-sky-100 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs font-extrabold">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to="/bloodbank/home"
-            className="px-4 py-2 rounded-xl bg-emerald-600 text-white shadow-sm font-black flex items-center gap-1.5"
-          >
-            <Droplet className="w-4 h-4" /> Home
-          </Link>
-
-          <Link
-            to="/bloodbank/dashboard"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-sky-50 flex items-center gap-1.5 transition-colors"
-          >
-            <LayoutDashboard className="w-4 h-4 text-emerald-600" /> Dashboard
-          </Link>
-
-          <Link
-            to="/bloodbank/inventory"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-sky-50 flex items-center gap-1.5 transition-colors"
-          >
-            <Boxes className="w-4 h-4 text-sky-600" /> Inventory Matrix
-          </Link>
-
-          <Link
-            to="/bloodbank/requests"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-sky-50 flex items-center gap-1.5 transition-colors"
-          >
-            <Package className="w-4 h-4 text-amber-600" /> Requester Queue
-          </Link>
-
-          <Link
-            to="/bloodbank/alerts"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-sky-50 flex items-center gap-1.5 transition-colors"
-          >
-            <AlertTriangle className="w-4 h-4 text-red-600" /> Expiry Alerts
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-2 pr-2">
-          <span className="text-[11px] text-slate-400 font-mono">Role: BLOOD BANK</span>
-          <span className="w-2 h-2 rounded-full bg-emerald-500" />
-        </div>
-      </div>
-
-      {/* 3. Summary Cards */}
+      {/* 2. Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-2">
           <span className="text-xs text-slate-500 font-bold block">Available Units</span>
