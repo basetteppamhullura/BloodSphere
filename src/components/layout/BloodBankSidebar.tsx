@@ -13,27 +13,33 @@ import {
   Sun,
   Moon,
   ChevronRight,
-  Send
+  Send,
+  FlaskConical,
+  Thermometer,
+  Settings,
+  LayoutDashboard
 } from 'lucide-react';
 
 export const BloodBankSidebar: React.FC = () => {
   const { requests, bloodUnitsList } = useApp();
   const { isDarkMode, toggleTheme } = useTheme();
 
-  const pendingRequestsCount = requests.filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED').length;
+  const pendingRequestsCount = requests.filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED' && r.status !== 'FULFILLED').length;
   const expiredUnitsCount = bloodUnitsList.filter(u => u.status === 'EXPIRED').length;
 
   const navItems = [
     { to: '/bloodbank/home', label: 'Blood Bank Home', icon: Droplet },
-    { to: '/bloodbank/dashboard', label: 'Dashboard', icon: Droplet },
+    { to: '/bloodbank/dashboard', label: 'Overview', icon: LayoutDashboard },
     { to: '/bloodbank/requests', label: 'Requester Queue', icon: Package, badge: pendingRequestsCount },
     { to: '/bloodbank/inventory', label: 'Inventory Matrix', icon: Boxes },
-    { to: '/bloodbank/units', label: 'Blood Units Tracking', icon: Droplet },
+    { to: '/bloodbank/units', label: 'Blood Units Tracking', icon: FlaskConical },
+    { to: '/bloodbank/preservation', label: 'Preservation Vault', icon: Thermometer },
     { to: '/bloodbank/reservations', label: 'Reservations Queue', icon: FileText },
     { to: '/bloodbank/issue', label: 'Issue Blood Transfusion', icon: Send },
     { to: '/bloodbank/alerts', label: 'Low Stock & Expiry Alerts', icon: AlertTriangle, badge: expiredUnitsCount },
     { to: '/bloodbank/activity', label: 'Activity Log', icon: History },
-    { to: '/bloodbank/reports', label: 'Analytics & Reports', icon: BarChart3 }
+    { to: '/bloodbank/reports', label: 'Reports & Analytics', icon: BarChart3 },
+    { to: '/bloodbank/settings', label: 'Settings', icon: Settings }
   ];
 
   return (

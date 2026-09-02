@@ -256,45 +256,6 @@ export const BloodBankPortalDesk: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. TAB NAVIGATION BAR */}
-      <div className="p-2 rounded-2xl bg-white border border-sky-100 shadow-xs flex flex-wrap items-center justify-between gap-2 text-xs font-extrabold">
-        <div className="flex flex-wrap items-center gap-1.5">
-          {[
-            { id: 'dashboard', label: 'Overview', path: '/bloodbank/dashboard', icon: BarChart3 },
-            { id: 'queue', label: `Requester Queue (${activeRequestsQueue.length})`, path: '/bloodbank/requests', icon: Package, badge: activeRequestsQueue.length },
-            { id: 'inventory', label: 'Inventory Table', path: '/bloodbank/inventory', icon: Boxes },
-            { id: 'lifecycle', label: 'Unit Lifecycle', path: '/bloodbank/units', icon: FlaskConical },
-            { id: 'preservation', label: 'Preservation Vault', path: '/bloodbank/preservation', icon: Thermometer },
-            { id: 'issue', label: 'Issue Blood', path: '/bloodbank/issue', icon: Send },
-            { id: 'alerts', label: `Low Stock Alerts (${lowStockAlertGroups.length})`, path: '/bloodbank/alerts', icon: AlertTriangle, badge: lowStockAlertGroups.length },
-            { id: 'activity', label: 'Activity Log', path: '/bloodbank/activity', icon: History },
-            { id: 'reports', label: 'Reports', path: '/bloodbank/reports', icon: FileText }
-          ].map(tab => {
-            const IconComp = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => navigate(tab.path)}
-                className={`px-3 py-2 rounded-xl flex items-center gap-1.5 transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-emerald-600 text-white font-black shadow-sm'
-                    : 'text-slate-700 hover:bg-sky-50'
-                }`}
-              >
-                <IconComp className={`w-4 h-4 ${isActive ? 'text-white' : 'text-emerald-600'}`} />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        <div className="flex items-center gap-2 pr-3 text-[11px] text-slate-500 font-mono">
-          <span>REALTIME DB SYNC</span>
-          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-        </div>
-      </div>
-
       {/* 3. TAB CONTENT VIEWS */}
 
       {/* TAB 1: OVERVIEW DASHBOARD */}
