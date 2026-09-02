@@ -109,6 +109,9 @@ export const BloodBankPortalDesk: React.FC = () => {
   const [reportRange, setReportRange] = useState<'today' | '7days' | '30days'>('today');
   const [minStockThreshold, setMinStockThreshold] = useState<number>(5);
 
+  // Requester Queue 3-Subcategory State
+  const [queueCategory, setQueueCategory] = useState<'direct' | 'hospital' | 'bloodbank'>('direct');
+
   // Issue Blood Modal State
   const [issueModalReq, setIssueModalReq] = useState<any | null>(null);
   const [selectedUnitIdToIssue, setSelectedUnitIdToIssue] = useState<string>('');
@@ -155,6 +158,72 @@ export const BloodBankPortalDesk: React.FC = () => {
   // Filter Active Incoming Requests (exclude fulfilled/completed/cancelled)
   const inactiveStatuses = ['FULFILLED', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'REJECTED'];
   const activeRequestsQueue = requests.filter(r => !inactiveStatuses.includes(r.status));
+
+  // 1. Direct Requesters: Requests from patients, family members, friends, or authorized individuals
+  const directRequestsList = React.useMemo(() => {
+    return activeRequestsQueue.filter(r => {
+      if (r.requesterType === 'DIRECT_REQUESTER') return true;
+      if (r.requesterType === 'HOSPITAL' || r.requesterType === 'BLOOD_BANK') return false;
+      const isHospital = r.hospitalName && (
+        r.hospitalName.toLowerCase().includes('hospital') ||
+        r.hospitalName.toLowerCase().includes('kims') ||
+        r.hospitalName.toLowerCase().includes('sdm') ||
+        r.hospitalName.toLowerCase().includes('kle') ||
+        r.hospitalName.toLowerCase().includes('medical college') ||
+        r.hospitalName.toLowerCase().includes('clinic')
+      );
+      const isBank = r.hospitalName && (
+        r.hospitalName.toLowerCase().includes('blood bank') ||
+        r.hospitalName.toLowerCase().includes('blood center') ||
+        r.hospitalName.toLowerCase().includes('regional blood')
+      );
+      if (isBank) return false;
+      if (isHospital && r.isVerifiedByHospital) return false;
+      return true;
+    });
+  }, [activeRequestsQueue]);
+
+  // 2. Hospital Requests: Requests received from verified hospitals
+  const hospitalRequestsList = React.useMemo(() => {
+    return activeRequestsQueue.filter(r => {
+      if (r.requesterType === 'HOSPITAL') return true;
+      if (r.requesterType === 'DIRECT_REQUESTER' || r.requesterType === 'BLOOD_BANK') return false;
+      const isHospital = r.hospitalName && (
+        r.hospitalName.toLowerCase().includes('hospital') ||
+        r.hospitalName.toLowerCase().includes('kims') ||
+        r.hospitalName.toLowerCase().includes('sdm') ||
+        r.hospitalName.toLowerCase().includes('kle') ||
+        r.hospitalName.toLowerCase().includes('medical') ||
+        r.hospitalName.toLowerCase().includes('clinic')
+      );
+      const isBank = r.hospitalName && (
+        r.hospitalName.toLowerCase().includes('blood bank') ||
+        r.hospitalName.toLowerCase().includes('blood center') ||
+        r.hospitalName.toLowerCase().includes('regional blood')
+      );
+      return isHospital && !isBank;
+    });
+  }, [activeRequestsQueue]);
+
+  // 3. Blood Bank Requests: Requests received from other blood banks for inter-bank stock support/transfers
+  const bloodBankRequestsList = React.useMemo(() => {
+    return activeRequestsQueue.filter(r => {
+      if (r.requesterType === 'BLOOD_BANK') return true;
+      const isBank = r.hospitalName && (
+        r.hospitalName.toLowerCase().includes('blood bank') ||
+        r.hospitalName.toLowerCase().includes('blood center') ||
+        r.hospitalName.toLowerCase().includes('rotary') ||
+        r.hospitalName.toLowerCase().includes('regional blood')
+      );
+      const isTransfer = r.reason && (
+        r.reason.toLowerCase().includes('transfer') ||
+        r.reason.toLowerCase().includes('replenishment') ||
+        r.reason.toLowerCase().includes('inter-bank') ||
+        r.reason.toLowerCase().includes('stock support')
+      );
+      return isBank || isTransfer;
+    });
+  }, [activeRequestsQueue]);
 
   // Calculate Low Stock Alert Groups dynamically
   const lowStockAlertGroups = (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).filter(group => {
@@ -365,91 +434,176 @@ export const BloodBankPortalDesk: React.FC = () => {
         </div>
       )}
 
-      {/* TAB 2: REQUESTER QUEUE */}
+      {/* TAB 2: REQUESTER QUEUE (3 SEPARATE CATEGORIES: DIRECT REQUESTERS, HOSPITALS, BLOOD BANKS) */}
       {activeTab === 'queue' && (
-        <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-xs space-y-4">
+        <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-xs space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-100 pb-4">
             <div>
               <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
                 <Package className="w-5 h-5 text-amber-600" /> Real-Time Requester & Hospital Requests Queue
               </h3>
-              <p className="text-xs text-slate-500 font-medium">Process incoming blood requests, reserve units, or issue directly to patients.</p>
+              <p className="text-xs text-slate-500 font-medium">Categorized request processing for direct requesters, hospital orders, and inter-blood-bank transfers.</p>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-xl bg-amber-100 text-amber-900 text-xs font-black border border-amber-200">
-                {activeRequestsQueue.length} Active Pending
+                {activeRequestsQueue.length} Total Active Pending
               </span>
             </div>
           </div>
 
-          {activeRequestsQueue.length === 0 ? (
-            <div className="p-10 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2">
-              <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-              <strong className="text-sm font-black text-slate-900 block">No Pending Requests in Queue</strong>
-              <p className="text-xs text-slate-500">All emergency blood requests have been processed.</p>
-            </div>
-          ) : (
-            <div className="divide-y divide-sky-100">
-              {activeRequestsQueue.map(req => {
-                const isCritical = req.urgency === 'HIGH' || req.urgency === 'CRITICAL';
-                return (
-                  <div key={req.id} className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-1.5 max-w-xl">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 font-black text-xs">
-                          🩸 {req.bloodGroup} ({req.bloodComponent || 'PRBC'})
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                          isCritical ? 'bg-red-600 text-white' : 'bg-amber-100 text-amber-900 border border-amber-300'
-                        }`}>
-                          {req.urgency}
-                        </span>
-                        <span className="text-xs font-mono text-slate-400">BR-{req.id}</span>
+          {/* 3 SUB-SECTION CATEGORY TABS */}
+          <div className="p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200 flex flex-wrap gap-2 text-xs font-extrabold">
+            <button
+              onClick={() => setQueueCategory('direct')}
+              className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                queueCategory === 'direct'
+                  ? 'bg-emerald-600 text-white font-black shadow-sm'
+                  : 'text-slate-700 hover:bg-slate-200/60'
+              }`}
+            >
+              <span>📥 Direct Requesters</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                queueCategory === 'direct' ? 'bg-white text-emerald-800' : 'bg-slate-200 text-slate-800'
+              }`}>
+                {directRequestsList.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setQueueCategory('hospital')}
+              className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                queueCategory === 'hospital'
+                  ? 'bg-emerald-600 text-white font-black shadow-sm'
+                  : 'text-slate-700 hover:bg-slate-200/60'
+              }`}
+            >
+              <span>🏥 Hospital Requests</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                queueCategory === 'hospital' ? 'bg-white text-emerald-800' : 'bg-slate-200 text-slate-800'
+              }`}>
+                {hospitalRequestsList.length}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setQueueCategory('bloodbank')}
+              className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                queueCategory === 'bloodbank'
+                  ? 'bg-emerald-600 text-white font-black shadow-sm'
+                  : 'text-slate-700 hover:bg-slate-200/60'
+              }`}
+            >
+              <span>🩸 Blood Bank Requests</span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                queueCategory === 'bloodbank' ? 'bg-white text-emerald-800' : 'bg-slate-200 text-slate-800'
+              }`}>
+                {bloodBankRequestsList.length}
+              </span>
+            </button>
+          </div>
+
+          {/* CATEGORY REQUEST CONTENT VIEW */}
+          {(() => {
+            const currentList =
+              queueCategory === 'direct'
+                ? directRequestsList
+                : queueCategory === 'hospital'
+                ? hospitalRequestsList
+                : bloodBankRequestsList;
+
+            const categoryLabel =
+              queueCategory === 'direct'
+                ? 'Direct Requesters'
+                : queueCategory === 'hospital'
+                ? 'Hospital Requests'
+                : 'Blood Bank Requests';
+
+            if (currentList.length === 0) {
+              return (
+                <div className="p-10 rounded-2xl bg-slate-50 border border-slate-200 text-center space-y-2">
+                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
+                  <strong className="text-sm font-black text-slate-900 block">No Pending Requests in {categoryLabel}</strong>
+                  <p className="text-xs text-slate-500">All requests in this category are up to date.</p>
+                </div>
+              );
+            }
+
+            return (
+              <div className="divide-y divide-sky-100">
+                {currentList.map(req => {
+                  const isCritical = req.urgency === 'HIGH' || req.urgency === 'CRITICAL';
+                  return (
+                    <div key={req.id} className="py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                      <div className="space-y-1.5 max-w-xl">
+                        <div className="flex items-center gap-2">
+                          <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 border border-red-200 font-black text-xs">
+                            🩸 {req.bloodGroup} ({req.bloodComponent || 'PRBC'})
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                            isCritical ? 'bg-red-600 text-white' : 'bg-amber-100 text-amber-900 border border-amber-300'
+                          }`}>
+                            {req.urgency}
+                          </span>
+                          <span className="text-xs font-mono text-slate-400">BR-{req.id}</span>
+                          <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-extrabold uppercase">
+                            {queueCategory === 'direct' ? 'DIRECT' : queueCategory === 'hospital' ? 'HOSPITAL' : 'BLOOD BANK'}
+                          </span>
+                        </div>
+
+                        <strong className="text-sm font-black text-slate-900 block">
+                          {queueCategory === 'hospital'
+                            ? `Hospital: ${req.hospitalName || 'Verified Hospital'}`
+                            : queueCategory === 'bloodbank'
+                            ? `Requesting Blood Bank: ${req.hospitalName || 'Regional Center'}`
+                            : `Requester: ${req.contactPerson || 'Registered Patient'} (Patient: ${req.patientName || 'Emergency Patient'})`}
+                          {' '}• {req.unitsNeeded} Units Required
+                        </strong>
+
+                        <div className="text-xs text-slate-600 space-y-0.5">
+                          <p className="flex items-center gap-1 font-medium">
+                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
+                            {req.hospitalName} ({req.city})
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            Contact: {req.contactPerson} ({req.maskedPhone}) • Required: {req.requiredDate || 'Within 2 Hours'} • Status: <strong className="text-emerald-700">{req.status}</strong>
+                          </p>
+                          {req.reason && (
+                            <p className="text-[11px] text-slate-600 italic">
+                              Reason: "{req.reason}"
+                            </p>
+                          )}
+                        </div>
                       </div>
 
-                      <strong className="text-sm font-black text-slate-900 block">
-                        Patient: {req.patientName || 'Emergency Patient'} • {req.unitsNeeded} Units Required
-                      </strong>
+                      <div className="flex flex-wrap items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleReserve(req.id, req.bloodGroup, req.unitsNeeded)}
+                          className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs shadow-xs"
+                        >
+                          Reserve {req.unitsNeeded}u
+                        </button>
 
-                      <div className="text-xs text-slate-600 space-y-0.5">
-                        <p className="flex items-center gap-1 font-medium">
-                          <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                          {req.hospitalName} ({req.city})
-                        </p>
-                        <p className="text-[11px] text-slate-500">
-                          Contact: {req.contactPerson} ({req.maskedPhone}) • Required: {req.requiredDate || 'Within 2 Hours'}
-                        </p>
+                        <button
+                          onClick={() => handleOpenIssueModal(req)}
+                          className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-xs"
+                        >
+                          {queueCategory === 'bloodbank' ? 'Process Transfer' : 'Process / Issue'}
+                        </button>
+
+                        <button
+                          onClick={() => handleReject(req.id)}
+                          className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-700 font-bold text-xs border border-slate-200"
+                        >
+                          Reject
+                        </button>
                       </div>
                     </div>
-
-                    <div className="flex flex-wrap items-center gap-2 shrink-0">
-                      <button
-                        onClick={() => handleReserve(req.id, req.bloodGroup, req.unitsNeeded)}
-                        className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-extrabold text-xs shadow-xs"
-                      >
-                        Reserve {req.unitsNeeded}u
-                      </button>
-
-                      <button
-                        onClick={() => handleOpenIssueModal(req)}
-                        className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-xs"
-                      >
-                        Issue Blood
-                      </button>
-
-                      <button
-                        onClick={() => handleReject(req.id)}
-                        className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-700 font-bold text-xs border border-slate-200"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
