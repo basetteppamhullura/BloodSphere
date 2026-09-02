@@ -216,6 +216,7 @@ export interface EmergencyRequest {
   isExpired?: boolean;
   matchScores?: Record<string, number>;
   requestedDonorsList?: string[]; // IDs of donors explicitly notified
+  requesterType?: 'DIRECT_REQUESTER' | 'HOSPITAL' | 'BLOOD_BANK';
 }
 
 export interface Donor {
