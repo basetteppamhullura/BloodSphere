@@ -150,7 +150,7 @@ export const RealtimeRequesterPortal: React.FC = () => {
               </div>
               <h2 className="text-xl font-black text-slate-900 mt-1">{activeReq.patientName}</h2>
               <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                <Building2 className="w-3.5 h-3.5 text-red-500" /> {activeReq.hospitalName}, {activeReq.city}
+                <Building2 className="w-3.5 h-3.5 text-red-500" /> {activeReq.hospitalName}, {activeReq.city} • <MapPin className="w-3 h-3 text-sky-600 inline" /> Distance: 3.2 km
               </p>
             </div>
           </div>
@@ -164,8 +164,10 @@ export const RealtimeRequesterPortal: React.FC = () => {
               </span>
 
               <span className={`px-3 py-1 rounded-full text-xs font-extrabold border uppercase tracking-wider ${
-                activeReq.status === 'BLOOD_SECURED' || activeReq.status === 'COMPLETED'
+                activeReq.status === 'APPROVED' || activeReq.status === 'BLOOD_SECURED' || activeReq.status === 'COMPLETED'
                   ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                  : activeReq.status === 'REJECTED'
+                  ? 'bg-red-600 text-white border-red-700 font-black'
                   : 'bg-indigo-100 text-indigo-800 border-indigo-300'
               }`}>
                 {activeReq.status.replace(/_/g, ' ')}
@@ -182,6 +184,36 @@ export const RealtimeRequesterPortal: React.FC = () => {
             )}
           </div>
         </div>
+
+        {/* REJECTION REASON NOTIFICATION BANNER */}
+        {activeReq.status === 'REJECTED' && (
+          <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-900 space-y-1 animate-in fade-in">
+            <strong className="text-sm font-black flex items-center gap-1.5 text-red-700">
+              <AlertTriangle className="w-4 h-4 text-red-600" /> Request Rejected by Center
+            </strong>
+            <p className="text-xs font-bold">
+              Reason: "{activeReq.additionalNotes || 'Stock unavailable at target hospital/center'}"
+            </p>
+            <p className="text-[11px] text-red-700">
+              You can redirect this request to another nearby center or broadcast urgent alerts to voluntary donors.
+            </p>
+          </div>
+        )}
+
+        {/* REDIRECTION NOTIFICATION BANNER */}
+        {activeReq.trendingReason?.includes('Redirected') && (
+          <div className="p-4 rounded-2xl bg-sky-50 border-2 border-sky-300 text-sky-900 space-y-1 animate-in fade-in">
+            <strong className="text-sm font-black flex items-center gap-1.5 text-sky-800">
+              <RadioTower className="w-4 h-4 text-sky-600" /> Request Redirected to {activeReq.hospitalName}
+            </strong>
+            <p className="text-xs font-bold">
+              {activeReq.trendingReason}
+            </p>
+            <p className="text-[11px] text-sky-700">
+              Request ID remains <strong>{activeReq.id}</strong>. Current center: {activeReq.hospitalName} ({activeReq.city}).
+            </p>
+          </div>
+        )}
 
         {/* 8-STEP LIFECYCLE TIMELINE */}
         <div className="space-y-2">
