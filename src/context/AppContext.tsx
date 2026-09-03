@@ -74,6 +74,9 @@ export interface AppContextType {
   // Workflow Phase Handlers
   approveRequestByHospital: (requestId: string, notes?: string) => void;
   rejectRequestByHospital: (requestId: string, reason?: string) => void;
+  acceptBloodRequest: (requestId: string, centerName: string) => void;
+  rejectBloodRequest: (requestId: string, centerName: string, reason: string) => void;
+  redirectBloodRequest: (requestId: string, fromCenter: string, targetCenter: string, targetCity?: string, reason?: string) => void;
   donorAcceptRequest: (requestId: string, donorId: string) => void;
   donorDeclineRequest: (requestId: string, donorId: string) => void;
   scheduleDonationAppointment: (requestId: string, date: string, time: string, venue: string) => void;
@@ -1171,23 +1174,201 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const rejectBloodBankRequest = (requestId: string, reason: string, staffName: string) => {
+  const acceptBloodRequest = (requestId: string, centerName: string) => {
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = new Date().toLocaleDateString();
+
     setRequests(prev =>
       prev.map(req => {
         if (req.id === requestId) {
+          const timeline = req.requestTimeline || [];
+          const newTimelineStep: TimelineStep = {
+            id: `step_acc_${Date.now()}`,
+            label: `Request Accepted by ${centerName}`,
+            timestamp: `${timeStr}`,
+            status: 'completed',
+            description: `Blood request ${requestId} accepted by ${centerName}. Available stock verified.`
+          };
+
           return {
             ...req,
+            status: 'APPROVED',
+            hospitalName: centerName,
+            isVerifiedByHospital: true,
             channelStatuses: {
               ...req.channelStatuses,
-              bloodBankStatus: 'REJECTED'
-            }
+              hospitalStatus: 'APPROVED',
+              bloodBankStatus: 'APPROVED'
+            },
+            trendingReason: `Accepted by ${centerName} (${dateStr} ${timeStr})`,
+            requestTimeline: [...timeline, newTimelineStep]
           };
         }
         return req;
       })
     );
 
-    showToast(`Blood Bank request ${requestId} declined: ${reason}`);
+    const newNotif: NotificationItem = {
+      id: `notif_acc_${Date.now()}`,
+      title: "✅ Request Accepted!",
+      message: `Your blood request ${requestId} has been accepted by ${centerName}.`,
+      time: "Just now",
+      type: "success",
+      read: false
+    };
+
+    setNotifications(prev => [newNotif, ...prev]);
+
+    const newLog: ImmutableActivityEntry = {
+      activityId: `ACT-${Date.now()}`,
+      staff: centerName,
+      action: 'Request Accepted',
+      requestId,
+      date: new Date().toISOString().split('T')[0],
+      time: timeStr,
+      details: `Accepted emergency blood request ${requestId}.`
+    };
+    setActivityLogs(prev => [newLog, ...prev]);
+
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'REQUEST_ACCEPTED', requestId, centerName });
+    }
+    socketManager.emitMessage(requestId, {
+      id: `sys_${Date.now()}`,
+      senderId: 'system',
+      senderName: centerName,
+      senderRole: 'hospital',
+      message: `Your request ${requestId} has been accepted by ${centerName}.`,
+      messageType: 'text',
+      timestamp: timeStr,
+      read: false
+    });
+
+    showToast(`Request ${requestId} accepted by ${centerName}.`);
+  };
+
+  const rejectBloodRequest = (requestId: string, centerName: string, reason: string) => {
+    if (!reason || !reason.trim()) {
+      showToast('Rejection reason is required.');
+      return;
+    }
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    setRequests(prev =>
+      prev.map(req => {
+        if (req.id === requestId) {
+          const timeline = req.requestTimeline || [];
+          const newTimelineStep: TimelineStep = {
+            id: `step_rej_${Date.now()}`,
+            label: `Request Rejected by ${centerName}`,
+            timestamp: `${timeStr}`,
+            status: 'completed',
+            description: `Rejected by ${centerName}. Reason: "${reason.trim()}".`
+          };
+
+          return {
+            ...req,
+            status: 'REJECTED',
+            trendingReason: `Rejected by ${centerName}: ${reason.trim()}`,
+            additionalNotes: `Rejected by ${centerName}. Reason: ${reason.trim()}`,
+            requestTimeline: [...timeline, newTimelineStep]
+          };
+        }
+        return req;
+      })
+    );
+
+    const newNotif: NotificationItem = {
+      id: `notif_rej_${Date.now()}`,
+      title: "❌ Request Rejected",
+      message: `Your blood request ${requestId} was rejected by ${centerName}. Reason: ${reason.trim()}`,
+      time: "Just now",
+      type: "urgent",
+      read: false
+    };
+
+    setNotifications(prev => [newNotif, ...prev]);
+
+    const newLog: ImmutableActivityEntry = {
+      activityId: `ACT-${Date.now()}`,
+      staff: centerName,
+      action: 'Request Rejected',
+      requestId,
+      date: new Date().toISOString().split('T')[0],
+      time: timeStr,
+      details: `Rejected request ${requestId}. Reason: ${reason.trim()}`
+    };
+    setActivityLogs(prev => [newLog, ...prev]);
+
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'REQUEST_REJECTED', requestId, centerName, reason });
+    }
+
+    showToast(`Request ${requestId} rejected: ${reason.trim()}`);
+  };
+
+  const redirectBloodRequest = (
+    requestId: string,
+    fromCenter: string,
+    targetCenter: string,
+    targetCity?: string,
+    reason?: string
+  ) => {
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    setRequests(prev =>
+      prev.map(req => {
+        if (req.id === requestId) {
+          const timeline = req.requestTimeline || [];
+          const newTimelineStep: TimelineStep = {
+            id: `step_redir_${Date.now()}`,
+            label: `Request Redirected to ${targetCenter}`,
+            timestamp: `${timeStr}`,
+            status: 'completed',
+            description: `Redirected from ${fromCenter} to ${targetCenter}. Reason: "${reason || 'No compatible blood available at current center'}".`
+          };
+
+          return {
+            ...req,
+            hospitalName: targetCenter,
+            city: targetCity || req.city,
+            status: 'PENDING_HOSPITAL_APPROVAL',
+            trendingReason: `Redirected from ${fromCenter} to ${targetCenter}`,
+            requestTimeline: [...timeline, newTimelineStep]
+          };
+        }
+        return req;
+      })
+    );
+
+    const newNotif: NotificationItem = {
+      id: `notif_redir_${Date.now()}`,
+      title: "🔀 Request Redirected",
+      message: `Your blood request ${requestId} was redirected from ${fromCenter} to ${targetCenter}.`,
+      time: "Just now",
+      type: "info",
+      read: false
+    };
+
+    setNotifications(prev => [newNotif, ...prev]);
+
+    const newLog: ImmutableActivityEntry = {
+      activityId: `ACT-${Date.now()}`,
+      staff: fromCenter,
+      action: 'Request Redirected',
+      requestId,
+      date: new Date().toISOString().split('T')[0],
+      time: timeStr,
+      details: `Redirected request ${requestId} to ${targetCenter}. Reason: ${reason || 'No stock available'}`
+    };
+    setActivityLogs(prev => [newLog, ...prev]);
+
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'REQUEST_REDIRECTED', requestId, fromCenter, targetCenter });
+    }
+
+    showToast(`Request ${requestId} redirected to ${targetCenter}.`);
   };
 
   const intakeBloodUnit = (unitData: Partial<DetailedBloodUnit>, staffName: string) => {
