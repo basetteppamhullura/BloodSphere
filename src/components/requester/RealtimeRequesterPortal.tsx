@@ -183,6 +183,54 @@ export const RealtimeRequesterPortal: React.FC = () => {
           </div>
         </div>
 
+        {/* REJECTION REASON NOTIFICATION BANNER */}
+        {activeReq.status === 'REJECTED' && (
+          <div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-900 space-y-1 animate-in fade-in">
+            <strong className="text-sm font-black flex items-center gap-1.5 text-red-700">
+              <AlertTriangle className="w-4 h-4 text-red-600" /> Request Rejected by Center
+            </strong>
+            <p className="text-xs font-bold">
+              Reason: "{activeReq.additionalNotes || 'Stock unavailable at target hospital/center'}"
+            </p>
+            <p className="text-[11px] text-red-700">
+              You can redirect this request to another nearby center or broadcast urgent alerts to voluntary donors.
+            </p>
+          </div>
+        )}
+
+        {/* REDIRECTION NOTIFICATION BANNER */}
+        {activeReq.trendingReason?.includes('Redirected') && (
+          <div className="p-4 rounded-2xl bg-sky-50 border-2 border-sky-300 text-sky-900 space-y-1 animate-in fade-in">
+            <strong className="text-sm font-black flex items-center gap-1.5 text-sky-800">
+              <RadioTower className="w-4 h-4 text-sky-600" /> Request Redirected to {activeReq.hospitalName}
+            </strong>
+            <p className="text-xs font-bold">
+              {activeReq.trendingReason}
+            </p>
+            <p className="text-[11px] text-sky-700">
+              Request ID remains <strong>{activeReq.id}</strong>. Current processing center: {activeReq.hospitalName} ({activeReq.city}).
+            </p>
+          </div>
+        )}
+
+        {/* RESERVED / APPROVED PICKUP PASS */}
+        {(activeReq.status === 'APPROVED' || activeReq.status === 'BLOOD_SECURED' || activeReq.status === 'COMPLETED') && (
+          <div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
+            <div className="space-y-1">
+              <strong className="text-sm font-black flex items-center gap-1.5 text-emerald-800">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600" /> Stock Reserved & Pickup Code Generated
+              </strong>
+              <p className="text-xs font-bold text-emerald-900">
+                Blood units reserved at <strong>{activeReq.hospitalName} ({activeReq.city})</strong>. Present pickup code at counter.
+              </p>
+            </div>
+            <div className="px-4 py-2 rounded-2xl bg-white border border-emerald-300 text-center font-mono shrink-0 shadow-sm">
+              <span className="text-[9px] text-slate-500 font-bold uppercase block">Fulfillment Pickup Code</span>
+              <span className="text-lg font-black text-emerald-700 tracking-wider">PK-{activeReq.id.slice(-5).toUpperCase()}</span>
+            </div>
+          </div>
+        )}
+
         {/* 8-STEP LIFECYCLE TIMELINE */}
         <div className="space-y-2">
           <div className="flex justify-between items-center text-[10px] text-slate-500 uppercase tracking-wider font-extrabold">

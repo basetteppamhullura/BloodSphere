@@ -70,6 +70,7 @@ export const BloodBankPortalDesk: React.FC = () => {
     reserveBloodBankUnits,
     issueBloodBankUnits,
     rejectBloodBankRequest,
+    redirectBloodRequest,
     intakeBloodUnit,
     checkBloodUnitExpiries,
     showToast,
