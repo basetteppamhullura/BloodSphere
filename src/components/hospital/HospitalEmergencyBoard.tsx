@@ -165,150 +165,151 @@ export const HospitalEmergencyBoard: React.FC = () => {
                   </a>
                 </div>
               </div>
-            ))
-          )}
+            );
+          })
+        )}
+      </div>
+
+      {/* 3. REJECTION REASON MODAL */}
+      {rejectingReq && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md bg-white border border-red-200 rounded-3xl p-6 space-y-4 text-xs shadow-2xl relative">
+            <button
+              onClick={() => setRejectingReq(null)}
+              className="absolute right-5 top-5 p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-red-600" /> Confirm Request Rejection
+            </h3>
+
+            <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 space-y-1">
+              <span className="font-black text-slate-900 block text-sm">
+                Request {rejectingReq.id} • {rejectingReq.patientName}
+              </span>
+              <span className="text-red-700 font-bold block">
+                🩸 {rejectingReq.bloodGroup} ({rejectingReq.unitsNeeded} Units Needed)
+              </span>
+            </div>
+
+            <form onSubmit={handleConfirmReject} className="space-y-3">
+              <div>
+                <label className="text-slate-800 font-bold block mb-1">Reason for Rejection * (Required)</label>
+                <textarea
+                  value={rejectReason}
+                  onChange={e => setRejectReason(e.target.value)}
+                  placeholder="e.g. Blood stock unavailable at center, incompatible component..."
+                  className="w-full p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold focus:outline-none focus:border-red-500 h-24"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRejectingReq(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black shadow-md shadow-red-500/20"
+                >
+                  Confirm Rejection
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
+      )}
 
-        {/* 3. REJECTION REASON MODAL */}
-        {rejectingReq && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
-            <div className="w-full max-w-md bg-white border border-red-200 rounded-3xl p-6 space-y-4 text-xs shadow-2xl relative">
-              <button
-                onClick={() => setRejectingReq(null)}
-                className="absolute right-5 top-5 p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200"
-              >
-                <X className="w-4 h-4" />
-              </button>
+      {/* 4. REDIRECTION REGION/CENTER MODAL */}
+      {redirectingReq && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-md bg-white border border-sky-100 rounded-3xl p-6 space-y-4 text-xs shadow-2xl relative">
+            <button
+              onClick={() => setRedirectingReq(null)}
+              className="absolute right-5 top-5 p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200"
+            >
+              <X className="w-4 h-4" />
+            </button>
 
-              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                <XCircle className="w-5 h-5 text-red-600" /> Confirm Request Rejection
-              </h3>
+            <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+              <ArrowRightLeft className="w-5 h-5 text-sky-600" /> Redirect Blood Request
+            </h3>
 
-              <div className="p-3.5 rounded-2xl bg-red-50 border border-red-200 space-y-1">
-                <span className="font-black text-slate-900 block text-sm">
-                  Request {rejectingReq.id} • {rejectingReq.patientName}
-                </span>
-                <span className="text-red-700 font-bold block">
-                  🩸 {rejectingReq.bloodGroup} ({rejectingReq.unitsNeeded} Units Needed)
-                </span>
+            <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 space-y-1">
+              <span className="font-black text-slate-900 block text-sm">
+                Request {redirectingReq.id} (Keeping same Request ID)
+              </span>
+              <span className="text-sky-800 font-bold block">
+                🩸 {redirectingReq.bloodGroup} ({redirectingReq.unitsNeeded} Units) • {redirectingReq.patientName}
+              </span>
+            </div>
+
+            <form onSubmit={handleConfirmRedirect} className="space-y-3">
+              <div>
+                <label className="text-slate-800 font-bold block mb-1">Select Target Region *</label>
+                <select
+                  value={selectedRegion}
+                  onChange={e => setSelectedRegion(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
+                >
+                  <option value="Hubballi-Dharwad">Hubballi-Dharwad Region</option>
+                  <option value="Belagavi Division">Belagavi Division</option>
+                  <option value="Bengaluru Division">Bengaluru Division</option>
+                </select>
               </div>
 
-              <form onSubmit={handleConfirmReject} className="space-y-3">
-                <div>
-                  <label className="text-slate-800 font-bold block mb-1">Reason for Rejection * (Required)</label>
-                  <textarea
-                    value={rejectReason}
-                    onChange={e => setRejectReason(e.target.value)}
-                    placeholder="e.g. Blood stock unavailable at center, incompatible component..."
-                    className="w-full p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-bold focus:outline-none focus:border-red-500 h-24"
-                    required
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setRejectingReq(null)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-black shadow-md shadow-red-500/20"
-                  >
-                    Confirm Rejection
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* 4. REDIRECTION REGION/CENTER MODAL */}
-        {redirectingReq && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
-            <div className="w-full max-w-md bg-white border border-sky-100 rounded-3xl p-6 space-y-4 text-xs shadow-2xl relative">
-              <button
-                onClick={() => setRedirectingReq(null)}
-                className="absolute right-5 top-5 p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                <ArrowRightLeft className="w-5 h-5 text-sky-600" /> Redirect Blood Request
-              </h3>
-
-              <div className="p-3.5 rounded-2xl bg-sky-50 border border-sky-200 space-y-1">
-                <span className="font-black text-slate-900 block text-sm">
-                  Request {redirectingReq.id} (Keeping same Request ID)
-                </span>
-                <span className="text-sky-800 font-bold block">
-                  🩸 {redirectingReq.bloodGroup} ({redirectingReq.unitsNeeded} Units) • {redirectingReq.patientName}
-                </span>
+              <div>
+                <label className="text-slate-800 font-bold block mb-1">Select Target Hospital / Blood Bank *</label>
+                <select
+                  value={selectedTargetCenter}
+                  onChange={e => setSelectedTargetCenter(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
+                >
+                  {REGIONAL_TARGETS
+                    .filter(t => t.region === selectedRegion)
+                    .map(t => (
+                      <option key={t.name} value={t.name}>
+                        {t.name} ({t.city})
+                      </option>
+                    ))}
+                </select>
               </div>
 
-              <form onSubmit={handleConfirmRedirect} className="space-y-3">
-                <div>
-                  <label className="text-slate-800 font-bold block mb-1">Select Target Region *</label>
-                  <select
-                    value={selectedRegion}
-                    onChange={e => setSelectedRegion(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
-                  >
-                    <option value="Hubballi-Dharwad">Hubballi-Dharwad Region</option>
-                    <option value="Belagavi Division">Belagavi Division</option>
-                    <option value="Bengaluru Division">Bengaluru Division</option>
-                  </select>
-                </div>
+              <div>
+                <label className="text-slate-800 font-bold block mb-1">Message / Redirect Notes</label>
+                <input
+                  type="text"
+                  value={redirectReason}
+                  onChange={e => setRedirectReason(e.target.value)}
+                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
+                />
+              </div>
 
-                <div>
-                  <label className="text-slate-800 font-bold block mb-1">Select Target Hospital / Blood Bank *</label>
-                  <select
-                    value={selectedTargetCenter}
-                    onChange={e => setSelectedTargetCenter(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
-                  >
-                    {REGIONAL_TARGETS
-                      .filter(t => t.region === selectedRegion)
-                      .map(t => (
-                        <option key={t.name} value={t.name}>
-                          {t.name} ({t.city})
-                        </option>
-                      ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-slate-800 font-bold block mb-1">Message / Redirect Notes</label>
-                  <input
-                    type="text"
-                    value={redirectReason}
-                    onChange={e => setRedirectReason(e.target.value)}
-                    className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
-                  />
-                </div>
-
-                <div className="flex justify-end gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setRedirectingReq(null)}
-                    className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black shadow-md shadow-sky-500/20"
-                  >
-                    Confirm Redirect
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setRedirectingReq(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-black shadow-md shadow-sky-500/20"
+                >
+                  Confirm Redirect
+                </button>
+              </div>
+            </form>
           </div>
-        )}
+        </div>
+      )}
 
     </div>
   );
