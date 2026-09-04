@@ -222,14 +222,14 @@ export const RealtimeDonorPortal: React.FC = () => {
                           onClick={() => donorRespondToRequest(req.id, loggedInDonor.id, 'ACCEPTED')}
                           className="py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all hover:scale-105"
                         >
-                          <Check className="w-4 h-4" /> I CAN DONATE
+                          <Check className="w-4 h-4" /> ACCEPT
                         </button>
 
                         <button
                           onClick={() => donorRespondToRequest(req.id, loggedInDonor.id, 'DECLINED')}
                           className="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs border border-slate-200 flex items-center justify-center gap-1.5 transition-all"
                         >
-                          <X className="w-4 h-4" /> NOT AVAILABLE
+                          <X className="w-4 h-4" /> DECLINE
                         </button>
                       </div>
                     )}
