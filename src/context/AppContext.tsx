@@ -76,6 +76,7 @@ export interface AppContextType {
   rejectRequestByHospital: (requestId: string, reason?: string) => void;
   acceptBloodRequest: (requestId: string, centerName: string) => void;
   rejectBloodRequest: (requestId: string, centerName: string, reason: string) => void;
+  rejectBloodBankRequest: (requestId: string, reason?: string) => { success: boolean; message: string };
   redirectBloodRequest: (requestId: string, fromCenter: string, targetCenter: string, targetCity?: string, reason?: string) => void;
   donorAcceptRequest: (requestId: string, donorId: string) => void;
   donorDeclineRequest: (requestId: string, donorId: string) => void;
@@ -1198,7 +1199,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             channelStatuses: {
               ...req.channelStatuses,
               hospitalStatus: 'APPROVED',
-              bloodBankStatus: 'APPROVED'
+              bloodBankStatus: 'RESERVED'
             },
             trendingReason: `Accepted by ${centerName} (${dateStr} ${timeStr})`,
             requestTimeline: [...timeline, newTimelineStep]
@@ -1306,6 +1307,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     showToast(`Request ${requestId} rejected: ${reason.trim()}`);
+  };
+
+  const rejectBloodBankRequest = (requestId: string, reason?: string) => {
+    rejectBloodRequest(requestId, 'Regional Blood Bank', reason || 'Stock unavailable');
+    return { success: true, message: `Request ${requestId} rejected successfully.` };
   };
 
   const redirectBloodRequest = (
