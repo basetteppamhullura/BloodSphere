@@ -11,7 +11,8 @@ import {
   X,
   ArrowRightLeft,
   CheckCircle2,
-  RadioTower
+  RadioTower,
+  MessageSquare
 } from 'lucide-react';
 
 const REGIONAL_TARGETS = [
@@ -29,6 +30,7 @@ export const HospitalEmergencyBoard: React.FC = () => {
     acceptBloodRequest,
     rejectBloodRequest,
     redirectBloodRequest,
+    openEmergencyChat,
     showToast
   } = useApp();
 
@@ -173,10 +175,10 @@ export const HospitalEmergencyBoard: React.FC = () => {
                         </button>
 
                         <button
-                          onClick={() => setRejectingReq(req)}
-                          className="px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 font-extrabold text-xs border border-slate-200 transition-all"
+                          onClick={() => openEmergencyChat(req.id)}
+                          className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
                         >
-                          <X className="w-4 h-4 inline" /> REJECT
+                          <MessageSquare className="w-4 h-4" /> 💬 Chat with Requester
                         </button>
                       </>
                     )}
