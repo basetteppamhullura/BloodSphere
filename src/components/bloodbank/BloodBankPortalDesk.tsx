@@ -35,7 +35,8 @@ import {
   Clock,
   ArrowRight,
   ShieldCheck,
-  Filter
+  Filter,
+  MessageSquare
 } from 'lucide-react';
 
 interface NearbyInstitution {
@@ -71,6 +72,7 @@ export const BloodBankPortalDesk: React.FC = () => {
     issueBloodBankUnits,
     rejectBloodBankRequest,
     redirectBloodRequest,
+    openEmergencyChat,
     intakeBloodUnit,
     checkBloodUnitExpiries,
     showToast,
@@ -597,6 +599,13 @@ export const BloodBankPortalDesk: React.FC = () => {
                           className="px-3 py-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-700 font-bold text-xs border border-slate-200"
                         >
                           Reject
+                        </button>
+
+                        <button
+                          onClick={() => openEmergencyChat(req.id)}
+                          className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <MessageSquare className="w-4 h-4" /> 💬 Chat with Requester
                         </button>
                       </div>
                     </div>
