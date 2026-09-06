@@ -59,13 +59,27 @@ export const EmergencyChatModal: React.FC = () => {
   const isClosed = activeSession.status === 'closed' || activeSession.status === 'completed' || activeReq?.status === 'COMPLETED';
 
   // Determine Participant Role Display
-  const isUserDonor = currentRole === 'donor' || currentUser?.id === activeSession.donorId;
-  const participantName = isUserDonor
-    ? `Patient Requester • ${activeSession.requesterName}`
-    : `Verified Donor • ${activeSession.donorName}`;
-  const participantBloodGroup = isUserDonor ? activeSession.bloodGroup : activeSession.donorBloodGroup;
-  const isOtherUserOnline = isUserDonor ? activeSession.isRequesterOnline : activeSession.isDonorOnline;
-  const isOtherUserTyping = isUserDonor ? activeSession.isRequesterTyping : activeSession.isDonorTyping;
+  const userRole = currentRole || 'requester';
+  const isUserDonor = userRole === 'donor';
+  const roleTitle =
+    userRole === 'hospital'
+      ? `Hospital ↔ Requester`
+      : userRole === 'bloodbank'
+      ? `Blood Bank ↔ Requester`
+      : userRole === 'donor'
+      ? `Donor ↔ Requester`
+      : `Requester ↔ Center / Donors`;
+
+  const participantName =
+    userRole === 'hospital' || userRole === 'bloodbank'
+      ? `Patient Requester • ${activeSession.requesterName}`
+      : userRole === 'donor'
+      ? `Patient Requester • ${activeSession.requesterName}`
+      : `Processing Facility • ${activeSession.hospitalName}`;
+
+  const participantBloodGroup = activeSession.bloodGroup || 'O-';
+  const isOtherUserOnline = activeSession.isRequesterOnline;
+  const isOtherUserTyping = activeSession.isRequesterTyping || activeSession.isDonorTyping;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputText(e.target.value);
@@ -124,22 +138,25 @@ export const EmergencyChatModal: React.FC = () => {
             </div>
 
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className="font-extrabold text-sm text-slate-900 truncate">
-                  {participantName}
+                  💬 Request {activeSession.requestId}
+                </span>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-red-100 text-red-800 border border-red-200 uppercase">
+                  {roleTitle}
                 </span>
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 flex items-center gap-1 shrink-0">
                   <span className={`w-1.5 h-1.5 rounded-full ${isOtherUserOnline !== false ? 'bg-emerald-500 animate-ping' : 'bg-slate-400'}`} />
-                  {isOtherUserOnline !== false ? '🟢 ONLINE' : '⚪ OFFLINE'}
+                  {isOtherUserOnline !== false ? '🟢 LIVE CHANNEL' : '⚪ OFFLINE'}
                 </span>
               </div>
 
               <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-500 font-medium truncate">
                 <span className="flex items-center gap-1 text-sky-700 font-mono">
-                  <Lock className="w-3 h-3 text-emerald-600" /> Room: emergency-request-{activeSession.requestId}
+                  <Lock className="w-3 h-3 text-emerald-600" /> Patient: {activeSession.patientName || 'Emergency Patient'}
                 </span>
                 <span>•</span>
-                <span className="truncate">Hospital: {activeSession.hospitalName}</span>
+                <span className="truncate">Facility: {activeSession.hospitalName}</span>
               </div>
             </div>
           </div>

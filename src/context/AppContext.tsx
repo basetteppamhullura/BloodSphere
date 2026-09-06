@@ -63,7 +63,6 @@ export interface AppContextType {
   bankNotifications: BankNotificationItem[];
   reserveBloodBankUnits: (requestId: string, bankId: string, group: BloodGroup, component: ComponentType, units: number, staffName: string) => void;
   issueBloodBankUnits: (requestId: string, unitId: string, staffName: string) => void;
-  rejectBloodBankRequest: (requestId: string, reason: string, staffName: string) => void;
   intakeBloodUnit: (unitData: Partial<DetailedBloodUnit>, staffName: string) => void;
   checkBloodUnitExpiries: () => void;
   detectDuplicateRequests: (patientId: string, group: string, hospitalName: string) => { isDuplicate: boolean; matchedReq?: EmergencyRequest };
