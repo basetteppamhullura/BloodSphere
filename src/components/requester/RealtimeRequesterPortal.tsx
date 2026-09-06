@@ -290,9 +290,17 @@ export const RealtimeRequesterPortal: React.FC = () => {
                     Blood units reserved at <strong>{activeReq.hospitalName} ({activeReq.city})</strong>. Present fulfillment code at counter.
                   </p>
                 </div>
-                <div className="px-4 py-2 rounded-2xl bg-white border border-emerald-300 text-center font-mono shrink-0 shadow-sm">
-                  <span className="text-[9px] text-slate-500 font-bold uppercase block">Fulfillment Pickup Code</span>
-                  <span className="text-lg font-black text-emerald-700 tracking-wider">PK-{activeReq.id.slice(-5).toUpperCase()}</span>
+                <div className="flex items-center gap-3 shrink-0">
+                  <button
+                    onClick={() => openEmergencyChat(activeReq.id)}
+                    className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <MessageSquare className="w-4 h-4" /> 💬 Chat with Hospital
+                  </button>
+                  <div className="px-4 py-2 rounded-2xl bg-white border border-emerald-300 text-center font-mono shadow-sm">
+                    <span className="text-[9px] text-slate-500 font-bold uppercase block">Fulfillment Pickup Code</span>
+                    <span className="text-lg font-black text-emerald-700 tracking-wider">PK-{activeReq.id.slice(-5).toUpperCase()}</span>
+                  </div>
                 </div>
               </div>
             )}

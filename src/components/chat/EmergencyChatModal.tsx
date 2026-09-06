@@ -151,12 +151,22 @@ export const EmergencyChatModal: React.FC = () => {
                 </span>
               </div>
 
-              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-500 font-medium truncate">
-                <span className="flex items-center gap-1 text-sky-700 font-mono">
-                  <Lock className="w-3 h-3 text-emerald-600" /> Patient: {activeSession.patientName || 'Emergency Patient'}
+              <div className="flex items-center gap-2 mt-0.5 text-[10px] text-slate-600 font-medium truncate flex-wrap">
+                <span className="font-bold text-slate-800">
+                  💬 Chat with {userRole === 'hospital' || userRole === 'bloodbank' ? 'Requester' : 'Hospital'}
                 </span>
                 <span>•</span>
-                <span className="truncate">Facility: {activeSession.hospitalName}</span>
+                <span className="font-mono text-sky-800 font-bold">
+                  Request ID: {activeSession.requestId}
+                </span>
+                <span>•</span>
+                <span className="font-bold text-red-700">
+                  {participantBloodGroup} ({activeReq?.unitsNeeded || 2} Units)
+                </span>
+                <span>•</span>
+                <span className="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 font-black text-[9px] uppercase">
+                  {activeReq?.status || 'APPROVED'}
+                </span>
               </div>
             </div>
           </div>
