@@ -180,19 +180,20 @@ export const HospitalEmergencyBoard: React.FC = () => {
                         >
                           <X className="w-4 h-4 inline" /> REJECT
                         </button>
+                      </>
+                    )}
 
+                    {isApproved && (
+                      <div className="flex items-center gap-2">
+                        <div className="px-4 py-2.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-black text-xs flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Stock Reserved & Approved
+                        </div>
                         <button
                           onClick={() => openEmergencyChat(req.id)}
                           className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
                         >
                           <MessageSquare className="w-4 h-4" /> 💬 Chat with Requester
                         </button>
-                      </>
-                    )}
-
-                    {isApproved && (
-                      <div className="px-4 py-2 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-black text-xs flex items-center gap-1.5">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Stock Reserved & Approved
                       </div>
                     )}
                   </div>
