@@ -451,61 +451,7 @@ export const RealtimeRequesterPortal: React.FC = () => {
 
       {/* TAB 2: NEARBY BLOOD AVAILABILITY SEARCH (Feature 2) */}
       {portalTab === 'availability' && (
-        <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-100 pb-3">
-            <div>
-              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-sky-600" /> Real Database Regional Blood Bank Inventory Matrix
-              </h3>
-              <p className="text-slate-500 text-[11px]">Real-time verified stock check for Blood Group <strong>{targetGroup}</strong> ({targetComponent})</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {hospitalFacilities.map(fac => {
-              const hasStock = fac.availableUnits > 0;
-
-              return (
-                <div key={fac.id} className="p-5 rounded-3xl bg-white border border-sky-100 space-y-4 flex flex-col justify-between shadow-xs">
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-extrabold text-sm text-slate-900 flex items-center gap-1.5">
-                        <Building2 className="w-4 h-4 text-sky-600" /> {fac.name}
-                      </h4>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-sky-100 text-sky-800 border border-sky-200 flex items-center gap-1">
-                        <MapPin className="w-3 h-3 text-red-500" /> {fac.city}
-                      </span>
-                    </div>
-
-                    <div className="mt-3 p-3.5 rounded-2xl bg-sky-50/50 border border-sky-100 flex items-center justify-between">
-                      <div>
-                        <span className="text-slate-600 text-xs font-bold block">{targetGroup} {targetComponent}:</span>
-                        <span className="text-[10px] text-slate-400">Updated: {fac.lastUpdated}</span>
-                      </div>
-                      <div className="text-right font-mono">
-                        <strong className={`text-lg block font-black ${hasStock ? 'text-emerald-600' : 'text-red-600'}`}>
-                          {hasStock ? `${fac.availableUnits} Units Available` : 'OUT OF STOCK'}
-                        </strong>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => approveBloodBankReservation(activeReq.id, fac.id)}
-                    disabled={!hasStock}
-                    className={`w-full py-2.5 rounded-xl font-extrabold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer ${
-                      hasStock
-                        ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                        : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                    }`}
-                  >
-                    <Droplet className="w-4 h-4" /> {hasStock ? `Reserve ${targetGroup} Blood from ${fac.name}` : 'Out of Stock'}
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <HospitalBloodStockFinder />
       )}
 
       {/* TAB 3: REAL-TIME NOTIFICATIONS FEED (Feature 5) */}
