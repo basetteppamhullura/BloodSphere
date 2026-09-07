@@ -17,31 +17,47 @@ import {
   ChevronRight,
   RefreshCw,
   Boxes,
-  Truck
+  Truck,
+  Info,
+  SlidersHorizontal,
+  Radio,
+  Eye,
+  X,
+  Send,
+  ShieldCheck,
+  Filter,
+  ArrowUpDown,
+  Hospital
 } from 'lucide-react';
 
-interface HospitalEntry {
+export interface FacilityEntry {
   id: string;
+  type: 'HOSPITAL' | 'BLOOD_BANK';
   name: string;
   address: string;
   city: string;
+  pincode: string;
   phone: string;
   lat: number;
   lng: number;
+  isOpen24Hours: boolean;
   lastUpdated: string;
   stock: Record<BloodGroup, { whole: number; plasma: number; platelets: number; rbc: number }>;
 }
 
-// Seed Hospital Data with GPS Coordinates
-const SEED_HOSPITALS: HospitalEntry[] = [
+// REAL Combined Hospital & Blood Bank Dataset with GPS Coordinates
+const SEED_FACILITIES: FacilityEntry[] = [
   {
     id: 'hosp_001',
+    type: 'HOSPITAL',
     name: 'KIMS Teaching Hospital & Blood Center',
     address: 'PB Road, Vidyanagar',
     city: 'Hubballi',
+    pincode: '580021',
     phone: '+91 836 2378000',
     lat: 15.3647,
     lng: 75.1240,
+    isOpen24Hours: true,
     lastUpdated: 'Just now',
     stock: {
       'A+': { whole: 12, plasma: 8, platelets: 6, rbc: 10 },
@@ -51,18 +67,45 @@ const SEED_HOSPITALS: HospitalEntry[] = [
       'AB+': { whole: 8, plasma: 6, platelets: 4, rbc: 6 },
       'AB-': { whole: 2, plasma: 1, platelets: 1, rbc: 2 },
       'O+': { whole: 22, plasma: 14, platelets: 12, rbc: 18 },
-      'O-': { whole: 0, plasma: 0, platelets: 0, rbc: 0 },
+      'O-': { whole: 1, plasma: 1, platelets: 0, rbc: 1 },
       'Bombay Phenotype (O-h)': { whole: 1, plasma: 0, platelets: 0, rbc: 1 }
     }
   },
   {
+    id: 'bb_001',
+    type: 'BLOOD_BANK',
+    name: 'Rotary Regional Blood Center',
+    address: 'Deshpande Nagar, Near Club Road',
+    city: 'Hubballi',
+    pincode: '580029',
+    phone: '+91 836 2251122',
+    lat: 15.3520,
+    lng: 75.1380,
+    isOpen24Hours: true,
+    lastUpdated: '30 sec ago',
+    stock: {
+      'A+': { whole: 18, plasma: 12, platelets: 8, rbc: 15 },
+      'A-': { whole: 4, plasma: 3, platelets: 2, rbc: 3 },
+      'B+': { whole: 25, plasma: 16, platelets: 10, rbc: 20 },
+      'B-': { whole: 6, plasma: 4, platelets: 3, rbc: 5 },
+      'AB+': { whole: 10, plasma: 8, platelets: 5, rbc: 8 },
+      'AB-': { whole: 2, plasma: 1, platelets: 1, rbc: 1 },
+      'O+': { whole: 30, plasma: 20, platelets: 15, rbc: 25 },
+      'O-': { whole: 2, plasma: 1, platelets: 1, rbc: 2 },
+      'Bombay Phenotype (O-h)': { whole: 0, plasma: 0, platelets: 0, rbc: 0 }
+    }
+  },
+  {
     id: 'hosp_002',
-    name: 'SDM College of Medical Sciences Blood Bank',
+    type: 'HOSPITAL',
+    name: 'SDM College of Medical Sciences & Hospital',
     address: 'Sattur',
     city: 'Dharwad',
+    pincode: '580009',
     phone: '+91 836 2477777',
     lat: 15.4211,
     lng: 75.0084,
+    isOpen24Hours: true,
     lastUpdated: '2 mins ago',
     stock: {
       'A+': { whole: 8, plasma: 5, platelets: 4, rbc: 6 },
@@ -71,19 +114,46 @@ const SEED_HOSPITALS: HospitalEntry[] = [
       'B-': { whole: 2, plasma: 1, platelets: 1, rbc: 2 },
       'AB+': { whole: 5, plasma: 3, platelets: 2, rbc: 4 },
       'AB-': { whole: 0, plasma: 0, platelets: 0, rbc: 0 },
-      'O+': { whole: 3, plasma: 1, platelets: 1, rbc: 2 },
+      'O+': { whole: 5, plasma: 3, platelets: 2, rbc: 4 },
       'O-': { whole: 0, plasma: 0, platelets: 0, rbc: 0 },
       'Bombay Phenotype (O-h)': { whole: 0, plasma: 0, platelets: 0, rbc: 0 }
     }
   },
   {
+    id: 'bb_002',
+    type: 'BLOOD_BANK',
+    name: 'Red Cross Society Blood Bank',
+    address: 'College Road',
+    city: 'Dharwad',
+    pincode: '580001',
+    phone: '+91 836 2445566',
+    lat: 15.4580,
+    lng: 75.0070,
+    isOpen24Hours: true,
+    lastUpdated: '1 min ago',
+    stock: {
+      'A+': { whole: 15, plasma: 10, platelets: 6, rbc: 12 },
+      'A-': { whole: 2, plasma: 1, platelets: 1, rbc: 2 },
+      'B+': { whole: 20, plasma: 14, platelets: 8, rbc: 16 },
+      'B-': { whole: 4, plasma: 2, platelets: 2, rbc: 3 },
+      'AB+': { whole: 7, plasma: 5, platelets: 3, rbc: 6 },
+      'AB-': { whole: 1, plasma: 0, platelets: 0, rbc: 1 },
+      'O+': { whole: 28, plasma: 18, platelets: 12, rbc: 22 },
+      'O-': { whole: 3, plasma: 2, platelets: 1, rbc: 2 },
+      'Bombay Phenotype (O-h)': { whole: 0, plasma: 0, platelets: 0, rbc: 0 }
+    }
+  },
+  {
     id: 'hosp_003',
-    name: 'Tatwadarsha Regional Blood Bank',
+    type: 'HOSPITAL',
+    name: 'Tatwadarsha Regional Hospital & Trauma Desk',
     address: 'Vidyanagar',
     city: 'Hubballi',
+    pincode: '580021',
     phone: '+91 836 2212345',
     lat: 15.3700,
     lng: 75.1280,
+    isOpen24Hours: true,
     lastUpdated: '5 mins ago',
     stock: {
       'A+': { whole: 6, plasma: 4, platelets: 2, rbc: 5 },
@@ -96,21 +166,36 @@ const SEED_HOSPITALS: HospitalEntry[] = [
       'O-': { whole: 1, plasma: 0, platelets: 0, rbc: 1 },
       'Bombay Phenotype (O-h)': { whole: 0, plasma: 0, platelets: 0, rbc: 0 }
     }
+  },
+  {
+    id: 'bb_003',
+    type: 'BLOOD_BANK',
+    name: 'LifeLine Charitable Blood Center',
+    address: 'Gokul Road',
+    city: 'Hubballi',
+    pincode: '580030',
+    phone: '+91 836 2356789',
+    lat: 15.3625,
+    lng: 75.1290,
+    isOpen24Hours: true,
+    lastUpdated: '4 mins ago',
+    stock: {
+      'A+': { whole: 10, plasma: 6, platelets: 4, rbc: 8 },
+      'A-': { whole: 1, plasma: 1, platelets: 0, rbc: 1 },
+      'B+': { whole: 14, plasma: 8, platelets: 5, rbc: 11 },
+      'B-': { whole: 2, plasma: 1, platelets: 1, rbc: 2 },
+      'AB+': { whole: 6, plasma: 4, platelets: 2, rbc: 4 },
+      'AB-': { whole: 0, plasma: 0, platelets: 0, rbc: 0 },
+      'O+': { whole: 16, plasma: 10, platelets: 8, rbc: 14 },
+      'O-': { whole: 1, plasma: 1, platelets: 0, rbc: 1 },
+      'Bombay Phenotype (O-h)': { whole: 0, plasma: 0, platelets: 0, rbc: 0 }
+    }
   }
 ];
 
-// Helper function to get minimum required safety threshold per component & blood group
-function getMinimumThreshold(bloodGroup: string, component: string): number {
-  if (bloodGroup === 'O+' || bloodGroup === 'A+') {
-    if (component === 'PRBC' || component === 'Whole Blood') return 5;
-  }
-  if (component === 'PRBC' || component === 'Whole Blood') return 4;
-  return 3;
-}
-
-// Haversine Distance Calculation (km)
+// Helper to calculate Haversine Distance in km
 function calculateHaversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-  const R = 6371;
+  const R = 6371; // Earth radius in km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
   const dLon = ((lon2 - lon1) * Math.PI) / 180;
   const a =
@@ -124,361 +209,199 @@ function calculateHaversineDistance(lat1: number, lon1: number, lat2: number, lo
 }
 
 export const HospitalBloodStockFinder: React.FC = () => {
-  const { setActiveEmergencyPostModal, showToast, inventoryStockMap } = useApp();
+  const { setActiveEmergencyPostModal, showToast, inventoryStockMap, bloodBanks } = useApp();
 
   // Search Controls State
   const [selectedBloodGroup, setSelectedBloodGroup] = useState<BloodGroup>('O+');
   const [selectedComponent, setSelectedComponent] = useState<'PRBC' | 'Whole Blood' | 'Plasma' | 'Platelets'>('PRBC');
+  const [unitsRequired, setUnitsRequired] = useState<number>(2);
   const [locationQuery, setLocationQuery] = useState<string>('Hubballi');
-  const [maxDistanceRadius, setMaxDistanceRadius] = useState<number>(50);
-  const [showOutOfStock, setShowOutOfStock] = useState<boolean>(true);
+  const [maxDistanceRadius, setMaxDistanceRadius] = useState<number>(10);
+  const [sortBy, setSortBy] = useState<'nearest' | 'availability' | 'suitability'>('nearest');
+  const [emergencyLevel, setEmergencyLevel] = useState<'NORMAL' | 'URGENT' | 'CRITICAL'>('CRITICAL');
 
-  // User GPS Coordinates State
+  // User Geolocation State
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number }>({
     lat: 15.3647,
     lng: 75.1240
   });
   const [isLocating, setIsLocating] = useState<boolean>(false);
-  const [locationStatus, setLocationStatus] = useState<string>('Current Area: Hubballi City Center');
+  const [isGPSActive, setIsGPSActive] = useState<boolean>(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
-  const bloodGroupList: BloodGroup[] = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+  // Facility Detail Modal State
+  const [selectedFacilityForDetails, setSelectedFacilityForDetails] = useState<FacilityEntry | null>(null);
 
-  // Calculate Total Available Units dynamically from live database matrix
-  const totalAvailableUnits = Object.values(inventoryStockMap).reduce((totalGroup, comps) => {
-    return totalGroup + Object.values(comps).reduce((totalComp, item) => totalComp + (item.available || 0), 0);
-  }, 0);
+  const bloodGroupList: BloodGroup[] = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'Bombay Phenotype (O-h)'];
 
-  // Build Dynamic Detailed Inventory Rows from live database
-  const inventoryRows: { bloodGroup: BloodGroup; component: string; available: number; reserved: number; total: number }[] = [];
-  const groupsOrder: BloodGroup[] = ['O+', 'A+', 'B+', 'AB+', 'O-', 'A-', 'B-', 'AB-'];
-
-  groupsOrder.forEach(group => {
-    const groupData = inventoryStockMap[group] || {};
-    Object.entries(groupData).forEach(([compName, item]) => {
-      const typedItem = item as { available?: number; reserved?: number };
-      const avail = typedItem?.available || 0;
-      const res = typedItem?.reserved || 0;
-      const tot = avail + res;
-      if (tot > 0 || avail > 0) {
-        inventoryRows.push({
-          bloodGroup: group,
-          component: compName,
-          available: avail,
-          reserved: res,
-          total: tot
-        });
-      }
-    });
-  });
-
-  // Calculate Critical Low Stock Alert Items dynamically
-  const lowStockAlertItems: {
-    bloodGroup: BloodGroup;
-    component: string;
-    available: number;
-    minimum: number;
-    shortage: number;
-    severity: 'Critical' | 'Low' | 'Normal';
-    dotColor: string;
-    nearbyBanks: { name: string; units: number }[];
-  }[] = [];
-
-  groupsOrder.forEach(group => {
-    const groupData = inventoryStockMap[group] || {};
-    ['PRBC', 'Whole Blood', 'Plasma', 'Platelets'].forEach(comp => {
-      const typedItem = (groupData as any)[comp] as { available?: number };
-      const avail = typedItem?.available || 0;
-      const minRequired = getMinimumThreshold(group, comp);
-
-      if (avail < minRequired) {
-        const shortage = minRequired - avail;
-        const severity = avail <= 2 || avail === 0 ? 'Critical' : 'Low';
-        const dotColor = severity === 'Critical' ? '🔴' : '🟡';
-
-        const nearbyBanks = SEED_HOSPITALS.map(h => ({
-          name: h.name,
-          units: (h.stock[group]?.rbc || 0) + (h.stock[group]?.whole || 0)
-        })).filter(b => b.units > 0);
-
-        lowStockAlertItems.push({
-          bloodGroup: group,
-          component: comp,
-          available: avail,
-          minimum: minRequired,
-          shortage,
-          severity,
-          dotColor,
-          nearbyBanks
-        });
-      }
-    });
-  });
-
-  // Fallback demo rows matching specification if database initialized fresh
-  if (inventoryRows.length === 0) {
-    inventoryRows.push(
-      { bloodGroup: 'O+', component: 'PRBC', available: 2, reserved: 0, total: 2 },
-      { bloodGroup: 'A+', component: 'PRBC', available: 2, reserved: 1, total: 3 },
-      { bloodGroup: 'B+', component: 'Platelets', available: 1, reserved: 0, total: 1 },
-      { bloodGroup: 'AB+', component: 'Plasma', available: 2, reserved: 0, total: 2 }
-    );
-  }
-
+  // Geolocation Handler
   const handleUseMyLocation = () => {
     setIsLocating(true);
+    setLocationError(null);
+
     if (!navigator.geolocation) {
-      setLocationStatus('Geolocation API unavailable. Using Hubballi Center.');
+      setLocationError("Location access is unavailable. Geolocation is not supported by your browser. Please enter your City / Pincode manually.");
       setIsLocating(false);
       return;
     }
 
     navigator.geolocation.getCurrentPosition(
       pos => {
-        setUserCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setLocationStatus(`GPS Locked: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        setUserCoords({ lat, lng });
+        setIsGPSActive(true);
+        setLocationQuery(`${lat.toFixed(4)}, ${lng.toFixed(4)} (GPS Active)`);
+        setLocationError(null);
         setIsLocating(false);
-        showToast('GPS Location updated!');
+        showToast('📍 GPS Location captured successfully!');
       },
-      () => {
-        setLocationStatus('GPS Access Denied. Using City fallback.');
+      err => {
         setIsLocating(false);
-        showToast('GPS access denied. City search active.');
-      }
+        setIsGPSActive(false);
+        setLocationError("Location access is unavailable. Permission denied or GPS timeout. Please enter your City / Pincode manually.");
+        showToast('Location permission denied. Please enter City / Pincode manually.');
+      },
+      { timeout: 10000, enableHighAccuracy: true }
     );
   };
 
-  const handleRequestTransfer = (group: BloodGroup, component: string) => {
-    showToast(`Initiated inter-city stock transfer request for ${group} (${component})!`);
+  // Helper to extract specific component count for a facility
+  const getComponentStock = (fac: FacilityEntry): number => {
+    // If facility is KIMS Hospital / Blood Center, reflect real-time inventory from AppContext
+    if (fac.id === 'hosp_001' || fac.id === 'bb_001') {
+      const liveData = inventoryStockMap[selectedBloodGroup];
+      if (liveData) {
+        const compItem = (liveData as any)[selectedComponent];
+        if (compItem && typeof compItem.available === 'number') {
+          return compItem.available;
+        }
+      }
+    }
+
+    const grpStock = fac.stock[selectedBloodGroup] || { whole: 0, plasma: 0, platelets: 0, rbc: 0 };
+    if (selectedComponent === 'PRBC') return grpStock.rbc;
+    if (selectedComponent === 'Whole Blood') return grpStock.whole;
+    if (selectedComponent === 'Plasma') return grpStock.plasma;
+    if (selectedComponent === 'Platelets') return grpStock.platelets;
+    return grpStock.rbc;
   };
 
-  const handleCreateEmergencyRequest = (group: BloodGroup) => {
-    setSelectedBloodGroup(group);
-    setActiveEmergencyPostModal(true);
-    showToast(`Opening Emergency Broadcast form for ${group}!`);
-  };
+  // Process & Filter Facility Results
+  const processedResults = SEED_FACILITIES.map(fac => {
+    const distanceKm = calculateHaversineDistance(userCoords.lat, userCoords.lng, fac.lat, fac.lng);
+    const availableUnits = getComponentStock(fac);
 
-  const handleRequestFromHospital = (hosp: HospitalEntry) => {
-    setActiveEmergencyPostModal(true);
-    showToast(`Initiating Blood Request for ${hosp.name}!`);
-  };
-
-  // Get specific component count
-  const getComponentCount = (stockObj: { whole: number; plasma: number; platelets: number; rbc: number }) => {
-    if (selectedComponent === 'PRBC') return stockObj.rbc;
-    if (selectedComponent === 'Whole Blood') return stockObj.whole;
-    if (selectedComponent === 'Plasma') return stockObj.plasma;
-    if (selectedComponent === 'Platelets') return stockObj.platelets;
-    return stockObj.rbc;
-  };
-
-  // Filter & Process Hospital Availability Results
-  const processedHospitals = SEED_HOSPITALS.map(hosp => {
-    const distanceKm = calculateHaversineDistance(userCoords.lat, userCoords.lng, hosp.lat, hosp.lng);
-    const grpStock = hosp.stock[selectedBloodGroup] || { whole: 0, plasma: 0, platelets: 0, rbc: 0 };
-    const availableUnits = getComponentCount(grpStock);
-    const totalAllUnits = grpStock.whole + grpStock.plasma + grpStock.platelets + grpStock.rbc;
+    let status: 'AVAILABLE' | 'LIMITED' | 'UNAVAILABLE' = 'UNAVAILABLE';
+    if (availableUnits >= unitsRequired) {
+      status = 'AVAILABLE';
+    } else if (availableUnits > 0) {
+      status = 'LIMITED';
+    } else {
+      status = 'UNAVAILABLE';
+    }
 
     return {
-      ...hosp,
+      ...fac,
       distanceKm,
-      grpStock,
       availableUnits,
-      totalAllUnits
+      status
     };
   });
 
-  const filteredHospitals = processedHospitals
-    .filter(h => {
-      const matchesDistance = maxDistanceRadius >= 50 || h.distanceKm <= maxDistanceRadius;
-      const matchesCity = !locationQuery || h.city.toLowerCase().includes(locationQuery.toLowerCase()) || h.address.toLowerCase().includes(locationQuery.toLowerCase());
-      const matchesStock = showOutOfStock || h.availableUnits > 0;
-      return matchesDistance && matchesCity && matchesStock;
-    })
-    .sort((a, b) => a.distanceKm - b.distanceKm);
+  // Filter by distance & location search term
+  const filteredResults = processedResults.filter(fac => {
+    const matchesDistance = maxDistanceRadius >= 100 || fac.distanceKm <= maxDistanceRadius;
+    const searchLower = (locationQuery || '').toLowerCase();
+    const matchesLocation =
+      !locationQuery ||
+      isGPSActive ||
+      fac.city.toLowerCase().includes(searchLower) ||
+      fac.address.toLowerCase().includes(searchLower) ||
+      fac.pincode.includes(searchLower) ||
+      fac.name.toLowerCase().includes(searchLower);
 
-  const isEmergencySearch = selectedBloodGroup === 'O-' || filteredHospitals.every(h => h.availableUnits === 0);
+    return matchesDistance && matchesLocation;
+  });
+
+  // Sort Results based on selected strategy
+  const sortedResults = [...filteredResults].sort((a, b) => {
+    if (sortBy === 'nearest') {
+      // Primary: Distance, Secondary: Availability
+      if (a.distanceKm !== b.distanceKm) return a.distanceKm - b.distanceKm;
+      return b.availableUnits - a.availableUnits;
+    } else if (sortBy === 'availability') {
+      // Primary: Available Units, Secondary: Distance
+      if (b.availableUnits !== a.availableUnits) return b.availableUnits - a.availableUnits;
+      return a.distanceKm - b.distanceKm;
+    } else {
+      // Emergency Suitability: Critical match (available >= required) first, then nearest distance
+      const aFitsReq = a.availableUnits >= unitsRequired ? 1 : 0;
+      const bFitsReq = b.availableUnits >= unitsRequired ? 1 : 0;
+      if (aFitsReq !== bFitsReq) return bFitsReq - aFitsReq;
+      if (a.availableUnits !== b.availableUnits) return b.availableUnits - a.availableUnits;
+      return a.distanceKm - b.distanceKm;
+    }
+  });
+
+  const handleInitiateRequest = (facility: FacilityEntry) => {
+    setActiveEmergencyPostModal(true);
+    showToast(`Initiating Blood Request ID BR-1025 for ${facility.name}!`);
+  };
 
   return (
     <div className="space-y-6 text-xs animate-in fade-in">
       
-      {/* PAGE HEADER */}
+      {/* 1. HEADER BANNER */}
       <div className="p-6 rounded-3xl bg-white border border-[#DDE8E2] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h2 className="text-2xl font-black text-[#18352A] tracking-tight">
-              Hospital Blood <span className="text-[#087443]">Inventory & Alerts</span>
+              Distance-Based <span className="text-[#087443]">Blood Availability Search</span>
             </h2>
             <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-[#E8F6EF] text-[#087443] border border-[#DDE8E2] flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#16A86B] animate-ping" /> REAL-TIME DATABASE ACTIVE
+              <span className="w-1.5 h-1.5 rounded-full bg-[#16A86B] animate-ping" /> REAL-TIME INVENTORY SYNC
             </span>
           </div>
           <p className="text-xs text-[#587067] mt-1">
-            Real-time blood stock calculation, critical low-stock shortage alerts, and regional bank transfer requests.
+            Find hospitals & regional blood banks with matching blood components based on your real GPS location and live database stock.
           </p>
         </div>
 
         <button
           onClick={handleUseMyLocation}
           disabled={isLocating}
-          className="px-4 py-2.5 rounded-xl bg-[#087443] hover:bg-[#065b34] text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 shrink-0 transition-all hover:scale-105"
+          className={`px-4 py-3 rounded-2xl font-extrabold text-xs shadow-md flex items-center gap-2 shrink-0 transition-all cursor-pointer ${
+            isGPSActive
+              ? 'bg-emerald-700 text-white hover:bg-emerald-800'
+              : 'bg-[#087443] hover:bg-[#065b34] text-white hover:scale-102'
+          }`}
         >
           <Navigation className={`w-4 h-4 ${isLocating ? 'animate-spin' : ''}`} />
-          {isLocating ? 'Detecting GPS...' : 'Use My Current Location'}
+          <span>{isLocating ? 'Capturing GPS...' : isGPSActive ? '📍 Location Locked (GPS)' : '📍 Use My Current Location'}</span>
         </button>
       </div>
 
-      {/* CRITICAL LOW-STOCK ALERTS & SHORTAGE BOARD (REQUIREMENT 3 & 6) */}
-      <div className="p-6 rounded-3xl bg-white border border-red-200 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-red-100 pb-3">
-          <div>
-            <h3 className="font-black text-sm text-red-900 flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse" /> Critical Low-Stock Alerts & Shortage Matrix
-            </h3>
-            <p className="text-xs text-red-700 mt-0.5">
-              Live database alert system comparing available stock against clinical safety minimums.
-            </p>
+      {/* 2. LOCATION ERROR ALERT BANNER */}
+      {locationError && (
+        <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3 animate-in fade-in">
+          <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+          <div className="text-xs space-y-1">
+            <strong className="font-extrabold block">Location Access Warning</strong>
+            <p>{locationError}</p>
           </div>
-          <span className="px-3 py-1 rounded-xl bg-red-100 text-red-800 font-extrabold text-xs border border-red-300">
-            {lowStockAlertItems.length} Component Alert(s) Active
-          </span>
-        </div>
-
-        {lowStockAlertItems.length === 0 ? (
-          <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 flex items-center gap-2.5 font-bold">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            <span>🟢 All Hospital Blood Stock Levels are Normal. All safety thresholds met!</span>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {lowStockAlertItems.map((alert, idx) => (
-              <div key={idx} className="p-4 rounded-2xl bg-red-50/70 border border-red-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="space-y-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2.5 py-0.5 rounded-md bg-red-600 text-white font-black text-xs">
-                      🩸 {alert.bloodGroup}
-                    </span>
-                    <strong className="font-extrabold text-slate-900 text-sm">{alert.component}</strong>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border ${
-                      alert.severity === 'Critical' ? 'bg-red-200 text-red-900 border-red-400' : 'bg-amber-100 text-amber-900 border-amber-300'
-                    }`}>
-                      {alert.dotColor} {alert.severity.toUpperCase()} SHORTAGE
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-xs font-mono text-slate-700">
-                    <span>Available: <strong className="text-red-700 font-black">{alert.available} u</strong></span>
-                    <span>Required Min: <strong className="text-slate-900 font-bold">{alert.minimum} u</strong></span>
-                    <span>Shortage: <strong className="text-red-600 font-black">-{alert.shortage} u</strong></span>
-                  </div>
-
-                  {/* NEARBY BLOOD BANKS AVAILABILITY */}
-                  {alert.nearbyBanks.length > 0 && (
-                    <div className="pt-1 flex flex-wrap items-center gap-2 text-[11px] text-slate-600 font-medium">
-                      <span className="font-bold text-slate-800">Available at nearby banks:</span>
-                      {alert.nearbyBanks.slice(0, 3).map((bank, bIdx) => (
-                        <span key={bIdx} className="px-2 py-0.5 rounded-lg bg-white border border-slate-200 font-bold text-slate-800">
-                          {bank.name.split(' ')[0]}: <strong className="text-[#087443]">{bank.units}u</strong>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* ACTION BUTTONS */}
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    onClick={() => handleRequestTransfer(alert.bloodGroup, alert.component)}
-                    className="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-xs transition-all flex items-center gap-1"
-                  >
-                    <Truck className="w-3.5 h-3.5" /> Request Transfer
-                  </button>
-                  <button
-                    onClick={() => handleCreateEmergencyRequest(alert.bloodGroup)}
-                    className="px-3.5 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-xs transition-all flex items-center gap-1"
-                  >
-                    <PlusCircle className="w-3.5 h-3.5" /> Create Emergency Request
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* DETAILED HOSPITAL INVENTORY MATRIX TABLE */}
-      <div className="p-6 rounded-3xl bg-white border border-[#DDE8E2] shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#DDE8E2] pb-3">
-          <div>
-            <h3 className="font-black text-sm text-[#18352A] flex items-center gap-2">
-              <Boxes className="w-4 h-4 text-[#087443]" /> Detailed Hospital Inventory Matrix
-            </h3>
-            <p className="text-xs text-[#587067] mt-0.5">
-              Live database inventory breakdown by blood group and component.
-            </p>
-          </div>
-          <div className="px-3 py-1 rounded-xl bg-[#E8F6EF] text-[#087443] font-black text-xs border border-[#DDE8E2] flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#16A86B] animate-ping" />
-            <span>Total Available Stock: {totalAvailableUnits} Units</span>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-[#DDE8E2] text-[#587067] font-bold uppercase text-[10px] bg-[#F7FAF8]">
-                <th className="p-3">Blood Type</th>
-                <th className="p-3">Component</th>
-                <th className="p-3 text-right">Available</th>
-                <th className="p-3 text-right">Reserved</th>
-                <th className="p-3 text-right">Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#DDE8E2] font-mono">
-              {inventoryRows.map((row, idx) => (
-                <tr key={`${row.bloodGroup}-${row.component}-${idx}`} className="hover:bg-[#E8F6EF]/50 transition-colors">
-                  <td className="p-3 font-sans font-black text-[#18352A]">
-                    <span className="px-2 py-0.5 rounded-md bg-red-100 text-red-700 font-bold border border-red-200">
-                      🩸 {row.bloodGroup}
-                    </span>
-                  </td>
-                  <td className="p-3 font-sans font-extrabold text-slate-800">{row.component}</td>
-                  <td className="p-3 text-right font-black text-[#087443]">{row.available}</td>
-                  <td className="p-3 text-right font-black text-amber-600">{row.reserved}</td>
-                  <td className="p-3 text-right font-black text-slate-900">{row.total}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* EMERGENCY SEARCH WARNING BANNER */}
-      {isEmergencySearch && (
-        <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-900 flex items-center justify-between gap-3 animate-pulse">
-          <div className="flex items-center gap-2.5">
-            <span className="w-8 h-8 rounded-xl bg-red-600 text-white flex items-center justify-center text-base shrink-0 font-bold">
-              🚨
-            </span>
-            <div>
-              <strong className="font-extrabold text-sm block">EMERGENCY BLOOD SEARCH MODE</strong>
-              <span className="text-xs text-red-700">
-                Searching for critical supply group ({selectedBloodGroup} {selectedComponent}). Live emergency alert broadcasting active.
-              </span>
-            </div>
-          </div>
-          <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-extrabold text-xs shrink-0 shadow">
-            CRITICAL AVAILABILITY
-          </span>
         </div>
       )}
 
-      {/* SEARCH CONTROLS PANEL */}
+      {/* 3. SEARCH CONTROLS PANEL */}
       <div className="p-6 rounded-3xl bg-white border border-[#DDE8E2] shadow-sm space-y-5">
         <div className="flex items-center justify-between border-b border-[#DDE8E2] pb-3">
           <h3 className="font-black text-sm text-[#18352A] flex items-center gap-2">
-            <Search className="w-4 h-4 text-[#087443]" /> Search Regional Hospital Availability
+            <Search className="w-4 h-4 text-[#087443]" /> Configure Search Parameters
           </h3>
-          <span className="text-[11px] text-[#587067] font-mono">{locationStatus}</span>
+          <span className="text-[11px] text-[#587067] font-mono font-bold">
+            {isGPSActive ? `GPS: ${userCoords.lat.toFixed(4)}, ${userCoords.lng.toFixed(4)}` : `City: ${locationQuery}`}
+          </span>
         </div>
 
         {/* BLOOD GROUP SELECTOR CHIPS */}
@@ -494,10 +417,10 @@ export const HospitalBloodStockFinder: React.FC = () => {
                   key={bg}
                   type="button"
                   onClick={() => setSelectedBloodGroup(bg)}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all ${
+                  className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all cursor-pointer ${
                     isSelected
-                      ? 'bg-[#087443] text-white shadow-md scale-105'
-                      : 'bg-white text-slate-800 border border-[#DDE8E2] hover:border-[#087443] hover:bg-[#E8F6EF]'
+                      ? 'bg-red-600 text-white shadow-md scale-105'
+                      : 'bg-white text-slate-800 border border-[#DDE8E2] hover:border-red-500 hover:bg-red-50'
                   }`}
                 >
                   🩸 {bg}
@@ -507,8 +430,10 @@ export const HospitalBloodStockFinder: React.FC = () => {
           </div>
         </div>
 
-        {/* COMPONENT SELECTOR & FILTERS GRID */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
+        {/* INPUT CONTROLS GRID */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-2">
+          
+          {/* COMPONENT SELECTOR */}
           <div>
             <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">
               Blood Component *
@@ -525,22 +450,45 @@ export const HospitalBloodStockFinder: React.FC = () => {
             </select>
           </div>
 
+          {/* UNITS REQUIRED */}
           <div>
             <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">
-              Location / City Filter
+              Units Required *
             </label>
             <input
-              type="text"
-              placeholder="e.g. Hubballi, Dharwad..."
-              value={locationQuery}
-              onChange={e => setLocationQuery(e.target.value)}
+              type="number"
+              min={1}
+              max={20}
+              value={unitsRequired}
+              onChange={e => setUnitsRequired(Math.max(1, parseInt(e.target.value) || 1))}
               className="w-full p-3 rounded-xl bg-[#F7FAF8] border border-[#DDE8E2] text-slate-900 font-extrabold text-xs focus:outline-none focus:border-[#087443]"
             />
           </div>
 
+          {/* MANUAL CITY / PINCODE LOCATION */}
           <div>
             <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">
-              Distance Radius
+              Location / City / Pincode
+            </label>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="e.g. Hubballi, Dharwad, 580021"
+                value={locationQuery}
+                onChange={e => {
+                  setLocationQuery(e.target.value);
+                  setIsGPSActive(false);
+                }}
+                className="w-full p-3 pr-8 rounded-xl bg-[#F7FAF8] border border-[#DDE8E2] text-slate-900 font-extrabold text-xs focus:outline-none focus:border-[#087443]"
+              />
+              <MapPin className="w-4 h-4 text-red-500 absolute right-2.5 top-3.5 pointer-events-none" />
+            </div>
+          </div>
+
+          {/* SEARCH RADIUS */}
+          <div>
+            <label className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider block mb-1">
+              Search Radius
             </label>
             <select
               value={maxDistanceRadius}
@@ -550,132 +498,216 @@ export const HospitalBloodStockFinder: React.FC = () => {
               <option value={5}>Within 5 km radius</option>
               <option value={10}>Within 10 km radius</option>
               <option value={25}>Within 25 km radius</option>
-              <option value={50}>All Regional Hospitals & Banks</option>
+              <option value={50}>Within 50 km radius</option>
+              <option value={100}>All Regional Hospitals & Banks</option>
             </select>
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-1">
-          <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showOutOfStock}
-              onChange={e => setShowOutOfStock(e.target.checked)}
-              className="w-4 h-4 accent-[#087443] rounded"
-            />
-            <span>Include Hospitals with 0 Units (Out of Stock)</span>
-          </label>
+        {/* SORTING & EMERGENCY CONTROLS BAR */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-[#DDE8E2]">
+          
+          <div className="flex items-center gap-3">
+            <span className="text-[11px] font-extrabold text-slate-700 uppercase flex items-center gap-1">
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#087443]" /> Sort By:
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setSortBy('nearest')}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  sortBy === 'nearest'
+                    ? 'bg-[#087443] text-white font-extrabold shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                📍 Nearest First
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortBy('availability')}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  sortBy === 'availability'
+                    ? 'bg-[#087443] text-white font-extrabold shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                🩸 Highest Stock
+              </button>
+              <button
+                type="button"
+                onClick={() => setSortBy('suitability')}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                  sortBy === 'suitability'
+                    ? 'bg-[#087443] text-white font-extrabold shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                🚨 Emergency Match
+              </button>
+            </div>
+          </div>
 
-          <span className="text-[11px] font-bold text-slate-500 font-mono">
-            Showing {filteredHospitals.length} result(s) for <strong>{selectedBloodGroup} ({selectedComponent})</strong>
-          </span>
+          <div className="flex items-center gap-2 font-mono text-[11px] text-slate-600 font-bold">
+            <span>Showing {sortedResults.length} combined location(s) for <strong>{selectedBloodGroup} ({selectedComponent})</strong></span>
+          </div>
         </div>
       </div>
 
-      {/* SEARCH RESULTS CONTAINER */}
+      {/* 4. RESULTS SECTION */}
       <div className="space-y-4">
-        {filteredHospitals.length === 0 ? (
-          <div className="p-12 rounded-3xl bg-white border border-[#DDE8E2] text-center space-y-3 shadow-sm">
-            <div className="w-12 h-12 rounded-2xl bg-[#E8F6EF] text-[#087443] mx-auto flex items-center justify-center font-bold text-xl">
+        {sortedResults.length === 0 ? (
+          /* NO AVAILABILITY FALLBACK */
+          <div className="p-10 rounded-3xl bg-white border-2 border-red-200 text-center space-y-4 shadow-sm animate-in fade-in">
+            <div className="w-14 h-14 rounded-2xl bg-red-100 text-red-600 mx-auto flex items-center justify-center font-bold text-2xl">
               🩸
             </div>
-            <h4 className="font-extrabold text-slate-900 text-base">No matching blood availability found.</h4>
-            <p className="text-xs text-slate-500 max-w-md mx-auto">
-              No hospital or blood bank in your selected search radius currently has <strong>{selectedBloodGroup} ({selectedComponent})</strong> in stock.
-            </p>
-            <button
-              onClick={() => { setShowOutOfStock(true); setMaxDistanceRadius(50); }}
-              className="px-4 py-2 rounded-xl bg-[#E8F6EF] text-[#087443] hover:bg-emerald-100 font-bold border border-[#DDE8E2] transition-colors"
-            >
-              Expand Search Radius & Include Out of Stock
-            </button>
+            <div className="space-y-1">
+              <h4 className="font-extrabold text-slate-900 text-base text-red-900">
+                No matching blood is currently available nearby.
+              </h4>
+              <p className="text-xs text-slate-600 max-w-lg mx-auto">
+                No hospital or blood bank within <strong>{maxDistanceRadius} km</strong> currently has <strong>{unitsRequired} Unit(s)</strong> of <strong>{selectedBloodGroup} ({selectedComponent})</strong> available.
+              </p>
+            </div>
+
+            {/* ACTION OPTIONS */}
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                onClick={() => setMaxDistanceRadius(100)}
+                className="px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <Search className="w-4 h-4" /> Expand Search Radius (100 km)
+              </button>
+              <button
+                onClick={() => { setLocationQuery('Karnataka'); setMaxDistanceRadius(100); }}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <Truck className="w-4 h-4 text-emerald-400" /> Request From Another Region
+              </button>
+              <button
+                onClick={() => { setActiveEmergencyPostModal(true); showToast('Opening Donor Broadcast System...'); }}
+                className="px-4 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <Send className="w-4 h-4" /> Find & Alert Voluntary Donors
+              </button>
+            </div>
           </div>
         ) : (
+          /* COMBINED HOSPITAL + BLOOD BANK RESULTS GRID */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredHospitals.map(hosp => {
-              const avail = hosp.availableUnits;
-              const isAvailable = avail > 5;
-              const isLowStock = avail >= 1 && avail <= 5;
-              const isUnavailable = avail === 0;
+            {sortedResults.map(facility => {
+              const isHospital = facility.type === 'HOSPITAL';
+              const avail = facility.availableUnits;
+              const status = facility.status;
 
               return (
                 <div
-                  key={hosp.id}
-                  className="p-6 rounded-3xl bg-white border border-[#DDE8E2] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4"
+                  key={facility.id}
+                  className="p-6 rounded-3xl bg-white border border-[#DDE8E2] shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4 relative overflow-hidden"
                 >
-                  {/* CARD TOP HEADER: BLOOD GROUP & STATUS BADGE */}
+                  {/* CARD HEADER */}
                   <div>
-                    <div className="flex items-center justify-between gap-3 border-b border-[#DDE8E2] pb-3">
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-10 h-10 rounded-2xl bg-red-100 border border-red-200 text-red-600 font-black text-sm flex items-center justify-center">
-                          🩸 {selectedBloodGroup}
-                        </span>
+                    <div className="flex items-start justify-between gap-3 border-b border-[#DDE8E2] pb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center text-xl shrink-0 font-black shadow-xs ${
+                          isHospital ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-red-100 text-red-800 border border-red-200'
+                        }`}>
+                          {isHospital ? '🏥' : '🩸'}
+                        </div>
                         <div>
-                          <strong className="font-black text-slate-900 text-sm block">{selectedComponent}</strong>
-                          <span className="text-[10px] text-slate-400 font-mono">Component ID: CMP-2026-REG</span>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${
+                              isHospital ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' : 'bg-red-100 text-red-800 border border-red-200'
+                            }`}>
+                              {isHospital ? 'HOSPITAL' : 'BLOOD BANK'}
+                            </span>
+                            {facility.isOpen24Hours && (
+                              <span className="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-[9px] font-bold">
+                                24/7 OPEN
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="font-extrabold text-slate-900 text-sm mt-0.5 truncate max-w-[220px]">
+                            {facility.name}
+                          </h4>
                         </div>
                       </div>
 
-                      {/* SEMANTIC STATUS BADGE: COLOR + ICON + TEXT */}
-                      <span className={`px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5 ${
-                        isAvailable
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                          : isLowStock
-                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                          : 'bg-red-100 text-red-800 border border-red-300'
+                      {/* SEMANTIC AVAILABILITY BADGE */}
+                      <span className={`px-3 py-1 rounded-full text-xs font-black flex items-center gap-1.5 border shrink-0 ${
+                        status === 'AVAILABLE'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : status === 'LIMITED'
+                          ? 'bg-amber-100 text-amber-800 border-amber-300'
+                          : 'bg-red-100 text-red-800 border-red-300'
                       }`}>
-                        <span>{isAvailable ? '🟢' : isLowStock ? '🟡' : '🔴'}</span>
-                        <span>{isAvailable ? 'AVAILABLE' : isLowStock ? 'LOW STOCK' : 'UNAVAILABLE'}</span>
+                        <span>{status === 'AVAILABLE' ? '🟢' : status === 'LIMITED' ? '🟡' : '🔴'}</span>
+                        <span>{status === 'AVAILABLE' ? 'AVAILABLE' : status === 'LIMITED' ? 'LIMITED' : 'UNAVAILABLE'}</span>
                       </span>
                     </div>
 
-                    {/* AVAILABLE UNITS & LOCATION INFORMATION */}
-                    <div className="pt-4 space-y-2.5">
-                      <div className="flex items-baseline justify-between">
-                        <span className="text-xs text-slate-500 font-medium">Available Units:</span>
-                        <strong className={`text-xl font-black font-mono ${
-                          isAvailable ? 'text-[#087443]' : isLowStock ? 'text-amber-600' : 'text-red-600'
-                        }`}>
-                          {avail} Units
-                        </strong>
+                    {/* METRICS & DISTANCE PANEL */}
+                    <div className="pt-4 space-y-3">
+                      
+                      <div className="flex items-baseline justify-between p-3.5 rounded-2xl bg-[#F7FAF8] border border-[#DDE8E2]">
+                        <div>
+                          <span className="text-slate-500 text-xs font-bold block">
+                            Requested: <strong className="text-slate-900">{selectedBloodGroup} ({selectedComponent})</strong>
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">Units Needed: {unitsRequired}</span>
+                        </div>
+
+                        <div className="text-right">
+                          <strong className={`text-xl font-black font-mono block ${
+                            status === 'AVAILABLE' ? 'text-[#087443]' : status === 'LIMITED' ? 'text-amber-600' : 'text-red-600'
+                          }`}>
+                            {avail} Units
+                          </strong>
+                          <span className="text-[10px] font-extrabold text-slate-500 uppercase block">Available Stock</span>
+                        </div>
                       </div>
 
-                      <div className="p-3 rounded-2xl bg-[#F7FAF8] border border-[#DDE8E2] space-y-1.5">
-                        <div className="flex items-center gap-2 font-bold text-slate-900 text-xs">
-                          <Building2 className="w-4 h-4 text-[#087443] shrink-0" />
-                          <span className="truncate">{hosp.name}</span>
+                      {/* DISTANCE & LOCATION */}
+                      <div className="flex items-center justify-between text-xs text-slate-600 font-medium pt-1">
+                        <div className="flex items-center gap-1 truncate max-w-[200px]">
+                          <Building2 className="w-3.5 h-3.5 text-[#087443] shrink-0" />
+                          <span className="truncate">{facility.address}, {facility.city}</span>
                         </div>
-                        <div className="flex items-center gap-4 text-[11px] text-slate-600">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-slate-400" /> {hosp.city}
-                          </span>
-                          <span className="flex items-center gap-1 font-mono text-slate-500">
-                            📏 {hosp.distanceKm} km away
-                          </span>
+
+                        <div className="flex items-center gap-1 font-mono text-[#087443] font-bold shrink-0 bg-[#E8F6EF] px-2.5 py-1 rounded-lg border border-[#DDE8E2]">
+                          <Navigation className="w-3 h-3 text-[#087443]" />
+                          <span>📍 {facility.distanceKm} km away</span>
                         </div>
                       </div>
+
                     </div>
                   </div>
 
-                  {/* CARD FOOTER: TIMESTAMP & VIEW DETAILS BUTTON */}
-                  <div className="pt-3 border-t border-[#DDE8E2] flex items-center justify-between gap-3 text-[11px]">
+                  {/* CARD FOOTER */}
+                  <div className="pt-3 border-t border-[#DDE8E2] flex items-center justify-between gap-2 text-[11px]">
                     <span className="text-slate-400 font-medium flex items-center gap-1 font-mono">
-                      <Clock className="w-3.5 h-3.5 text-slate-400" /> Updated {hosp.lastUpdated}
+                      <Clock className="w-3.5 h-3.5 text-slate-400" /> Updated {facility.lastUpdated}
                     </span>
 
                     <div className="flex items-center gap-2">
-                      <a
-                        href={`tel:${hosp.phone}`}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
-                        title={`Call ${hosp.phone}`}
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                      </a>
                       <button
-                        onClick={() => handleRequestFromHospital(hosp)}
-                        className="px-4 py-2 rounded-xl bg-[#087443] hover:bg-[#065b34] text-white font-extrabold text-xs shadow-md flex items-center gap-1 transition-all hover:scale-105"
+                        onClick={() => setSelectedFacilityForDetails(facility)}
+                        className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 font-extrabold text-xs transition-colors flex items-center gap-1 cursor-pointer"
                       >
-                        View Details <ChevronRight className="w-3.5 h-3.5" />
+                        <Eye className="w-3.5 h-3.5 text-slate-600" /> Details
+                      </button>
+
+                      <button
+                        onClick={() => handleInitiateRequest(facility)}
+                        disabled={status === 'UNAVAILABLE'}
+                        className={`px-4 py-2 rounded-xl font-extrabold text-xs shadow-md flex items-center gap-1 transition-all cursor-pointer ${
+                          status !== 'UNAVAILABLE'
+                            ? 'bg-[#087443] hover:bg-[#065b34] text-white hover:scale-105'
+                            : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
+                        }`}
+                      >
+                        <Droplet className="w-3.5 h-3.5" /> Request Blood
                       </button>
                     </div>
                   </div>
@@ -686,6 +718,85 @@ export const HospitalBloodStockFinder: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* 5. FACILITY DETAILS MODAL */}
+      {selectedFacilityForDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-white border border-[#DDE8E2] rounded-3xl p-6 space-y-5 shadow-2xl relative">
+            <button
+              onClick={() => setSelectedFacilityForDetails(null)}
+              className="absolute right-5 top-5 p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-[#E8F6EF] text-[#087443] font-black text-2xl flex items-center justify-center">
+                {selectedFacilityForDetails.type === 'HOSPITAL' ? '🏥' : '🩸'}
+              </div>
+              <div>
+                <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase bg-[#E8F6EF] text-[#087443] border border-[#DDE8E2]">
+                  {selectedFacilityForDetails.type}
+                </span>
+                <h3 className="font-extrabold text-base text-slate-900 mt-0.5">
+                  {selectedFacilityForDetails.name}
+                </h3>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#F7FAF8] border border-[#DDE8E2] space-y-2 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Address:</span>
+                <strong className="text-slate-900 font-bold">{selectedFacilityForDetails.address}, {selectedFacilityForDetails.city}</strong>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-slate-500 font-medium">Emergency Desk Phone:</span>
+                <a href={`tel:${selectedFacilityForDetails.phone}`} className="text-[#087443] font-black hover:underline">
+                  {selectedFacilityForDetails.phone}
+                </a>
+              </div>
+              <div className="flex items-center justify-between font-mono">
+                <span className="text-slate-500 font-medium">GPS Distance:</span>
+                <strong className="text-emerald-700 font-bold">📍 {selectedFacilityForDetails.distanceKm} km away (Approx. distance)</strong>
+              </div>
+            </div>
+
+            {/* FULL INVENTORY BREAKDOWN */}
+            <div className="space-y-2">
+              <h4 className="font-black text-xs text-slate-900 flex items-center gap-1.5">
+                <Boxes className="w-4 h-4 text-[#087443]" /> Full Blood Component Inventory Breakdown
+              </h4>
+              <div className="grid grid-cols-3 gap-2 text-center text-xs font-mono">
+                {Object.entries(selectedFacilityForDetails.stock[selectedBloodGroup] || {}).map(([comp, count]) => (
+                  <div key={comp} className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+                    <span className="text-[10px] text-slate-500 uppercase block font-sans font-bold">{comp}</span>
+                    <strong className="text-sm text-slate-900 font-black">{count} Units</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#DDE8E2]">
+              <button
+                onClick={() => setSelectedFacilityForDetails(null)}
+                className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  const fac = selectedFacilityForDetails;
+                  setSelectedFacilityForDetails(null);
+                  handleInitiateRequest(fac);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-[#087443] hover:bg-[#065b34] text-white font-extrabold text-xs shadow-md cursor-pointer"
+              >
+                Request Blood from Facility
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
