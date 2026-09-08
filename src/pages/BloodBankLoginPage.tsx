@@ -83,8 +83,16 @@ export const BloodBankLoginPage: React.FC = () => {
         <div className="flex justify-center">
           <BloodNetLogo size="lg" showTagline={true} />
         </div>
-        <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-extrabold mt-2 shadow-2xs">
-          <Droplet className="w-4 h-4 text-emerald-600" /> Blood Bank Operational Portal
+        <div className="flex items-center justify-center gap-2 mt-2">
+          <button
+            onClick={() => navigate('/login')}
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded-full transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-3 h-3" /> Back to Main Login
+          </button>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-extrabold shadow-2xs">
+            <Droplet className="w-4 h-4 text-emerald-600" /> Blood Bank Operational Portal
+          </div>
         </div>
       </div>
 
