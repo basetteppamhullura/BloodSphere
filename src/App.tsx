@@ -15,7 +15,9 @@ import { RoleProtectedRoute } from './components/common/RoleProtectedRoute';
 
 // Public Pages
 import { LandingPage } from './pages/LandingPage';
-import { DonorRequesterLoginPage } from './pages/DonorRequesterLoginPage';
+import { LoginPage } from './pages/LoginPage';
+import { DonorLoginPage } from './pages/DonorLoginPage';
+import { RequesterLoginPage } from './pages/RequesterLoginPage';
 import { HospitalLoginPage } from './pages/HospitalLoginPage';
 import { BloodBankLoginPage } from './pages/BloodBankLoginPage';
 import { AdminLoginPage } from './pages/AdminLoginPage';
@@ -63,12 +65,17 @@ export default function App() {
               {/* ================================================== */}
               <Route element={<PublicLayout />}>
                 <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<DonorRequesterLoginPage />} />
-                <Route path="/login/donor-requester" element={<DonorRequesterLoginPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/login/donor" element={<DonorLoginPage />} />
+                <Route path="/login/requester" element={<RequesterLoginPage />} />
                 <Route path="/login/hospital" element={<HospitalLoginPage />} />
                 <Route path="/login/bloodbank" element={<BloodBankLoginPage />} />
                 <Route path="/login/admin" element={<AdminLoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
+                <Route path="/register/donor" element={<RegisterPage forcedPortal="donor" />} />
+                <Route path="/register/requester" element={<RegisterPage forcedPortal="requester" />} />
+                <Route path="/register/hospital" element={<RegisterPage forcedPortal="hospital" />} />
+                <Route path="/register/bloodbank" element={<RegisterPage forcedPortal="bloodbank" />} />
               </Route>
 
               {/* ================================================== */}
