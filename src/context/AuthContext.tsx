@@ -332,8 +332,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const authorizeRole = (requiredRole: UserRole): { isAuthorized: boolean; userRole: UserRole | null; redirectPath: string } => {
     if (!currentUser) {
       const loginPaths: Record<UserRole, string> = {
-        donor: '/login',
-        requester: '/login',
+        donor: '/login/donor',
+        requester: '/login/requester',
         hospital: '/login/hospital',
         bloodbank: '/login/bloodbank',
         admin: '/login/admin'
