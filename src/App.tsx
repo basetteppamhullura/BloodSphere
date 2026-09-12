@@ -200,7 +200,8 @@ export default function App() {
                 <Route path="bloodbanks" element={<Navigate to="/admin/blood-banks" replace />} />
                 <Route path="blood-banks/:bloodBankId" element={<AdminControlCenterDesk />} />
                 <Route path="requests" element={<AdminControlCenterDesk />} />
-                <Route path="requests/:requestId" element={<AdminControlCenterDesk />} />
+                <Route path="inventory" element={<AdminControlCenterDesk />} />
+                <Route path="live-activity" element={<AdminControlCenterDesk />} />
                 <Route path="analytics" element={<AdminControlCenterDesk />} />
                 <Route path="reports" element={<Navigate to="/admin/analytics" replace />} />
                 <Route path="audit-logs" element={<AdminControlCenterDesk />} />
