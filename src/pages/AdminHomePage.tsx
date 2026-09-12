@@ -93,6 +93,20 @@ export const AdminHomePage: React.FC = () => {
           </Link>
 
           <Link
+            to="/admin/live-activity"
+            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-amber-50 flex items-center gap-1.5 transition-colors"
+          >
+            <Activity className="w-4 h-4 text-emerald-600" /> Live Activity
+          </Link>
+
+          <Link
+            to="/admin/requests"
+            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-amber-50 flex items-center gap-1.5 transition-colors"
+          >
+            <ShieldAlert className="w-4 h-4 text-red-600" /> System Requests ({activeRequestsCount})
+          </Link>
+
+          <Link
             to="/admin/accounts"
             className="px-4 py-2 rounded-xl text-slate-700 hover:bg-amber-50 flex items-center gap-1.5 transition-colors"
           >
@@ -100,17 +114,10 @@ export const AdminHomePage: React.FC = () => {
           </Link>
 
           <Link
-            to="/admin/hospitals"
+            to="/admin/inventory"
             className="px-4 py-2 rounded-xl text-slate-700 hover:bg-amber-50 flex items-center gap-1.5 transition-colors"
           >
-            <Building2 className="w-4 h-4 text-indigo-600" /> Hospitals
-          </Link>
-
-          <Link
-            to="/admin/blood-banks"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-amber-50 flex items-center gap-1.5 transition-colors"
-          >
-            <Droplet className="w-4 h-4 text-emerald-600" /> Blood Banks
+            <Building2 className="w-4 h-4 text-indigo-600" /> Inventory Monitor
           </Link>
 
           <Link
