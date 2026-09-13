@@ -32,28 +32,24 @@ import {
   MapPin,
   Package,
   Layers,
-  ArrowUpRight
+  ArrowUpRight,
+  Landmark,
+  Boxes,
+  Send,
+  Truck
 } from 'lucide-react';
 
-function calculateTimeAgo(timestampStr: string): string {
-  const diffMs = Date.now() - new Date(timestampStr).getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins} mins ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs} hrs ago`;
-  return `${Math.floor(hrs / 24)} days ago`;
-}
-
 export interface HospitalMonitorDeskProps {
-  initialTab?: 'monitor' | 'audit_log';
+  initialTab?: 'monitor' | 'audit_log' | 'activity' | 'reports';
 }
 
 export const HospitalMonitorDesk: React.FC<HospitalMonitorDeskProps> = ({ initialTab = 'monitor' }) => {
   const {
     requests,
     inventoryStockMap,
+    bloodUnitsList,
     activityLogs,
+    bloodBanks,
     approveRequestByHospital,
     rejectRequestByHospital,
     intakeBloodUnit,
@@ -66,34 +62,38 @@ export const HospitalMonitorDesk: React.FC<HospitalMonitorDeskProps> = ({ initia
   // Configurable Low Stock Threshold
   const [lowThreshold, setLowThreshold] = useState<number>(5);
 
-  // Active Desk Tab: 'monitor' | 'audit_log'
-  const [deskTab, setDeskTab] = useState<'monitor' | 'audit_log'>(initialTab);
+  // Active Desk Tab: 'monitor' | 'audit_log' | 'reports' | 'activity'
+  const [deskTab, setDeskTab] = useState<'monitor' | 'audit_log' | 'reports' | 'activity'>(
+    initialTab === 'activity' ? 'activity' : initialTab === 'audit_log' || initialTab === 'reports' ? 'reports' : 'monitor'
+  );
 
   // Search & Filter State
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [filterBloodGroup, setFilterBloodGroup] = useState<string>('ALL');
-  const [filterUrgency, setFilterUrgency] = useState<string>('ALL');
-  const [filterStatus, setFilterStatus] = useState<string>('ALL');
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 5;
-
-  // Modals State
-  const [approvalModalReq, setApprovalModalReq] = useState<any | null>(null);
-  const [rejectionModalReq, setRejectionModalReq] = useState<any | null>(null);
-  const [rejectionReason, setRejectionReason] = useState<string>('Insufficient Stock');
-  const [infoReqId, setInfoReqId] = useState<string | null>(null);
-  const [infoNoteText, setInfoNoteText] = useState<string>('Please provide attending doctor phone & prescription copy.');
+  const [reportDateFilter, setReportDateFilter] = useState<'today' | '7days' | '30days' | 'custom'>('today');
 
   // Donation Intake Modal State
   const [showIntakeModal, setShowIntakeModal] = useState<boolean>(false);
   const [intakeGroup, setIntakeGroup] = useState<BloodGroup>('O+');
   const [intakeComponent, setIntakeComponent] = useState<ComponentType>('Whole Blood');
   const [intakeUnits, setIntakeUnits] = useState<number>(4);
-  const [intakeDonorName, setIntakeDonorName] = useState<string>('KIMS Rotary Donation Drive');
+  const [intakeDonorName, setIntakeDonorName] = useState<string>('KIMS Rotary Blood Drive / Regional Hub');
 
-  // Staff Stock Change Audit Trail Logs State
+  // Issue Blood Unit Modal State
+  const [showIssueModal, setShowIssueModal] = useState<boolean>(false);
+  const [issueRequestId, setIssueRequestId] = useState<string>('BR-1025');
+  const [issueGroup, setIssueGroup] = useState<BloodGroup>('O+');
+  const [issueComponent, setIssueComponent] = useState<ComponentType>('PRBC');
+  const [issueQuantity, setIssueQuantity] = useState<number>(2);
+  const [issueDepartment, setIssueDepartment] = useState<string>('Emergency Trauma ICU');
+
+  // Request From Blood Bank Modal State
+  const [showBankRequestModal, setShowBankRequestModal] = useState<boolean>(false);
+  const [bankReqGroup, setBankReqGroup] = useState<BloodGroup>('B-');
+  const [bankReqComponent, setBankReqComponent] = useState<ComponentType>('Whole Blood');
+  const [bankReqUnits, setBankReqUnits] = useState<number>(3);
+  const [selectedBloodBankTarget, setSelectedBloodBankTarget] = useState<string>('Rotary Regional Blood Center');
+
+  // Audit Logs State
   const [localAuditLogs, setLocalAuditLogs] = useState<ComprehensiveAuditLogEntry[]>([
     {
       id: 'log_001',
@@ -116,11 +116,10 @@ export const HospitalMonitorDesk: React.FC<HospitalMonitorDeskProps> = ({ initia
       unitsChanged: -2,
       resultingStock: 6,
       reason: 'Fulfilled ICU trauma transfusion',
-      linkedRequestId: 'BN-HUB-2026-00852'
+      linkedRequestId: 'BR-1025'
     }
   ]);
 
-  // Record Audit Entry Helper
   const recordAuditEntry = (
     group: BloodGroup,
     component: ComponentType,
@@ -145,7 +144,7 @@ export const HospitalMonitorDesk: React.FC<HospitalMonitorDeskProps> = ({ initia
     setLocalAuditLogs(prev => [entry, ...prev]);
   };
 
-  // Feature 1: Real-Time Summary Counters
+  // Real-Time Summary Counters
   const pendingCount = requests.filter(
     r => r.status === 'PENDING_HOSPITAL_APPROVAL' || r.status === 'VERIFIED_SEARCHING_DONORS' || r.status === 'PENDING'
   ).length;
@@ -154,41 +153,17 @@ export const HospitalMonitorDesk: React.FC<HospitalMonitorDeskProps> = ({ initia
     r => r.urgency === 'CRITICAL' && r.status !== 'COMPLETED' && r.status !== 'CANCELLED'
   ).length;
 
-  const approvedTodayCount = requests.filter(
-    r => r.channelStatuses?.hospitalStatus === 'APPROVED' || r.status === 'APPROVED' || r.status === 'VERIFIED_SEARCHING_DONORS'
-  ).length;
+  const totalAvailableUnits = Object.values(inventoryStockMap).reduce(
+    (acc, row) => acc + Object.values(row).reduce((a, b) => a + (b.available || 0), 0),
+    0
+  );
 
-  const rejectedTodayCount = requests.filter(
-    r => r.status === 'REJECTED' || r.channelStatuses?.hospitalStatus === 'REJECTED'
-  ).length;
-
-  // Feature 5: Overdue Critical Alert Banner (> 15 mins pending)
-  const overdueCriticalReqs = requests.filter(r => {
-    if (r.urgency !== 'CRITICAL') return false;
-    if (r.status === 'COMPLETED' || r.status === 'CANCELLED' || r.status === 'REJECTED') return false;
-    return true; // Live pending critical request
+  const lowStockGroups = Object.entries(inventoryStockMap).filter(([group, comps]) => {
+    const totalAvail = Object.values(comps).reduce((a, b) => a + (b.available || 0), 0);
+    return totalAvail < lowThreshold;
   });
 
-  // Feature 3: Inline Stock Adjustments
-  const handleCellAdjust = (group: BloodGroup, component: ComponentType, delta: number) => {
-    if (delta > 0) {
-      intakeBloodUnit(
-        {
-          bloodGroup: group,
-          component,
-          storageLocation: 'Hospital Main Trauma Vault'
-        },
-        staffName
-      );
-      recordAuditEntry(group, component, 'Stock Added', 1, (inventoryStockMap[group]?.[component]?.available || 0) + 1, `Manual stock intake by ${staffName}`);
-      showToast(`Recorded intake: +1 unit of ${group} (${component})`);
-    } else {
-      recordAuditEntry(group, component, 'Stock Corrected', -1, Math.max(0, (inventoryStockMap[group]?.[component]?.available || 0) - 1), `Manual stock correction by ${staffName}`);
-      showToast(`Updated ${group} (${component}) stock count.`);
-    }
-  };
-
-  // Feature 10: Record Donation Intake Submit
+  // Handle Intake Form Submit
   const handleIntakeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     for (let i = 0; i < intakeUnits; i++) {
@@ -197,7 +172,7 @@ export const HospitalMonitorDesk: React.FC<HospitalMonitorDeskProps> = ({ initia
           bloodGroup: intakeGroup,
           component: intakeComponent,
           donorRef: intakeDonorName,
-          storageLocation: 'KIMS Trauma Bay Vault 1'
+          storageLocation: 'KIMS Hospital Main Trauma Vault'
         },
         staffName
       );
@@ -209,461 +184,498 @@ export const HospitalMonitorDesk: React.FC<HospitalMonitorDeskProps> = ({ initia
       'Stock Added',
       intakeUnits,
       newCount,
-      `Intake from ${intakeDonorName}`
+      `Received intake from ${intakeDonorName}`
     );
     setShowIntakeModal(false);
-    showToast(`Successfully recorded intake of +${intakeUnits} units of ${intakeGroup} (${intakeComponent})!`);
+    showToast(`Recorded intake of +${intakeUnits} units of ${intakeGroup} (${intakeComponent})!`);
   };
 
-  // Request Approval Handler
-  const handleConfirmApproval = () => {
-    if (!approvalModalReq) return;
-    approveRequestByHospital(approvalModalReq.id);
-    recordAuditEntry(
-      approvalModalReq.bloodGroup,
-      'Whole Blood',
-      'Stock Reserved',
-      -approvalModalReq.unitsNeeded,
-      Math.max(0, (inventoryStockMap[approvalModalReq.bloodGroup]?.['Whole Blood']?.available || 0) - approvalModalReq.unitsNeeded),
-      `Approved trauma request #${approvalModalReq.id} for ${approvalModalReq.patientName}`,
-      approvalModalReq.id
-    );
-    setApprovalModalReq(null);
-    showToast(`Approved Emergency Request #${approvalModalReq.id}!`);
-  };
-
-  // Request Rejection Handler
-  const handleConfirmRejection = () => {
-    if (!rejectionModalReq) return;
-    rejectRequestByHospital(rejectionModalReq.id, rejectionReason);
-    setRejectionModalReq(null);
-    showToast(`Rejected request #${rejectionModalReq.id}. Reason logged.`);
-  };
-
-  // Filtered & Sorted Queue
-  const filteredQueue = requests.filter(r => {
-    if (filterBloodGroup !== 'ALL' && r.bloodGroup !== filterBloodGroup) return false;
-    if (filterUrgency !== 'ALL' && r.urgency !== filterUrgency) return false;
-    if (filterStatus !== 'ALL' && r.status !== filterStatus) return false;
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      return (
-        r.patientName.toLowerCase().includes(q) ||
-        r.contactPerson.toLowerCase().includes(q) ||
-        r.id.toLowerCase().includes(q)
-      );
+  // Handle Issue / Transfusion Submit
+  const handleIssueSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const currentCount = inventoryStockMap[issueGroup]?.[issueComponent]?.available || 0;
+    if (currentCount < issueQuantity) {
+      showToast(`Warning: Only ${currentCount} units of ${issueGroup} ${issueComponent} available.`);
+      return;
     }
-    return true;
-  });
 
-  const totalPages = Math.max(1, Math.ceil(filteredQueue.length / itemsPerPage));
-  const paginatedQueue = filteredQueue.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+    recordAuditEntry(
+      issueGroup,
+      issueComponent,
+      'Stock Used',
+      -issueQuantity,
+      Math.max(0, currentCount - issueQuantity),
+      `Issued to ${issueDepartment} for Request ${issueRequestId}`,
+      issueRequestId
+    );
+    setShowIssueModal(false);
+    showToast(`Issued ${issueQuantity} units of ${issueGroup} ${issueComponent} to ${issueDepartment}!`);
+  };
+
+  // Handle Request From Blood Bank Submit
+  const handleBankRequestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setShowBankRequestModal(false);
+    showToast(`Emergency order of ${bankReqUnits} units of ${bankReqGroup} ${bankReqComponent} routed to ${selectedBloodBankTarget}!`);
+  };
 
   return (
-    <div className="space-y-6 text-xs animate-in fade-in w-full max-w-7xl mx-auto">
+    <div className="space-y-6 text-xs animate-in fade-in w-full max-w-7xl mx-auto pb-16">
       
-      {/* 1. TOP HEADER BANNER & SYSTEM STATUS */}
+      {/* 1. TOP HEADER BANNER */}
       <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <Building2 className="w-6 h-6 text-sky-600" />
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Hospital Trauma Center Workstation</h2>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Hospital Blood Stock & Clinical Desk</h2>
             <span className="px-3 py-1 rounded-full text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-200 uppercase tracking-wider">
-              REAL-TIME OPERATIONAL DESK
+              OPERATIONS DESK
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-1">
-            Logged in: <strong>{staffName}</strong> • Live Database & Real-Time Sync
+            Logged in: <strong>{staffName}</strong> • Real-time clinical blood inventory, donation intake, and transfusion records
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowIntakeModal(true)}
-            className="px-4 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-md shadow-sky-600/20 flex items-center gap-1.5 transition-all"
+            className="px-4 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-md shadow-sky-600/20 flex items-center gap-1.5 transition-all cursor-pointer"
           >
-            <PlusCircle className="w-4 h-4" /> Record Donation Intake
+            <PlusCircle className="w-4 h-4" /> Record Blood Intake
           </button>
-          <div className="px-3.5 py-2 rounded-2xl bg-emerald-50 text-emerald-800 font-extrabold border border-emerald-200 flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-            <span>🟢 Live Sync</span>
-          </div>
+
+          <button
+            onClick={() => setShowIssueModal(true)}
+            className="px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 transition-all cursor-pointer"
+          >
+            <Send className="w-4 h-4" /> Issue Blood Unit
+          </button>
         </div>
       </div>
 
-      {/* 2. OVERDUE CRITICAL ALERT BANNER (Feature 5) */}
-      {overdueCriticalReqs.length > 0 && (
-        <div className="p-5 rounded-3xl bg-red-50 border-2 border-red-300 text-red-900 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
-          <div className="flex items-center gap-3">
-            <AlertTriangle className="w-6 h-6 text-red-600 shrink-0 animate-bounce" />
+      {/* 2. DESK TABS SELECTOR */}
+      <div className="flex items-center gap-2 p-1.5 bg-slate-100 rounded-2xl w-fit">
+        <button
+          onClick={() => setDeskTab('monitor')}
+          className={`px-4 py-2 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+            deskTab === 'monitor' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Blood Stock Monitor
+        </button>
+        <button
+          onClick={() => setDeskTab('reports')}
+          className={`px-4 py-2 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+            deskTab === 'reports' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Hospital Reports & Audit
+        </button>
+        <button
+          onClick={() => setDeskTab('activity')}
+          className={`px-4 py-2 rounded-xl font-extrabold text-xs transition-all cursor-pointer ${
+            deskTab === 'activity' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'
+          }`}
+        >
+          Activity Log ({activityLogs.length})
+        </button>
+      </div>
+
+      {/* 3. LOW STOCK & CRITICAL ALERTS BANNER (REQUIREMENT 11) */}
+      {lowStockGroups.length > 0 && (
+        <div className="p-5 rounded-3xl bg-red-50 border-2 border-red-200 text-red-900 flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xs">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
             <div>
-              <span className="font-black text-sm text-red-700 block">
-                🚨 OVERDUE CRITICAL BLOOD REQUEST ALERT ({overdueCriticalReqs.length} Action Required Case)
-              </span>
-              <span className="text-xs text-slate-600 block mt-0.5">
-                Patient <strong>{overdueCriticalReqs[0].patientName}</strong> ({overdueCriticalReqs[0].bloodGroup}, {overdueCriticalReqs[0].unitsNeeded} Units) requires immediate clinical review!
-              </span>
+              <strong className="text-sm font-black text-red-800 block">
+                Low Blood Stock Warning ({lowStockGroups.length} Groups Below Threshold)
+              </strong>
+              <div className="flex items-center gap-2 flex-wrap pt-1 font-mono text-xs font-bold">
+                {lowStockGroups.map(([grp, comps]) => {
+                  const avail = Object.values(comps).reduce((a, b) => a + (b.available || 0), 0);
+                  return (
+                    <span key={grp} className="px-2.5 py-0.5 rounded-lg bg-red-600 text-white text-[11px]">
+                      {grp}: {avail} Units Left
+                    </span>
+                  );
+                })}
+              </div>
             </div>
           </div>
+
           <button
-            onClick={() => setApprovalModalReq(overdueCriticalReqs[0])}
-            className="px-5 py-2.5 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-md shrink-0"
+            onClick={() => setShowBankRequestModal(true)}
+            className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white font-black text-xs shadow-md shrink-0 flex items-center gap-1.5 cursor-pointer"
           >
-            Review & Approve Now
+            <Landmark className="w-4 h-4" /> Request From Blood Bank
           </button>
         </div>
       )}
 
-      {/* 3. UNIFIED 4-CARD SUMMARY COUNTERS ROW (Feature 1 - Vertical Layout Rule) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="p-4 rounded-3xl bg-white border border-sky-100 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-500 font-bold uppercase block">Pending Queue</span>
-            <strong className="text-2xl font-black text-amber-600 block">{pendingCount}</strong>
-          </div>
-          <Clock className="w-6 h-6 text-amber-500/40" />
-        </div>
-
-        <div className="p-4 rounded-3xl bg-white border border-sky-100 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-500 font-bold uppercase block">Critical Cases</span>
-            <strong className="text-2xl font-black text-red-600 block">{criticalCount}</strong>
-          </div>
-          <AlertTriangle className="w-6 h-6 text-red-500/40" />
-        </div>
-
-        <div className="p-4 rounded-3xl bg-white border border-sky-100 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-500 font-bold uppercase block">Approved Today</span>
-            <strong className="text-2xl font-black text-emerald-600 block">{approvedTodayCount}</strong>
-          </div>
-          <CheckCircle2 className="w-6 h-6 text-emerald-500/40" />
-        </div>
-
-        <div className="p-4 rounded-3xl bg-white border border-sky-100 shadow-xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-500 font-bold uppercase block">Rejected Today</span>
-            <strong className="text-2xl font-black text-slate-500 block">{rejectedTodayCount}</strong>
-          </div>
-          <XCircle className="w-6 h-6 text-slate-400/40" />
-        </div>
-      </div>
-
-      {/* 4. LIVE DESK MONITOR & INCOMING REQUESTS QUEUE (Feature 2) */}
-      <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-100 pb-3">
-          <div>
-            <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-sky-600" /> Incoming Patient Blood Requests Queue ({filteredQueue.length})
-            </h3>
-            <p className="text-xs text-slate-500 mt-0.5">Real-time triage queue for trauma cases, ICU transfusions, and clinical requests.</p>
+      {/* ========================================================================= */}
+      {/* VIEW 1: BLOOD STOCK MONITOR                                                */}
+      {/* ========================================================================= */}
+      {deskTab === 'monitor' && (
+        <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-6 shadow-sm">
+          <div className="flex items-center justify-between border-b border-sky-100 pb-3">
+            <div>
+              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+                <Droplet className="w-5 h-5 text-red-600" /> Hospital Blood Inventory Matrix
+              </h3>
+              <p className="text-xs text-slate-500">Live units available, reserved for surgery/ICU, and safety thresholds</p>
+            </div>
+            <span className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 font-mono font-bold text-xs">
+              Total In Stock: {totalAvailableUnits} Units
+            </span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <input
-              type="text"
-              placeholder="Search patient, requester..."
-              value={searchQuery}
-              onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-              className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs w-48"
-            />
-
-            <select
-              value={filterBloodGroup}
-              onChange={e => { setFilterBloodGroup(e.target.value); setCurrentPage(1); }}
-              className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs"
-            >
-              <option value="ALL">All Groups</option>
-              <option value="O-">O-</option>
-              <option value="O+">O+</option>
-              <option value="A+">A+</option>
-              <option value="A-">A-</option>
-              <option value="B+">B+</option>
-              <option value="B-">B-</option>
-              <option value="AB+">AB+</option>
-              <option value="AB-">AB-</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-700">
-            <thead className="bg-sky-50/70 uppercase text-[10px] text-slate-500 font-extrabold tracking-wider border-b border-sky-100">
-              <tr>
-                <th className="py-3 px-4">Request ID & Patient</th>
-                <th className="py-3 px-4">Blood Group</th>
-                <th className="py-3 px-4">Hospital & Location</th>
-                <th className="py-3 px-4">Units Needed</th>
-                <th className="py-3 px-4">Urgency</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-sky-100 font-mono">
-              {paginatedQueue.map(req => (
-                <tr key={req.id} className="hover:bg-sky-50/40 transition-colors">
-                  <td className="py-3.5 px-4 font-sans font-extrabold text-slate-900">
-                    <div>{req.patientName}</div>
-                    <div className="text-[10px] text-slate-400 font-mono font-normal">ID: {req.id}</div>
-                  </td>
-                  <td className="py-3.5 px-4 font-sans">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-red-100 text-red-700 border border-red-200">
-                      {req.bloodGroup}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 font-sans text-slate-600">{req.hospitalName}, {req.city}</td>
-                  <td className="py-3.5 px-4 font-bold text-slate-900">{req.unitsNeeded} Units</td>
-                  <td className="py-3.5 px-4 font-sans">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                      req.urgency === 'CRITICAL' ? 'bg-red-100 text-red-800 animate-pulse' : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {req.urgency}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 font-sans">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-sky-100 text-sky-800 border border-sky-200 uppercase">
-                      {req.status.replace(/_/g, ' ')}
-                    </span>
-                  </td>
-                  <td className="py-3.5 px-4 font-sans flex items-center gap-1.5">
-                    <button
-                      onClick={() => setApprovalModalReq(req)}
-                      className="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-[10px] shadow-xs flex items-center gap-1"
-                    >
-                      <Check className="w-3.5 h-3.5" /> Approve
-                    </button>
-                    <button
-                      onClick={() => setRejectionModalReq(req)}
-                      className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 font-bold text-[10px]"
-                    >
-                      Reject
-                    </button>
-                  </td>
+          {/* INVENTORY TABLE */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-700">
+              <thead className="bg-sky-50/70 uppercase text-[10px] text-slate-500 font-extrabold tracking-wider border-b border-sky-100">
+                <tr>
+                  <th className="py-3 px-4">Blood Group</th>
+                  <th className="py-3 px-4">PRBC</th>
+                  <th className="py-3 px-4">Whole Blood</th>
+                  <th className="py-3 px-4">Plasma (FFP)</th>
+                  <th className="py-3 px-4">Platelets (PRP)</th>
+                  <th className="py-3 px-4">Total Stock</th>
+                  <th className="py-3 px-4">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody className="divide-y divide-sky-100 font-mono">
+                {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(grp => {
+                  const comps = inventoryStockMap[grp] || {
+                    'PRBC': { available: 0, reserved: 0, issued: 0, expired: 0 },
+                    'Whole Blood': { available: 0, reserved: 0, issued: 0, expired: 0 },
+                    'Plasma (FFP)': { available: 0, reserved: 0, issued: 0, expired: 0 },
+                    'Platelets (PRP)': { available: 0, reserved: 0, issued: 0, expired: 0 }
+                  };
+                  const totalGrpAvail = Object.values(comps).reduce((a, b) => a + (b.available || 0), 0);
+                  const isLow = totalGrpAvail < lowThreshold;
 
-      {/* 5. BLOOD STOCK MONITOR MATRIX (Feature 3 - Connected to inventoryStockMap) */}
-      <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-100 pb-3">
-          <div>
+                  return (
+                    <tr key={grp} className="hover:bg-sky-50/40 transition-colors">
+                      <td className="py-3.5 px-4 font-bold text-slate-900">
+                        <span className="px-2.5 py-1 rounded-lg bg-red-100 text-red-700 font-black">
+                          🩸 {grp}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-bold">{comps['PRBC']?.available || 0} units</td>
+                      <td className="py-3.5 px-4 font-bold">{comps['Whole Blood']?.available || 0} units</td>
+                      <td className="py-3.5 px-4 font-bold">{comps['Plasma (FFP)']?.available || 0} units</td>
+                      <td className="py-3.5 px-4 font-bold">{comps['Platelets (PRP)']?.available || 0} units</td>
+                      <td className="py-3.5 px-4 font-black text-sm text-slate-900">{totalGrpAvail} Units</td>
+                      <td className="py-3.5 px-4 font-sans">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                          isLow ? 'bg-red-100 text-red-800 border border-red-200' : 'bg-emerald-100 text-emerald-800'
+                        }`}>
+                          {isLow ? 'LOW STOCK' : 'AVAILABLE'}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* VIEW 2: HOSPITAL REPORTS & AUDIT TRAIL                                     */}
+      {/* ========================================================================= */}
+      {deskTab === 'reports' && (
+        <div className="space-y-6">
+          <HospitalAuditLogViewer logs={localAuditLogs} />
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* VIEW 3: HOSPITAL ACTIVITY LOG STREAM                                       */}
+      {/* ========================================================================= */}
+      {deskTab === 'activity' && (
+        <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
+          <div className="flex items-center justify-between border-b border-sky-100 pb-3">
             <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-              <Droplet className="w-5 h-5 text-red-600" /> Hospital Blood Stock Monitor (8 Groups × 4 Components)
+              <Clock className="w-5 h-5 text-sky-600" /> Hospital Operational Activity Log
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">Live stock levels linked directly to shared vault database.</p>
+            <span className="text-xs text-slate-500 font-mono">Live Database Logs</span>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-            <Sliders className="w-4 h-4 text-amber-600" />
-            <span className="text-slate-700 font-bold text-xs">Low Stock Threshold:</span>
-            <input
-              type="number"
-              min={1}
-              max={20}
-              value={lowThreshold}
-              onChange={e => setLowThreshold(Number(e.target.value))}
-              className="w-14 p-1 rounded-lg bg-white border border-slate-300 text-center font-bold text-slate-900 text-xs"
-            />
-            <span className="text-slate-500 text-xs">units</span>
+          <div className="space-y-2.5 font-mono">
+            {activityLogs.map((log) => (
+              <div key={log.activityId} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">
+                <div>
+                  <strong className="text-slate-900 block font-sans font-extrabold">{log.action}</strong>
+                  <p className="text-slate-600 text-[11px] font-sans mt-0.5">{log.details}</p>
+                  <span className="text-[10px] text-slate-400 font-sans">Staff: {log.staff} • {log.date} {log.time}</span>
+                </div>
+                <span className="text-slate-400 text-[10px] font-bold">{log.activityId}</span>
+              </div>
+            ))}
           </div>
         </div>
+      )}
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="border-b border-sky-100 text-slate-500 font-bold uppercase text-[10px] bg-sky-50/70">
-                <th className="p-3">Blood Group</th>
-                <th className="p-3">Whole Blood</th>
-                <th className="p-3">Plasma (FFP)</th>
-                <th className="p-3">Platelets (PRP)</th>
-                <th className="p-3">Red Cells (PRBC)</th>
-                <th className="p-3 text-right">Group Total</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-sky-100 font-mono">
-              {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(group => {
-                const rowObj = inventoryStockMap[group] || {
-                  'Whole Blood': { available: 12 },
-                  'Plasma (FFP)': { available: 8 },
-                  'Platelets (PRP)': { available: 6 },
-                  'PRBC': { available: 10 }
-                };
+      {/* RECORD INTAKE MODAL */}
+      {showIntakeModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
+          <form
+            onSubmit={handleIntakeSubmit}
+            className="w-full max-w-md bg-white border border-sky-100 rounded-3xl p-6 space-y-4 text-xs shadow-2xl relative"
+          >
+            <button
+              type="button"
+              onClick={() => setShowIntakeModal(false)}
+              className="absolute right-5 top-5 p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
+            >
+              ✕
+            </button>
 
-                const groupTotal =
-                  (rowObj['Whole Blood']?.available || 0) +
-                  (rowObj['Plasma (FFP)']?.available || 0) +
-                  (rowObj['Platelets (PRP)']?.available || 0) +
-                  (rowObj['PRBC']?.available || 0);
-
-                return (
-                  <tr key={group} className="hover:bg-sky-50/40 transition-colors">
-                    <td className="p-3 font-sans font-black text-slate-900 text-xs">{group}</td>
-
-                    {(['Whole Blood', 'Plasma (FFP)', 'Platelets (PRP)', 'PRBC'] as ComponentType[]).map(comp => {
-                      const count = rowObj[comp]?.available || 0;
-                      let bgClass = 'bg-emerald-50 text-emerald-800 border-emerald-200';
-                      if (count === 0) bgClass = 'bg-red-50 text-red-800 border-red-200';
-                      else if (count <= lowThreshold) bgClass = 'bg-amber-50 text-amber-800 border-amber-200';
-
-                      return (
-                        <td key={comp} className="p-2">
-                          <div className={`p-2 rounded-xl border flex items-center justify-between gap-1 font-bold ${bgClass}`}>
-                            <span>{count}u</span>
-                            <div className="flex items-center gap-0.5">
-                              <button
-                                onClick={() => handleCellAdjust(group, comp, 1)}
-                                className="w-5 h-5 rounded bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 font-black flex items-center justify-center text-xs"
-                                title="Add 1 Unit"
-                              >
-                                +
-                              </button>
-                              <button
-                                onClick={() => handleCellAdjust(group, comp, -1)}
-                                className="w-5 h-5 rounded bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 font-black flex items-center justify-center text-xs"
-                                title="Subtract 1 Unit"
-                              >
-                                -
-                              </button>
-                            </div>
-                          </div>
-                        </td>
-                      );
-                    })}
-
-                    <td className="p-3 text-right font-sans font-extrabold text-slate-900 text-xs">
-                      {groupTotal} units
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 6. STAFF STOCK CHANGE AUDIT LOG (Feature 4 - Vertical Layout) */}
-      <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
-        <div className="flex items-center justify-between border-b border-sky-100 pb-3">
-          <div>
             <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-              <History className="w-5 h-5 text-amber-600" /> Staff Stock Change Audit Log ({localAuditLogs.length} Entries)
+              <PlusCircle className="w-5 h-5 text-sky-600" /> Record Blood Unit Intake
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">Immutable log of manual inventory edits, request reservations, and donation intakes.</p>
-          </div>
-        </div>
 
-        <HospitalAuditLogViewer logs={localAuditLogs} />
-      </div>
-
-      {/* APPROVAL CONFIRMATION MODAL */}
-      {approvalModalReq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-md bg-white border border-sky-100 rounded-3xl p-6 space-y-4 shadow-2xl relative text-xs">
-            <div className="flex items-center justify-between border-b border-sky-100 pb-3">
-              <h4 className="font-extrabold text-slate-900 text-sm">Approve Blood Request #{approvalModalReq.id}</h4>
-              <button onClick={() => setApprovalModalReq(null)} className="p-1 rounded-lg text-slate-400 hover:text-slate-700">✕</button>
+            <div>
+              <label className="text-slate-800 font-bold block mb-1">Blood Group *</label>
+              <select
+                value={intakeGroup}
+                onChange={e => setIntakeGroup(e.target.value as BloodGroup)}
+                className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold cursor-pointer"
+              >
+                {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(bg => (
+                  <option key={bg} value={bg}>{bg}</option>
+                ))}
+              </select>
             </div>
 
-            <div className="space-y-2 font-mono">
-              <div>Patient Name: <strong>{approvalModalReq.patientName}</strong></div>
-              <div>Blood Group Required: <strong className="text-red-600">{approvalModalReq.bloodGroup}</strong></div>
-              <div>Units Needed: <strong>{approvalModalReq.unitsNeeded} Units</strong></div>
-              <div>Hospital: <strong>{approvalModalReq.hospitalName}</strong></div>
+            <div>
+              <label className="text-slate-800 font-bold block mb-1">Component *</label>
+              <select
+                value={intakeComponent}
+                onChange={e => setIntakeComponent(e.target.value as ComponentType)}
+                className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold cursor-pointer"
+              >
+                <option value="PRBC">PRBC (Packed Red Blood Cells)</option>
+                <option value="Whole Blood">Whole Blood</option>
+                <option value="Plasma (FFP)">Plasma (FFP)</option>
+                <option value="Platelets (PRP)">Platelets (PRP)</option>
+              </select>
             </div>
 
-            <div className="pt-2 flex items-center gap-2">
-              <button onClick={handleConfirmApproval} className="flex-1 py-2.5 rounded-2xl bg-emerald-600 text-white font-extrabold text-xs">
-                Confirm Approval & Reserve Stock
-              </button>
-              <button onClick={() => setApprovalModalReq(null)} className="px-4 py-2.5 rounded-2xl bg-slate-100 text-slate-700 font-extrabold text-xs">
+            <div>
+              <label className="text-slate-800 font-bold block mb-1">Quantity (Units) *</label>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={intakeUnits}
+                onChange={e => setIntakeUnits(parseInt(e.target.value) || 1)}
+                className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="text-slate-800 font-bold block mb-1">Source / Batch Reference *</label>
+              <input
+                type="text"
+                value={intakeDonorName}
+                onChange={e => setIntakeDonorName(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
+                placeholder="e.g. Rotary Blood Center Shipment / Drive"
+                required
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowIntakeModal(false)}
+                className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold cursor-pointer"
+              >
                 Cancel
               </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-sky-600 text-white font-extrabold shadow-sm hover:bg-sky-700 cursor-pointer"
+              >
+                Confirm Intake
+              </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
-      {/* RECORD DONATION INTAKE MODAL (Feature 10) */}
-      {showIntakeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-md bg-white border border-sky-100 rounded-3xl p-6 space-y-4 shadow-2xl relative text-xs">
-            <div className="flex items-center justify-between border-b border-sky-100 pb-3">
-              <h4 className="font-extrabold text-slate-900 text-sm">Record Donation Intake into Hospital Vault</h4>
-              <button onClick={() => setShowIntakeModal(false)} className="p-1 rounded-lg text-slate-400 hover:text-slate-700">✕</button>
+      {/* ISSUE BLOOD UNIT MODAL */}
+      {showIssueModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
+          <form
+            onSubmit={handleIssueSubmit}
+            className="w-full max-w-md bg-white border border-slate-200 rounded-3xl p-6 space-y-4 text-xs shadow-2xl relative"
+          >
+            <button
+              type="button"
+              onClick={() => setShowIssueModal(false)}
+              className="absolute right-5 top-5 p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
+            >
+              ✕
+            </button>
+
+            <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+              <Send className="w-5 h-5 text-slate-900" /> Issue Blood for Transfusion
+            </h3>
+
+            <div>
+              <label className="text-slate-800 font-bold block mb-1">Linked Request ID *</label>
+              <input
+                type="text"
+                value={issueRequestId}
+                onChange={e => setIssueRequestId(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold font-mono"
+                required
+              />
             </div>
 
-            <form onSubmit={handleIntakeSubmit} className="space-y-3 font-sans">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-slate-700 font-bold block mb-1">Blood Group *</label>
+                <label className="text-slate-800 font-bold block mb-1">Blood Group *</label>
                 <select
-                  value={intakeGroup}
-                  onChange={e => setIntakeGroup(e.target.value as BloodGroup)}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
+                  value={issueGroup}
+                  onChange={e => setIssueGroup(e.target.value as BloodGroup)}
+                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold cursor-pointer"
                 >
-                  <option value="O+">O+</option>
-                  <option value="O-">O- (Universal)</option>
-                  <option value="A+">A+</option>
-                  <option value="A-">A-</option>
-                  <option value="B+">B+</option>
-                  <option value="B-">B-</option>
-                  <option value="AB+">AB+</option>
-                  <option value="AB-">AB-</option>
+                  {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(bg => (
+                    <option key={bg} value={bg}>{bg}</option>
+                  ))}
                 </select>
               </div>
 
               <div>
-                <label className="text-slate-700 font-bold block mb-1">Component Type *</label>
+                <label className="text-slate-800 font-bold block mb-1">Component *</label>
                 <select
-                  value={intakeComponent}
-                  onChange={e => setIntakeComponent(e.target.value as ComponentType)}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
+                  value={issueComponent}
+                  onChange={e => setIssueComponent(e.target.value as ComponentType)}
+                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold cursor-pointer"
                 >
+                  <option value="PRBC">PRBC</option>
                   <option value="Whole Blood">Whole Blood</option>
-                  <option value="PRBC">Red Blood Cells (PRBC)</option>
                   <option value="Plasma (FFP)">Plasma (FFP)</option>
                   <option value="Platelets (PRP)">Platelets (PRP)</option>
                 </select>
               </div>
+            </div>
+
+            <div>
+              <label className="text-slate-800 font-bold block mb-1">Receiving Department / Ward *</label>
+              <input
+                type="text"
+                value={issueDepartment}
+                onChange={e => setIssueDepartment(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
+                required
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowIssueModal(false)}
+                className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-slate-900 text-white font-extrabold shadow-sm hover:bg-slate-800 cursor-pointer"
+              >
+                Confirm Blood Issue
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* REQUEST FROM BLOOD BANK MODAL */}
+      {showBankRequestModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in">
+          <form
+            onSubmit={handleBankRequestSubmit}
+            className="w-full max-w-md bg-white border border-emerald-100 rounded-3xl p-6 space-y-4 text-xs shadow-2xl relative"
+          >
+            <button
+              type="button"
+              onClick={() => setShowBankRequestModal(false)}
+              className="absolute right-5 top-5 p-2 rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 cursor-pointer"
+            >
+              ✕
+            </button>
+
+            <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
+              <Landmark className="w-5 h-5 text-emerald-600" /> Request Blood From Regional Blood Bank
+            </h3>
+
+            <div>
+              <label className="text-slate-800 font-bold block mb-1">Select Blood Bank *</label>
+              <select
+                value={selectedBloodBankTarget}
+                onChange={e => setSelectedBloodBankTarget(e.target.value)}
+                className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold cursor-pointer"
+              >
+                <option value="Rotary Regional Blood Center">Rotary Regional Blood Center (Hubballi)</option>
+                <option value="Red Cross Society Blood Bank">Red Cross Society Blood Bank (Dharwad)</option>
+                <option value="LifeLine Charitable Blood Center">LifeLine Charitable Blood Center (Gokul Road)</option>
+              </select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-slate-800 font-bold block mb-1">Blood Group *</label>
+                <select
+                  value={bankReqGroup}
+                  onChange={e => setBankReqGroup(e.target.value as BloodGroup)}
+                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold cursor-pointer"
+                >
+                  {(['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Bombay Phenotype (O-h)'] as BloodGroup[]).map(bg => (
+                    <option key={bg} value={bg}>{bg}</option>
+                  ))}
+                </select>
+              </div>
 
               <div>
-                <label className="text-slate-700 font-bold block mb-1">Units Collected *</label>
+                <label className="text-slate-800 font-bold block mb-1">Units Required *</label>
                 <input
                   type="number"
                   min={1}
-                  max={50}
-                  value={intakeUnits}
-                  onChange={e => setIntakeUnits(Number(e.target.value))}
+                  max={10}
+                  value={bankReqUnits}
+                  onChange={e => setBankReqUnits(parseInt(e.target.value) || 1)}
                   className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
                   required
                 />
               </div>
+            </div>
 
-              <div>
-                <label className="text-slate-700 font-bold block mb-1">Donor Name / Drive Reference</label>
-                <input
-                  type="text"
-                  value={intakeDonorName}
-                  onChange={e => setIntakeDonorName(e.target.value)}
-                  className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold"
-                />
-              </div>
-
-              <div className="pt-2 flex items-center justify-end gap-2">
-                <button type="button" onClick={() => setShowIntakeModal(false)} className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold">
-                  Cancel
-                </button>
-                <button type="submit" className="px-5 py-2 rounded-xl bg-sky-600 text-white font-extrabold">
-                  Submit & Intake Stock
-                </button>
-              </div>
-            </form>
-          </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowBankRequestModal(false)}
+                className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 font-bold cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-5 py-2 rounded-xl bg-emerald-600 text-white font-extrabold shadow-sm hover:bg-emerald-700 cursor-pointer"
+              >
+                Send Blood Bank Order
+              </button>
+            </div>
+          </form>
         </div>
       )}
-
     </div>
   );
 };
