@@ -13,70 +13,57 @@ import {
   Sun,
   Moon,
   ChevronRight,
-  X
+  ShieldAlert,
+  Boxes,
+  Truck,
+  Bell,
+  Activity,
+  Settings,
+  Landmark,
+  Radio,
+  Clock
 } from 'lucide-react';
 
 export const HospitalSidebar: React.FC = () => {
-  const { requests, isMobileSidebarOpen, setIsMobileSidebarOpen } = useApp();
+  const { requests, notifications, isMobileSidebarOpen, setIsMobileSidebarOpen } = useApp();
   const { isDarkMode, toggleTheme } = useTheme();
 
   const criticalCount = requests.filter(
     r => r.urgency === 'CRITICAL' && r.status !== 'COMPLETED' && r.status !== 'CANCELLED'
   ).length;
 
-  const navItems = [
-    { to: '/hospital/home', label: 'Hospital Home', icon: Home },
-    { to: '/hospital/dashboard', label: 'Hospital Dashboard', icon: LayoutDashboard },
-    { to: '/hospital/requests', label: 'Patient Requests Board', icon: AlertTriangle, badge: criticalCount || 5 },
-    { to: '/hospital/unit-details', label: 'Hospital Blood Unit Details', icon: Search },
-    { to: '/hospital/blood-availability', label: 'Blood Availability Search', icon: Search },
-    { to: '/hospital/donors', label: 'Donation Drives & Donors', icon: Heart },
-    { to: '/hospital/reports', label: 'Audit Logs & Reports', icon: FileText }
-  ];
+  const pendingRequestsCount = requests.filter(
+    r => r.status === 'PENDING_HOSPITAL_APPROVAL' || r.status === 'VERIFIED_SEARCHING_DONORS' || r.status === 'PENDING'
+  ).length;
 
-  const renderNavLinks = () => (
-    <nav className="w-full flex flex-col space-y-2 text-xs font-extrabold">
-      {navItems.map(item => {
-        const IconComp = item.icon;
-        return (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            onClick={() => setIsMobileSidebarOpen(false)}
-            className={({ isActive }) =>
-              `w-full flex items-center justify-between px-3.5 py-3 rounded-2xl transition-all ${
-                isActive
-                  ? 'bg-[#0EA5E9] text-white shadow-md shadow-[#0EA5E9]/25 font-black border-l-4 border-l-white'
-                  : 'text-[#0D2B45] hover:text-[#0284C7] hover:bg-[#E0F2FE]'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <div className="flex items-center gap-3 min-w-0">
-                  <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#0EA5E9]'}`} />
-                  <span className="truncate">{item.label}</span>
-                </div>
-                {item.badge && item.badge > 0 ? (
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-black shadow-2xs ${
-                      isActive
-                        ? 'bg-white text-[#0284C7]'
-                        : 'bg-red-500 text-white font-mono animate-pulse'
-                    }`}
-                  >
-                    {item.badge}
-                  </span>
-                ) : isActive ? (
-                  <ChevronRight className="w-4 h-4 text-white shrink-0" />
-                ) : null}
-              </>
-            )}
-          </NavLink>
-        );
-      })}
-    </nav>
-  );
+  const unreadNotifsCount = notifications.filter(n => !n.read).length;
+
+  const navSections = [
+    {
+      title: 'HOSPITAL OPERATIONS',
+      items: [
+        { to: '/hospital/home', label: 'Home / Operations', icon: Home },
+        { to: '/hospital/requests', label: 'Incoming Blood Requests', icon: AlertTriangle, badge: pendingRequestsCount || criticalCount },
+        { to: '/hospital/dashboard', label: 'Blood Stock Monitor', icon: LayoutDashboard },
+        { to: '/hospital/unit-details', label: 'Blood Unit Tracking', icon: Boxes }
+      ]
+    },
+    {
+      title: 'NETWORK & LOGISTICS',
+      items: [
+        { to: '/hospital/blood-banks', label: 'Blood Bank Requests', icon: Landmark },
+        { to: '/hospital/donors', label: 'Donor Responses & Drives', icon: Heart },
+        { to: '/hospital/blood-availability', label: 'Blood Availability Search', icon: Search }
+      ]
+    },
+    {
+      title: 'GOVERNANCE & REPORTS',
+      items: [
+        { to: '/hospital/reports', label: 'Hospital Reports & Audit', icon: FileText },
+        { to: '/hospital/activity', label: 'Hospital Activity Log', icon: Activity }
+      ]
+    }
+  ];
 
   return (
     <>
@@ -93,71 +80,131 @@ export const HospitalSidebar: React.FC = () => {
               <span className="text-xs font-black text-[#0D2B45] tracking-tight uppercase block leading-tight">
                 HOSPITAL PORTAL
               </span>
-              <span className="text-[10px] text-sky-700 font-medium">Trauma & Emergency</span>
+              <span className="text-[10px] text-sky-700 font-medium">Operations & Trauma</span>
             </div>
           </div>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Connected to Blood Net" />
         </div>
 
-        {/* Navigation Links */}
-        {renderNavLinks()}
+        {/* Navigation Sections */}
+        <nav className="w-full flex flex-col space-y-4 text-xs font-extrabold">
+          {navSections.map(section => (
+            <div key={section.title} className="space-y-1">
+              <div className="px-3 text-[10px] font-black tracking-wider text-slate-400 uppercase">
+                {section.title}
+              </div>
+              <div className="space-y-1">
+                {section.items.map(item => {
+                  const IconComp = item.icon;
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setIsMobileSidebarOpen(false)}
+                      className={({ isActive }) =>
+                        `w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl transition-all ${
+                          isActive
+                            ? 'bg-[#0284C7] text-white shadow-md shadow-[#0284C7]/20 font-black'
+                            : 'text-[#0D2B45] hover:text-[#0284C7] hover:bg-[#E0F2FE]'
+                        }`
+                      }
+                    >
+                      {({ isActive }) => (
+                        <>
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#0284C7]'}`} />
+                            <span className="truncate">{item.label}</span>
+                          </div>
+                          {item.badge && item.badge > 0 ? (
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                                isActive ? 'bg-white text-[#0284C7]' : 'bg-red-500 text-white font-mono'
+                              }`}
+                            >
+                              {item.badge}
+                            </span>
+                          ) : isActive ? (
+                            <ChevronRight className="w-4 h-4 text-white shrink-0" />
+                          ) : null}
+                        </>
+                      )}
+                    </NavLink>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
 
-        {/* Footer */}
+        {/* Footer with Mode Toggle */}
         <div className="pt-3 border-t border-sky-100 flex items-center justify-between text-xs text-sky-700 font-medium">
-          <span className="text-[10px] font-mono text-sky-700">Blood Net • Hospital</span>
+          <span className="text-[10px] font-mono text-sky-700">Blood Net • Clinical</span>
           <button
             onClick={toggleTheme}
-            className="p-1.5 rounded-xl bg-[#F0F9FF] hover:bg-[#E0F2FE] text-[#0D2B45] border border-sky-200 transition-all"
+            className="p-1.5 rounded-xl bg-[#F0F9FF] hover:bg-[#E0F2FE] text-[#0D2B45] border border-sky-200 transition-all cursor-pointer"
             title="Toggle Light/Dark Mode"
           >
             {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-500" /> : <Moon className="w-3.5 h-3.5 text-[#0EA5E9]" />}
           </button>
         </div>
-
       </aside>
 
       {/* 2. MOBILE SLIDE-OUT DRAWER */}
       {isMobileSidebarOpen && (
         <div className="md:hidden fixed inset-0 z-50 flex animate-in fade-in">
-          {/* Backdrop */}
           <div
-            onClick={() => setIsMobileSidebarOpen(false)}
             className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity"
+            onClick={() => setIsMobileSidebarOpen(false)}
           />
-
-          {/* Drawer Panel */}
-          <div className="relative w-72 max-w-[85vw] bg-white h-full p-5 flex flex-col justify-between shadow-2xl z-10 border-r border-sky-100 overflow-y-auto space-y-5">
-            <div className="space-y-5">
+          <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl p-5 overflow-y-auto flex flex-col justify-between space-y-6">
+            <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-sky-100 pb-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-xl bg-[#E0F2FE] border border-sky-200 flex items-center justify-center text-[#0EA5E9] font-bold">
-                    <Building2 className="w-4 h-4 text-[#0EA5E9]" />
-                  </div>
-                  <div>
-                    <span className="text-xs font-black text-[#0D2B45] tracking-tight uppercase block">
-                      HOSPITAL PORTAL
-                    </span>
-                    <span className="text-[10px] text-sky-700 font-medium">Trauma & Emergency</span>
-                  </div>
+                  <Building2 className="w-5 h-5 text-[#0284C7]" />
+                  <span className="font-black text-sm text-[#0D2B45]">Hospital Menu</span>
                 </div>
                 <button
                   onClick={() => setIsMobileSidebarOpen(false)}
-                  className="p-1.5 rounded-xl bg-slate-100 text-slate-600 hover:text-slate-900"
+                  className="p-1 text-slate-400 hover:text-slate-700"
                 >
-                  <X className="w-5 h-5" />
+                  ✕
                 </button>
               </div>
 
-              {renderNavLinks()}
-            </div>
-
-            <div className="pt-3 border-t border-sky-100 flex items-center justify-between text-xs text-sky-700 font-medium">
-              <span className="text-[10px] font-mono text-sky-700">Blood Net Hospital System</span>
-              <button
-                onClick={toggleTheme}
-                className="p-1.5 rounded-xl bg-[#F0F9FF] text-[#0D2B45] border border-sky-200"
-              >
-                {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-500" /> : <Moon className="w-3.5 h-3.5 text-[#0EA5E9]" />}
-              </button>
+              <nav className="space-y-4 text-xs font-extrabold">
+                {navSections.map(section => (
+                  <div key={section.title} className="space-y-1">
+                    <div className="text-[10px] font-black text-slate-400 uppercase px-2">
+                      {section.title}
+                    </div>
+                    {section.items.map(item => {
+                      const IconComp = item.icon;
+                      return (
+                        <NavLink
+                          key={item.to}
+                          to={item.to}
+                          onClick={() => setIsMobileSidebarOpen(false)}
+                          className={({ isActive }) =>
+                            `w-full flex items-center justify-between px-3 py-2.5 rounded-xl ${
+                              isActive ? 'bg-[#0284C7] text-white font-black' : 'text-[#0D2B45] hover:bg-[#E0F2FE]'
+                            }`
+                          }
+                        >
+                          <div className="flex items-center gap-2">
+                            <IconComp className="w-4 h-4" />
+                            <span>{item.label}</span>
+                          </div>
+                          {item.badge && item.badge > 0 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-500 text-white">
+                              {item.badge}
+                            </span>
+                          )}
+                        </NavLink>
+                      );
+                    })}
+                  </div>
+                ))}
+              </nav>
             </div>
           </div>
         </div>
