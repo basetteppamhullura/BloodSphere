@@ -21,22 +21,41 @@ import {
 } from 'lucide-react';
 
 export const BloodBankSidebar: React.FC = () => {
-  const { requests, bloodUnitsList } = useApp();
+  const { requests, bloodUnitsList, inventoryStockMap, notifications } = useApp();
   const { isDarkMode, toggleTheme } = useTheme();
 
-  const pendingRequestsCount = requests.filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED' && r.status !== 'FULFILLED').length;
-  const expiredUnitsCount = bloodUnitsList.filter(u => u.status === 'EXPIRED').length;
+  // Active pending requests
+  const inactiveStatuses = ['FULFILLED', 'COMPLETED', 'CANCELLED', 'EXPIRED', 'REJECTED'];
+  const activeRequests = requests.filter(r => !inactiveStatuses.includes(r.status));
+
+  const directReqCount = activeRequests.filter(r => r.requesterType === 'DIRECT_REQUESTER' || (!r.isVerifiedByHospital && r.requesterType !== 'HOSPITAL' && r.requesterType !== 'BLOOD_BANK')).length;
+  const hospitalReqCount = activeRequests.filter(r => r.requesterType === 'HOSPITAL' || (r.isVerifiedByHospital && r.requesterType !== 'BLOOD_BANK')).length;
+  const bloodBankReqCount = activeRequests.filter(r => r.requesterType === 'BLOOD_BANK' || (r.hospitalName && r.hospitalName.toLowerCase().includes('blood bank'))).length;
+
+  // Expired / Near expiry count
+  const todayStr = new Date().toISOString().split('T')[0];
+  const expiredUnitsCount = bloodUnitsList.filter(u => u.status === 'EXPIRED' || u.expiryDate < todayStr).length;
+
+  // Unread notifications count
+  const unreadNotifsCount = notifications.filter(n => !n.read).length;
+
+  // Low stock alerts count
+  const lowStockCount = Object.values(inventoryStockMap).reduce((acc, comps) => {
+    const totalGroup = Object.values(comps).reduce((sub, item) => sub + (item.available || 0), 0);
+    return totalGroup < 5 ? acc + 1 : acc;
+  }, 0);
 
   const navItems = [
-    { to: '/bloodbank/home', label: 'Blood Bank Home', icon: Droplet },
-    { to: '/bloodbank/dashboard', label: 'Overview', icon: LayoutDashboard },
-    { to: '/bloodbank/requests', label: 'Requester Queue', icon: Package, badge: pendingRequestsCount },
+    { to: '/bloodbank/home', label: 'Home / Operations', icon: Droplet },
+    { to: '/bloodbank/requests', label: 'Requester Queue', icon: Package, badge: directReqCount },
+    { to: '/bloodbank/hospital-requests', label: 'Hospital Requests', icon: FileText, badge: hospitalReqCount },
+    { to: '/bloodbank/bloodbank-requests', label: 'Blood Bank Requests', icon: Boxes, badge: bloodBankReqCount },
     { to: '/bloodbank/inventory', label: 'Inventory Matrix', icon: Boxes },
-    { to: '/bloodbank/units', label: 'Blood Units Tracking', icon: FlaskConical },
-    { to: '/bloodbank/preservation', label: 'Preservation Vault', icon: Thermometer },
-    { to: '/bloodbank/reservations', label: 'Reservations Queue', icon: FileText },
-    { to: '/bloodbank/issue', label: 'Issue Blood Transfusion', icon: Send },
-    { to: '/bloodbank/alerts', label: 'Low Stock & Expiry Alerts', icon: AlertTriangle, badge: expiredUnitsCount },
+    { to: '/bloodbank/units', label: 'Blood Unit Tracking', icon: FlaskConical },
+    { to: '/bloodbank/preservation', label: 'Preservation & Expiry', icon: Thermometer, badge: expiredUnitsCount > 0 ? expiredUnitsCount : undefined },
+    { to: '/bloodbank/issue', label: 'Issue Blood', icon: Send },
+    { to: '/bloodbank/alerts', label: 'Low Stock Alerts', icon: AlertTriangle, badge: lowStockCount > 0 ? lowStockCount : undefined },
+    { to: '/bloodbank/notifications', label: 'Notifications', icon: History, badge: unreadNotifsCount > 0 ? unreadNotifsCount : undefined },
     { to: '/bloodbank/activity', label: 'Activity Log', icon: History },
     { to: '/bloodbank/reports', label: 'Reports & Analytics', icon: BarChart3 },
     { to: '/bloodbank/settings', label: 'Settings', icon: Settings }

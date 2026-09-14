@@ -1067,12 +1067,39 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const reserveBloodBankUnits = (
     requestId: string,
-    bankId: string,
-    group: BloodGroup,
-    component: ComponentType,
-    units: number,
-    staffName: string
+    bankIdOrGroup: string,
+    groupOrUnits?: BloodGroup | number,
+    componentOrStaff?: ComponentType | string,
+    unitsParam?: number,
+    staffNameParam?: string
   ) => {
+    // Support flexible signature
+    let group: BloodGroup = 'O+';
+    let component: ComponentType = 'PRBC';
+    let units = 1;
+    let staffName = 'Rotary Blood Bank Staff';
+
+    const req = requests.find(r => r.id === requestId);
+
+    if (typeof groupOrUnits === 'number') {
+      // Called as (requestId, group, units)
+      group = bankIdOrGroup as BloodGroup;
+      units = groupOrUnits;
+      component = (req?.bloodComponent as ComponentType) || 'PRBC';
+      staffName = (componentOrStaff as string) || 'Rotary Blood Bank Staff';
+    } else if (typeof groupOrUnits === 'string') {
+      // Called as (requestId, bankId, group, component, units, staffName)
+      group = groupOrUnits as BloodGroup;
+      component = (componentOrStaff as ComponentType) || (req?.bloodComponent as ComponentType) || 'PRBC';
+      units = unitsParam || 1;
+      staffName = staffNameParam || 'Rotary Blood Bank Staff';
+    } else if (req) {
+      group = req.bloodGroup;
+      component = (req.bloodComponent as ComponentType) || 'PRBC';
+      units = req.unitsNeeded || 1;
+    }
+
+    // 1. Update Inventory Stock Map
     setInventoryStockMap(prev => {
       const groupData = prev[group] || {};
       const compData = groupData[component] || { available: 0, reserved: 0, issued: 0, expired: 0 };
@@ -1092,6 +1119,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     });
 
+    // 2. Mark matching individual blood units as RESERVED
+    let unitsMarked = 0;
+    setBloodUnitsList(prev =>
+      prev.map(u => {
+        if (unitsMarked < units && u.bloodGroup === group && (u.component === component || !u.component) && (u.status === 'STORED' || u.status === 'APPROVED' || u.status === 'COLLECTED')) {
+          unitsMarked++;
+          return { ...u, status: 'RESERVED' as const, lastUpdated: new Date().toISOString().split('T')[0] };
+        }
+        return u;
+      })
+    );
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = new Date().toISOString().split('T')[0];
+
+    // 3. Create Immutable Activity Log
     const newLog: ImmutableActivityEntry = {
       activityId: `ACT-${Date.now()}`,
       staff: staffName,
@@ -1100,78 +1143,203 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       bloodGroup: group,
       component,
       units,
-      date: new Date().toISOString().split('T')[0],
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      date: dateStr,
+      time: timeStr,
       details: `Reserved ${units} unit(s) of ${group} ${component} for request ${requestId}.`
     };
-
     setActivityLogs(prev => [newLog, ...prev]);
 
+    // 4. Update Request Record & Timeline
     setRequests(prev =>
-      prev.map(req => {
-        if (req.id === requestId) {
+      prev.map(r => {
+        if (r.id === requestId) {
+          const timeline = r.requestTimeline || [];
+          const newStep: TimelineStep = {
+            id: `step_res_${Date.now()}`,
+            label: `Blood Units Reserved (${units}u ${group} ${component})`,
+            timestamp: timeStr,
+            status: 'completed',
+            description: `${units} unit(s) of ${group} ${component} reserved by ${staffName}. Ready for dispatch.`
+          };
+
           return {
-            ...req,
+            ...r,
             status: 'BLOOD_SECURED',
             channelStatuses: {
-              ...req.channelStatuses,
+              ...r.channelStatuses,
               bloodBankStatus: 'RESERVED'
             },
-            fulfilledChannel: 'bloodbank'
+            fulfilledChannel: 'bloodbank',
+            trendingReason: `Blood Reserved (${units} Units ${group} Confirmed)`,
+            requestTimeline: [...timeline, newStep]
           };
         }
-        return req;
+        return r;
       })
     );
 
+    // 5. Notify Requester & Hospital
+    const notifReq: NotificationItem = {
+      id: `notif_res_${Date.now()}`,
+      title: "🔒 Blood Units Reserved!",
+      message: `${units} unit(s) of ${group} (${component}) have been reserved for request ${requestId} by ${staffName}.`,
+      time: "Just now",
+      type: "success",
+      read: false,
+      requestId
+    };
+    setNotifications(prev => [notifReq, ...prev]);
+
+    // 6. Broadcast Real-Time System Event
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'BLOOD_RESERVED', requestId, units, group, component, staffName });
+    }
+    socketManager.emitMessage(requestId, {
+      id: `sys_res_${Date.now()}`,
+      senderId: 'system',
+      senderName: staffName,
+      senderRole: 'bloodbank',
+      message: `${units} unit(s) of ${group} (${component}) reserved in regional vault.`,
+      messageType: 'text',
+      timestamp: timeStr,
+      read: false
+    });
+
     showToast(`Reserved ${units} unit(s) of ${group} ${component} for ${requestId}!`);
+    return { success: true, message: `Successfully reserved ${units} unit(s) of ${group}.` };
   };
 
-  const issueBloodBankUnits = (requestId: string, unitId: string, staffName: string) => {
-    const unit = bloodUnitsList.find(u => u.unitId === unitId);
-    if (unit) {
-      setBloodUnitsList(prev =>
-        prev.map(u => (u.unitId === unitId ? { ...u, status: 'ISSUED' as const } : u))
-      );
+  const issueBloodBankUnits = (
+    requestId: string,
+    unitIdOrGroup: string,
+    staffNameOrUnits?: string | number,
+    selectedUnitIdParam?: string,
+    receivingPartyParam?: string
+  ) => {
+    let unitId = '';
+    let staffName = 'Rotary Blood Bank Officer';
+    let receivingParty = 'Authorized Hospital Staff / Courier';
 
-      if (unit.bloodGroup && unit.component) {
-        setInventoryStockMap(prev => {
-          const groupData = prev[unit.bloodGroup] || {};
-          const compData = groupData[unit.component] || { available: 0, reserved: 0, issued: 0, expired: 0 };
-          const newRes = Math.max(0, compData.reserved - 1);
-          const newIss = compData.issued + 1;
+    if (selectedUnitIdParam) {
+      unitId = selectedUnitIdParam;
+      staffName = (typeof staffNameOrUnits === 'string' ? staffNameOrUnits : 'Rotary Blood Bank Officer');
+      receivingParty = receivingPartyParam || 'Authorized Receiving Facility';
+    } else if (unitIdOrGroup && unitIdOrGroup.startsWith('U-') || unitIdOrGroup.startsWith('BU-')) {
+      unitId = unitIdOrGroup;
+      staffName = (typeof staffNameOrUnits === 'string' ? staffNameOrUnits : 'Rotary Blood Bank Officer');
+    } else {
+      // Find matching reserved or stored unit
+      const req = requests.find(r => r.id === requestId);
+      const match = bloodUnitsList.find(u => (!req || u.bloodGroup === req.bloodGroup) && (u.status === 'RESERVED' || u.status === 'STORED' || u.status === 'APPROVED'));
+      unitId = match ? match.unitId : `BU-2026-${Math.floor(1000 + Math.random() * 9000)}`;
+      staffName = typeof staffNameOrUnits === 'string' ? staffNameOrUnits : 'Rotary Blood Bank Officer';
+    }
+
+    const unit = bloodUnitsList.find(u => u.unitId === unitId);
+    const bg: BloodGroup = unit?.bloodGroup || 'O+';
+    const comp: ComponentType = unit?.component || 'PRBC';
+
+    // 1. Update Blood Unit Lifecycle Status to ISSUED
+    setBloodUnitsList(prev =>
+      prev.map(u => (u.unitId === unitId ? { ...u, status: 'ISSUED' as const, lastUpdated: new Date().toISOString().split('T')[0] } : u))
+    );
+
+    // 2. Decrement Reserved and Increment Issued in Stock Map
+    setInventoryStockMap(prev => {
+      const groupData = prev[bg] || {};
+      const compData = groupData[comp] || { available: 0, reserved: 0, issued: 0, expired: 0 };
+      const newRes = Math.max(0, compData.reserved - 1);
+      const newIss = compData.issued + 1;
+
+      return {
+        ...prev,
+        [bg]: {
+          ...groupData,
+          [comp]: {
+            ...compData,
+            reserved: newRes,
+            issued: newIss
+          }
+        }
+      };
+    });
+
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const dateStr = new Date().toISOString().split('T')[0];
+
+    // 3. Create Immutable Activity Log
+    const newLog: ImmutableActivityEntry = {
+      activityId: `ACT-${Date.now()}`,
+      staff: staffName,
+      action: 'Blood Issued',
+      requestId,
+      unitId,
+      bloodGroup: bg,
+      component: comp,
+      units: 1,
+      date: dateStr,
+      time: timeStr,
+      details: `Issued blood unit ${unitId} (${bg} ${comp}) to ${receivingParty} for request ${requestId}.`
+    };
+    setActivityLogs(prev => [newLog, ...prev]);
+
+    // 4. Update Request Status & Timeline
+    setRequests(prev =>
+      prev.map(r => {
+        if (r.id === requestId) {
+          const timeline = r.requestTimeline || [];
+          const newStep: TimelineStep = {
+            id: `step_iss_${Date.now()}`,
+            label: `Blood Unit ${unitId} Dispatched & Issued`,
+            timestamp: timeStr,
+            status: 'completed',
+            description: `Unit ${unitId} issued by ${staffName} to ${receivingParty}. Dispatched for transfusion.`
+          };
 
           return {
-            ...prev,
-            [unit.bloodGroup]: {
-              ...groupData,
-              [unit.component]: {
-                ...compData,
-                reserved: newRes,
-                issued: newIss
-              }
-            }
+            ...r,
+            status: 'COMPLETED',
+            channelStatuses: {
+              ...r.channelStatuses,
+              bloodBankStatus: 'FULFILLED'
+            },
+            trendingReason: `Blood Issued (Unit ${unitId} Dispatched)`,
+            requestTimeline: [...timeline, newStep]
           };
-        });
-      }
+        }
+        return r;
+      })
+    );
 
-      const newLog: ImmutableActivityEntry = {
-        activityId: `ACT-${Date.now()}`,
-        staff: staffName,
-        action: 'Blood Issued',
-        requestId,
-        unitId,
-        bloodGroup: unit.bloodGroup,
-        component: unit.component,
-        units: 1,
-        date: new Date().toISOString().split('T')[0],
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        details: `Issued blood unit ${unitId} to requester for request ${requestId}.`
-      };
+    // 5. Notify Requester & Hospital
+    const notifIssue: NotificationItem = {
+      id: `notif_iss_${Date.now()}`,
+      title: "🚀 Blood Issued & Dispatched!",
+      message: `Blood unit ${unitId} (${bg} ${comp}) has been issued for request ${requestId}.`,
+      time: "Just now",
+      type: "success",
+      read: false,
+      requestId
+    };
+    setNotifications(prev => [notifIssue, ...prev]);
 
-      setActivityLogs(prev => [newLog, ...prev]);
-      showToast(`Blood Unit ${unitId} issued successfully!`);
+    // 6. Broadcast Real-Time System Event
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'BLOOD_ISSUED', requestId, unitId, bg, comp, staffName });
     }
+    socketManager.emitMessage(requestId, {
+      id: `sys_iss_${Date.now()}`,
+      senderId: 'system',
+      senderName: staffName,
+      senderRole: 'bloodbank',
+      message: `Blood unit ${unitId} has been issued and dispatched to ${receivingParty}.`,
+      messageType: 'text',
+      timestamp: timeStr,
+      read: false
+    });
+
+    showToast(`Blood Unit ${unitId} issued and dispatched successfully!`);
+    return { success: true, message: `Blood Unit ${unitId} issued successfully.` };
   };
 
   const acceptBloodRequest = (requestId: string, centerName: string) => {

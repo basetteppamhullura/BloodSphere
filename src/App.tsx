@@ -160,14 +160,18 @@ export default function App() {
                 <Route path="dashboard" element={<BloodBankPortalDesk />} />
                 <Route path="requests" element={<BloodBankPortalDesk />} />
                 <Route path="requests/:requestId" element={<BloodBankPortalDesk />} />
+                <Route path="hospital-requests" element={<BloodBankPortalDesk />} />
+                <Route path="bloodbank-requests" element={<BloodBankPortalDesk />} />
                 <Route path="inventory" element={<BloodBankPortalDesk />} />
                 <Route path="units" element={<BloodBankPortalDesk />} />
                 <Route path="units/:unitId" element={<BloodBankPortalDesk />} />
+                <Route path="unit-tracking" element={<Navigate to="/bloodbank/units" replace />} />
                 <Route path="preservation" element={<BloodBankPortalDesk />} />
                 <Route path="reservations" element={<BloodBankPortalDesk />} />
                 <Route path="issue" element={<BloodBankPortalDesk />} />
                 <Route path="issue-blood" element={<Navigate to="/bloodbank/issue" replace />} />
                 <Route path="alerts" element={<BloodBankPortalDesk />} />
+                <Route path="notifications" element={<BloodBankPortalDesk />} />
                 <Route path="activity" element={<BloodBankPortalDesk />} />
                 <Route path="activity-log" element={<Navigate to="/bloodbank/activity" replace />} />
                 <Route path="reports" element={<BloodBankPortalDesk />} />
