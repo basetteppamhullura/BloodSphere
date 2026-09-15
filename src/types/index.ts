@@ -68,8 +68,17 @@ export interface User {
   lastDonationDate?: string;
   points?: number;
   streak?: number;
-  badges?: string[];
+  badges?: (string | { id: string; title: string; icon?: string; desc?: string })[];
   isVerified?: boolean;
+  medicalFlags?: string[];
+  donationHistory?: Array<{
+    id: string;
+    date: string;
+    location: string;
+    units: number;
+    component?: string;
+    recipientType?: string;
+  }>;
 }
 
 export interface PatientVerification {
@@ -88,6 +97,7 @@ export interface AppointmentDetails {
   time: string;
   venue: string;
   assignedDonorName: string;
+  assignedDonorId?: string;
 }
 
 export interface DonorResponse {
@@ -180,6 +190,7 @@ export interface EmergencyRequest {
   urgency: UrgencyLevel;
   hospitalName: string;
   hospitalAddress?: string;
+  hospitalNotes?: string;
   wardDept?: string;
   city: string;
   state?: string;
@@ -194,13 +205,13 @@ export interface EmergencyRequest {
   requiredDate?: string;
   requiredTime?: string;
   reason: string;
-  additionalNotes: string;
+  additionalNotes?: string;
   doctorName?: string;
   prescriptionFileName?: string;
   status: RequestWorkflowStatus | 'SEARCHING_FOR_BLOOD' | 'BLOOD_SECURED' | 'EXPIRED' | 'CANCELLED';
   aiUrgencyScore: number;
-  decayScore: number;
-  trendingReason: string;
+  decayScore?: number;
+  trendingReason?: string;
   sharesCount: number;
   matchedDonorsCount: number;
   assignedDonorId?: string;
@@ -222,18 +233,19 @@ export interface EmergencyRequest {
 export interface Donor {
   id: string;
   name: string;
+  email?: string;
   bloodGroup: BloodGroup;
   city: string;
   distanceKm: number;
   phone: string;
-  maskedPhone: string;
+  maskedPhone?: string;
   totalDonations: number;
   lastDonationDate: string;
-  points: number;
+  points?: number;
   responseLikelihoodScore: number;
   isAvailable: boolean;
-  isEligible: boolean;
-  isRareGroup: boolean;
+  isEligible?: boolean;
+  isRareGroup?: boolean;
   lat: number;
   lng: number;
 
@@ -253,6 +265,8 @@ export interface InventoryItem {
   group: BloodGroup;
   units: number;
   lastUpdated: string;
+  status?: string;
+  minThreshold?: number;
 }
 
 export interface BloodBank {
@@ -273,6 +287,7 @@ export interface DonationCamp {
   title: string;
   organizer: string;
   location: string;
+  venue?: string;
   city: string;
   date: string;
   time: string;
@@ -299,16 +314,19 @@ export interface NotificationItem {
   time: string;
   type: 'urgent' | 'success' | 'info';
   read: boolean;
+  requestId?: string;
 }
 
 export interface GroupCircle {
   id: string;
   name: string;
   type: 'Campus' | 'Corporate' | 'Family';
+  category?: string;
   location: string;
   membersCount: number;
   totalUnitsDonated: number;
   isUserMember?: boolean;
+  joined?: boolean;
 }
 
 export interface InterCityTransfer {
