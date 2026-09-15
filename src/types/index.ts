@@ -64,13 +64,15 @@ export interface User {
   bloodGroup: BloodGroup;
   city: string;
   phone: string;
+  gender?: string;
   totalDonations?: number;
   lastDonationDate?: string;
   points?: number;
   streak?: number;
   badges?: (string | { id: string; title: string; icon?: string; desc?: string })[];
   isVerified?: boolean;
-  medicalFlags?: string[];
+  medicalFlags?: any;
+  hbTrendHistory?: any[];
   donationHistory?: Array<{
     id: string;
     date: string;
@@ -78,6 +80,7 @@ export interface User {
     units: number;
     component?: string;
     recipientType?: string;
+    bloodGroup?: string;
   }>;
 }
 
@@ -98,6 +101,7 @@ export interface AppointmentDetails {
   venue: string;
   assignedDonorName: string;
   assignedDonorId?: string;
+  assignedDonorPhone?: string;
 }
 
 export interface DonorResponse {
@@ -265,6 +269,9 @@ export interface InventoryItem {
   group: BloodGroup;
   units: number;
   lastUpdated: string;
+  bloodGroup?: BloodGroup;
+  availableUnits?: number;
+  expiring7Days?: number;
   status?: string;
   minThreshold?: number;
 }
@@ -292,19 +299,23 @@ export interface DonationCamp {
   date: string;
   time: string;
   targetUnits: number;
+  expectedDonors?: number;
   registeredDonorsCount: number;
   isUserRegistered?: boolean;
 }
 
 export interface LeaderboardItem {
   rank: number;
-  donorId: string;
+  donorId?: string;
   name: string;
   city: string;
-  bloodGroup: BloodGroup;
-  donationsCount: number;
+  bloodGroup?: BloodGroup;
+  donationsCount?: number;
+  donations?: number;
   points: number;
-  badgeTitle: string;
+  badgeTitle?: string;
+  badge?: string;
+  college?: string;
 }
 
 export interface NotificationItem {
@@ -312,7 +323,7 @@ export interface NotificationItem {
   title: string;
   message: string;
   time: string;
-  type: 'urgent' | 'success' | 'info';
+  type?: 'urgent' | 'success' | 'info' | string;
   read: boolean;
   requestId?: string;
 }
@@ -320,11 +331,14 @@ export interface NotificationItem {
 export interface GroupCircle {
   id: string;
   name: string;
-  type: 'Campus' | 'Corporate' | 'Family';
+  type?: 'Campus' | 'Corporate' | 'Family' | string;
   category?: string;
-  location: string;
+  city?: string;
+  location?: string;
   membersCount: number;
-  totalUnitsDonated: number;
+  totalUnitsDonated?: number;
+  activeRequests?: number;
+  isVerified?: boolean;
   isUserMember?: boolean;
   joined?: boolean;
 }
@@ -335,7 +349,7 @@ export interface InterCityTransfer {
   sourceCity?: string;
   targetHospital?: string;
   targetCity?: string;
-  bloodGroup: BloodGroup;
+  bloodGroup: BloodGroup | string;
   component?: ComponentType;
   units: number;
   urgency?: UrgencyLevel;

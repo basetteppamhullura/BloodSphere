@@ -413,7 +413,9 @@ export const RealtimeRequesterPortal: React.FC = () => {
                           <div>
                             <div className="flex items-center gap-1.5">
                               <h4 className="font-extrabold text-sm text-slate-900">{donor.name}</h4>
-                              <ShieldCheck className="w-4 h-4 text-emerald-600" title="Verified Donor" />
+                              <span title="Verified Donor">
+                                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                              </span>
                             </div>
                             <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                               <MapPin className="w-3.5 h-3.5 text-red-500" /> {distanceKm} km away ({donor.city})
