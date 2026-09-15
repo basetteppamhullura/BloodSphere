@@ -81,7 +81,7 @@ export const BloodBankPortalDesk: React.FC = () => {
     intakeBloodUnit,
     checkBloodUnitExpiries,
     showToast,
-    requestInterCityTransfer
+    createInterCityTransfer
   } = useApp();
 
   const { currentUser } = useAuth();
@@ -266,7 +266,7 @@ export const BloodBankPortalDesk: React.FC = () => {
     const allGroups: BloodGroup[] = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
     return allGroups.filter(group => {
       const comps = inventoryStockMap[group] || {};
-      const avail = Object.values(comps).reduce((acc, item) => acc + (item.available || 0), 0);
+      const avail: number = Number(Object.values(comps).reduce<number>((acc: number, item: any) => acc + Number(item?.available || 0), 0));
       return avail < minStockThreshold;
     });
   }, [inventoryStockMap, minStockThreshold]);
@@ -304,7 +304,7 @@ export const BloodBankPortalDesk: React.FC = () => {
     if (comp && groupStock[comp as ComponentType]) {
       return groupStock[comp as ComponentType]?.available || 0;
     }
-    return Object.values(groupStock).reduce((acc, item) => acc + (item.available || 0), 0);
+    return Number(Object.values(groupStock).reduce<number>((acc: number, item: any) => acc + Number(item?.available || 0), 0));
   };
 
   // ==================================================
@@ -379,7 +379,7 @@ export const BloodBankPortalDesk: React.FC = () => {
   // 7. Confirm Issue Blood Unit
   const handleConfirmIssue = () => {
     if (!issueModalReq) return;
-    issueBloodBankUnits(issueModalReq.id, selectedUnitIdToIssue, staffName, selectedUnitIdToIssue, receivingPartyInput);
+    issueBloodBankUnits(issueModalReq.id, selectedUnitIdToIssue, staffName);
     showToast(`🚀 Dispatched & issued blood for request BR-${issueModalReq.id}`);
     setIssueModalReq(null);
     setSelectedUnitIdToIssue('');
@@ -399,7 +399,14 @@ export const BloodBankPortalDesk: React.FC = () => {
 
   // 9. Automated Inter-Bank Transfer Order
   const handleReplenishmentOrder = (targetInstName: string, group: BloodGroup) => {
-    requestInterCityTransfer('Hubballi Regional Blood Bank', targetInstName, group, 5, 'Automated Low-Stock Replenishment Transfer');
+    createInterCityTransfer({
+      sourceHospital: 'Hubballi Regional Blood Bank',
+      sourceCity: 'Hubballi',
+      targetHospital: targetInstName,
+      bloodGroup: group,
+      units: 5,
+      urgencyReason: 'Automated Low-Stock Replenishment Transfer'
+    });
     showToast(`Replenishment transfer request for 5 units of ${group} sent to ${targetInstName}.`);
   };
 
@@ -648,7 +655,7 @@ export const BloodBankPortalDesk: React.FC = () => {
               <div className="grid grid-cols-4 gap-2.5 text-xs">
                 {(['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] as BloodGroup[]).map(group => {
                   const comps = inventoryStockMap[group] || {};
-                  const avail = Object.values(comps).reduce((acc, item) => acc + (item.available || 0), 0);
+                  const avail: number = Number(Object.values(comps).reduce<number>((acc: number, item: any) => acc + Number(item?.available || 0), 0));
                   const isLow = avail < minStockThreshold;
                   return (
                     <div key={group} className={`p-3 rounded-2xl border text-center space-y-1 ${isLow ? 'bg-red-50/60 border-red-200' : 'bg-slate-50/70 border-slate-200'}`}>
@@ -844,8 +851,8 @@ export const BloodBankPortalDesk: React.FC = () => {
                   const prp = groupStock['Platelets (PRP)']?.available || 0;
                   
                   const totalGroupAvail = prbc + wb + ffp + prp;
-                  const totalReserved = Object.values(groupStock).reduce((acc, c) => acc + (c.reserved || 0), 0);
-                  const totalIssued = Object.values(groupStock).reduce((acc, c) => acc + (c.issued || 0), 0);
+                  const totalReserved: number = Number(Object.values(groupStock).reduce<number>((acc: number, c: any) => acc + Number(c?.reserved || 0), 0));
+                  const totalIssued: number = Number(Object.values(groupStock).reduce<number>((acc: number, c: any) => acc + Number(c?.issued || 0), 0));
                   const isLow = totalGroupAvail < minStockThreshold;
 
                   return (
@@ -1180,7 +1187,7 @@ export const BloodBankPortalDesk: React.FC = () => {
             <div className="space-y-3">
               {lowStockAlertGroups.map(group => {
                 const comps = inventoryStockMap[group] || {};
-                const currentAvail = Object.values(comps).reduce((acc, item) => acc + (item.available || 0), 0);
+                const currentAvail: number = Number(Object.values(comps).reduce<number>((acc: number, item: any) => acc + Number(item?.available || 0), 0));
                 return (
                   <div key={group} className="p-4 rounded-2xl bg-red-50/70 border border-red-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="space-y-0.5">

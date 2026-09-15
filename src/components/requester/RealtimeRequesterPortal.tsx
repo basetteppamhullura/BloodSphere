@@ -73,7 +73,14 @@ export const RealtimeRequesterPortal: React.FC = () => {
   const targetComponent = activeReq.bloodComponent || 'PRBC';
 
   // Smart Matching Donors
-  const matchedDonors = calculateSmartDonorMatches(donors, activeReq, radiusKm);
+  const matchedDonors = calculateSmartDonorMatches(
+    donors,
+    activeReq.bloodGroup,
+    activeReq.lat || 15.3647,
+    activeReq.lng || 75.124,
+    radiusKm,
+    activeReq.urgency
+  );
 
   // Hospital Facilities & Blood Banks Stock
   const hospitalFacilities = bloodBanks.map(bank => {

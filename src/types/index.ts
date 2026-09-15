@@ -29,6 +29,7 @@ export interface PortalAccount {
 }
 
 export type RequestWorkflowStatus = 
+  | 'PENDING'
   | 'PENDING_HOSPITAL_APPROVAL'
   | 'VERIFIED_SEARCHING_DONORS'
   | 'APPROVED'
@@ -63,6 +64,10 @@ export interface User {
   role: UserRole;
   bloodGroup: BloodGroup;
   city: string;
+  state?: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
   phone: string;
   gender?: string;
   totalDonations?: number;
@@ -71,6 +76,7 @@ export interface User {
   streak?: number;
   badges?: (string | { id: string; title: string; icon?: string; desc?: string })[];
   isVerified?: boolean;
+  isEligible?: boolean;
   medicalFlags?: any;
   hbTrendHistory?: any[];
   donationHistory?: Array<{
@@ -81,6 +87,7 @@ export interface User {
     component?: string;
     recipientType?: string;
     bloodGroup?: string;
+    certificateUrl?: string;
   }>;
 }
 
@@ -142,6 +149,8 @@ export interface DetailedBloodUnit {
   source?: string;
   receivedDate?: string;
   quantity?: number;
+  computedStatus?: string;
+  daysRemaining?: number;
 }
 
 export interface BankNotificationItem {
@@ -268,7 +277,7 @@ export interface Donor {
 export interface InventoryItem {
   group: BloodGroup;
   units: number;
-  lastUpdated: string;
+  lastUpdated?: string;
   bloodGroup?: BloodGroup;
   availableUnits?: number;
   expiring7Days?: number;
@@ -280,28 +289,36 @@ export interface BloodBank {
   id: string;
   name: string;
   city: string;
+  state?: string;
   address: string;
   phone: string;
+  email?: string;
   inventory: InventoryItem[];
   lat: number;
   lng: number;
   licenseNo?: string;
   verified?: boolean;
+  distanceKm?: number;
+  isOpen24Hours?: boolean;
 }
 
 export interface DonationCamp {
   id: string;
   title: string;
   organizer: string;
-  location: string;
+  location?: string;
   venue?: string;
   city: string;
   date: string;
   time: string;
-  targetUnits: number;
+  targetUnits?: number;
   expectedDonors?: number;
-  registeredDonorsCount: number;
+  rsvpsCount?: number;
+  registeredDonorsCount?: number;
+  bannerUrl?: string;
+  amenities?: string[];
   isUserRegistered?: boolean;
+  isJoined?: boolean;
 }
 
 export interface LeaderboardItem {
