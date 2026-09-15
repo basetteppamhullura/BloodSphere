@@ -1,20 +1,13 @@
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import {
   ShieldCheck,
   LayoutDashboard,
-  Users,
-  Building2,
-  Droplet,
   ShieldAlert,
-  Bell,
-  User,
   LogOut,
-  ArrowRight,
-  Activity,
-  FileText
+  ArrowRight
 } from 'lucide-react';
 
 export const AdminHomePage: React.FC = () => {
@@ -75,66 +68,7 @@ export const AdminHomePage: React.FC = () => {
         </div>
       </div>
 
-      {/* 2. Primary Navigation Bar */}
-      <div className="p-3 rounded-2xl bg-white border border-sky-100 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs font-extrabold">
-        <div className="flex flex-wrap items-center gap-2">
-          <Link
-            to="/admin/home"
-            className="px-4 py-2 rounded-xl bg-amber-600 text-white shadow-sm font-black flex items-center gap-1.5"
-          >
-            <ShieldCheck className="w-4 h-4" /> Home
-          </Link>
-
-          <Link
-            to="/admin/dashboard"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-amber-50 flex items-center gap-1.5 transition-colors"
-          >
-            <LayoutDashboard className="w-4 h-4 text-amber-600" /> Dashboard
-          </Link>
-
-          <Link
-            to="/admin/live-activity"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-amber-50 flex items-center gap-1.5 transition-colors"
-          >
-            <Activity className="w-4 h-4 text-emerald-600" /> Live Activity
-          </Link>
-
-          <Link
-            to="/admin/requests"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-amber-50 flex items-center gap-1.5 transition-colors"
-          >
-            <ShieldAlert className="w-4 h-4 text-red-600" /> System Requests ({activeRequestsCount})
-          </Link>
-
-          <Link
-            to="/admin/accounts"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-amber-50 flex items-center gap-1.5 transition-colors"
-          >
-            <Users className="w-4 h-4 text-sky-600" /> Accounts & Approvals ({pendingAccounts.length})
-          </Link>
-
-          <Link
-            to="/admin/inventory"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-amber-50 flex items-center gap-1.5 transition-colors"
-          >
-            <Building2 className="w-4 h-4 text-indigo-600" /> Inventory Monitor
-          </Link>
-
-          <Link
-            to="/admin/audit-logs"
-            className="px-4 py-2 rounded-xl text-slate-700 hover:bg-amber-50 flex items-center gap-1.5 transition-colors"
-          >
-            <FileText className="w-4 h-4 text-slate-600" /> Audit Logs
-          </Link>
-        </div>
-
-        <div className="flex items-center gap-2 pr-2">
-          <span className="text-[11px] text-slate-400 font-mono">Role: ADMIN</span>
-          <span className="w-2 h-2 rounded-full bg-amber-500" />
-        </div>
-      </div>
-
-      {/* 3. Executive Metrics */}
+      {/* 2. Executive Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-2">
           <span className="text-xs text-slate-500 font-bold block">Pending Verification</span>

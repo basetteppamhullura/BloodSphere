@@ -56,7 +56,7 @@ export const BloodBankHomePage: React.FC = () => {
   const allGroups: BloodGroup[] = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
   const lowStockGroupsList = allGroups.filter(bg => {
     const groupStock = inventoryStockMap[bg] || {};
-    const totalAvail = Object.values(groupStock).reduce((acc, comp) => acc + (comp.available || 0), 0);
+    const totalAvail = Object.values(groupStock).reduce((acc: number, comp: any) => acc + (comp?.available || 0), 0);
     return totalAvail < 5;
   });
 

@@ -144,7 +144,9 @@ export const DonorSearchPage: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-1.5">
                         <h3 className="font-extrabold text-sm text-slate-900">{donor.name}</h3>
-                        <ShieldCheck className="w-4 h-4 text-emerald-600" title="Verified Donor" />
+                        <span title="Verified Donor">
+                          <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                        </span>
                       </div>
                       <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
                         <MapPin className="w-3.5 h-3.5 text-red-500" /> Area: {donor.city} ({donor.distanceKm || 3.2} km)
