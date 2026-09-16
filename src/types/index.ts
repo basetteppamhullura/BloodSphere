@@ -8,10 +8,18 @@ export type AccountVerificationStatus = 'Pending Verification' | 'Verified' | 'D
 
 export type RequestChannel = 'hospital' | 'donors' | 'bloodbank';
 
+export type RecipientStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export interface ChannelStatuses {
-  hospitalStatus?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'FULFILLED' | 'CANCELLED';
-  donorStatus?: 'SEARCHING' | 'DONOR_ACCEPTED' | 'FULFILLED' | 'CANCELLED';
-  bloodBankStatus?: 'PENDING' | 'RESERVED' | 'REJECTED' | 'FULFILLED' | 'CANCELLED';
+  hospitalStatus?: RecipientStatus | 'FULFILLED' | 'CANCELLED';
+  donorStatus?: RecipientStatus | 'SEARCHING' | 'DONOR_ACCEPTED' | 'FULFILLED' | 'CANCELLED';
+  bloodBankStatus?: RecipientStatus | 'RESERVED' | 'FULFILLED' | 'CANCELLED';
+  donorRespondedAt?: string;
+  hospitalRespondedAt?: string;
+  bloodBankRespondedAt?: string;
+  donorRejectionReason?: string;
+  hospitalRejectionReason?: string;
+  bloodBankRejectionReason?: string;
 }
 
 export interface PortalAccount {
@@ -77,6 +85,7 @@ export interface User {
   badges?: (string | { id: string; title: string; icon?: string; desc?: string })[];
   isVerified?: boolean;
   isEligible?: boolean;
+  verificationStatus?: string;
   medicalFlags?: any;
   hbTrendHistory?: any[];
   donationHistory?: Array<{
