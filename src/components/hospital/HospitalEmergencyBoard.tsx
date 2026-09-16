@@ -234,20 +234,27 @@ export const HospitalEmergencyBoard: React.FC = () => {
                       <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-800 border border-red-200 uppercase">
                         Urgency: {req.urgency}
                       </span>
-                      <span className="text-xs font-mono text-slate-400 font-bold">ID: {req.id}</span>
-                      <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                        isApproved
-                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                          : isRejected
-                          ? 'bg-red-100 text-red-800 border border-red-300'
-                          : 'bg-indigo-100 text-indigo-800 border border-indigo-300'
-                      }`}>
-                        Status: {req.status}
-                      </span>
+                      <span className="text-xs font-mono text-slate-400 font-bold">Request ID: {req.id}</span>
+                      {(() => {
+                        const rawStatus = req.channelStatuses?.hospitalStatus || (isApproved ? 'APPROVED' : (isRejected ? 'REJECTED' : 'PENDING'));
+                        const hospStatus = rawStatus === 'APPROVED' ? 'APPROVED' : (rawStatus === 'REJECTED' ? 'REJECTED' : 'PENDING');
+                        return (
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border ${
+                            hospStatus === 'APPROVED'
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                              : hospStatus === 'REJECTED'
+                              ? 'bg-red-100 text-red-800 border-red-300'
+                              : 'bg-amber-100 text-amber-800 border-amber-300'
+                          }`}>
+                            <span>{hospStatus === 'APPROVED' ? '🟢' : hospStatus === 'REJECTED' ? '🔴' : '🟡'}</span>
+                            <span>Hospital: {hospStatus}</span>
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     <p className="text-xs text-slate-500 mt-1">
-                      Department / Ward: <strong>{req.wardDept || 'Emergency ICU'}</strong> • Required: <strong>{req.unitsNeeded} units</strong> • Need by: {req.requiredDate || 'Immediate'}
+                      Department / Ward: <strong>{req.wardDept || 'Emergency ICU'}</strong> • Required: <strong>{req.unitsNeeded} units</strong> • Need by: {req.requiredDate || 'Immediate'} {req.requiredTime || ''}
                     </p>
                     {isRedirected && (
                       <p className="text-xs text-sky-700 font-bold mt-1 flex items-center gap-1">
@@ -256,12 +263,12 @@ export const HospitalEmergencyBoard: React.FC = () => {
                     )}
                     {isRejected && (
                       <p className="text-xs text-red-700 font-bold mt-1">
-                        ❌ Rejection Reason: "{req.additionalNotes || 'Stock unavailable'}"
+                        ❌ Rejection Reason: "{req.channelStatuses?.hospitalRejectionReason || req.additionalNotes || 'Stock unavailable'}"
                       </p>
                     )}
                   </div>
 
-                  {/* WORKFLOW ACTIONS FOR HOSPITAL STAFF: VIEW, APPROVE, REJECT, REDIRECT, CHAT */}
+                  {/* WORKFLOW ACTIONS FOR HOSPITAL STAFF: VIEW, APPROVE, REJECT, REDIRECT, CHAT (Requirement 7) */}
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <button
                       onClick={() => setViewingReq(req)}
@@ -276,21 +283,21 @@ export const HospitalEmergencyBoard: React.FC = () => {
                           onClick={() => acceptBloodRequest(req.id, req.hospitalName || 'KIMS Teaching Hospital')}
                           className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
                         >
-                          <Check className="w-4 h-4" /> APPROVE & RESERVE
+                          <Check className="w-4 h-4" /> Approve
                         </button>
 
                         <button
                           onClick={() => setRedirectingReq(req)}
                           className="px-4 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer"
                         >
-                          <ArrowRightLeft className="w-4 h-4" /> REDIRECT
+                          <ArrowRightLeft className="w-4 h-4" /> Redirect
                         </button>
 
                         <button
                           onClick={() => setRejectingReq(req)}
                           className="px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 font-extrabold text-xs border border-slate-200 transition-all cursor-pointer"
                         >
-                          <X className="w-4 h-4 inline" /> REJECT
+                          <X className="w-4 h-4 inline" /> Reject
                         </button>
                       </>
                     )}

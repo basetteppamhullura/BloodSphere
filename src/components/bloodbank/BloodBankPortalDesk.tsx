@@ -445,18 +445,27 @@ export const BloodBankPortalDesk: React.FC = () => {
                 {req.urgency}
               </span>
               <span className="font-mono text-xs font-bold text-slate-500">
-                BR-{req.id}
+                Request ID: {req.id}
               </span>
               <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-extrabold uppercase">
                 {queueType}
               </span>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-                req.status === 'BLOOD_SECURED' || req.status === 'APPROVED'
-                  ? 'bg-emerald-100 text-emerald-800'
-                  : 'bg-amber-100 text-amber-800'
-              }`}>
-                Status: {req.status}
-              </span>
+              {(() => {
+                const rawStatus = req.channelStatuses?.bloodBankStatus || (req.fulfilledChannel === 'bloodbank' || req.status === 'APPROVED' || req.status === 'BLOOD_SECURED' ? 'APPROVED' : (req.status === 'REJECTED' ? 'REJECTED' : 'PENDING'));
+                const bankStatus = rawStatus === 'APPROVED' || rawStatus === 'RESERVED' || rawStatus === 'FULFILLED' ? 'APPROVED' : (rawStatus === 'REJECTED' ? 'REJECTED' : 'PENDING');
+                return (
+                  <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border ${
+                    bankStatus === 'APPROVED'
+                      ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                      : bankStatus === 'REJECTED'
+                      ? 'bg-red-100 text-red-800 border-red-300'
+                      : 'bg-amber-100 text-amber-800 border-amber-300'
+                  }`}>
+                    <span>{bankStatus === 'APPROVED' ? '🟢' : bankStatus === 'REJECTED' ? '🔴' : '🟡'}</span>
+                    <span>Blood Bank: {bankStatus}</span>
+                  </span>
+                );
+              })()}
             </div>
 
             {/* Request Summary Title */}

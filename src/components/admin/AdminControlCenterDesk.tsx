@@ -1140,11 +1140,44 @@ export const AdminControlCenterDesk: React.FC = () => {
                         {req.urgency}
                       </span>
                     </td>
-                    <td className="py-3.5 px-4 font-sans text-[10px] text-slate-600">
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.5 rounded bg-sky-100 text-sky-800 font-bold">🏥 Hosp</span>
-                        <span className="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">🩸 Bank</span>
-                        <span className="px-1.5 py-0.5 rounded bg-red-100 text-red-800 font-bold">❤️ Donor</span>
+                    <td className="py-3.5 px-4 font-sans text-[10px]">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className="text-slate-500 font-bold">❤️ Donor:</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${
+                            (req.channelStatuses?.donorStatus || 'PENDING') === 'APPROVED'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : (req.channelStatuses?.donorStatus || 'PENDING') === 'REJECTED'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {(req.channelStatuses?.donorStatus || 'PENDING') === 'APPROVED' ? '🟢 APPROVED' : (req.channelStatuses?.donorStatus || 'PENDING') === 'REJECTED' ? '🔴 REJECTED' : '🟡 PENDING'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className="text-slate-500 font-bold">🏥 Hospital:</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${
+                            (req.channelStatuses?.hospitalStatus || 'PENDING') === 'APPROVED'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : (req.channelStatuses?.hospitalStatus || 'PENDING') === 'REJECTED'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {(req.channelStatuses?.hospitalStatus || 'PENDING') === 'APPROVED' ? '🟢 APPROVED' : (req.channelStatuses?.hospitalStatus || 'PENDING') === 'REJECTED' ? '🔴 REJECTED' : '🟡 PENDING'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between gap-1.5">
+                          <span className="text-slate-500 font-bold">🩸 Blood Bank:</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-black uppercase ${
+                            (req.channelStatuses?.bloodBankStatus || 'PENDING') === 'APPROVED'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : (req.channelStatuses?.bloodBankStatus || 'PENDING') === 'REJECTED'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-amber-100 text-amber-800'
+                          }`}>
+                            {(req.channelStatuses?.bloodBankStatus || 'PENDING') === 'APPROVED' ? '🟢 APPROVED' : (req.channelStatuses?.bloodBankStatus || 'PENDING') === 'REJECTED' ? '🔴 REJECTED' : '🟡 PENDING'}
+                          </span>
+                        </div>
                       </div>
                     </td>
                     <td className="py-3.5 px-4 font-sans font-bold text-slate-800">
@@ -1384,6 +1417,93 @@ export const AdminControlCenterDesk: React.FC = () => {
               </button>
             </div>
 
+            {/* MULTI-SOURCE INDEPENDENT REAL-TIME STATUS BREAKDOWN */}
+            <div className="space-y-2">
+              <strong className="text-xs font-black text-slate-800 uppercase tracking-wider block">
+                Source Dispatch & Response Statuses
+              </strong>
+
+              <div className="grid grid-cols-3 gap-2.5">
+                {/* Donor Status */}
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-[11px] text-slate-800 flex items-center gap-1">
+                      ❤️ Donor
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                      (selectedRequestModal.channelStatuses?.donorStatus || 'PENDING') === 'APPROVED'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : (selectedRequestModal.channelStatuses?.donorStatus || 'PENDING') === 'REJECTED'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {(selectedRequestModal.channelStatuses?.donorStatus || 'PENDING') === 'APPROVED' ? '🟢 APPROVED' : (selectedRequestModal.channelStatuses?.donorStatus || 'PENDING') === 'REJECTED' ? '🔴 REJECTED' : '🟡 PENDING'}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono">
+                    {selectedRequestModal.channelStatuses?.donorRespondedAt ? `Responded: ${selectedRequestModal.channelStatuses.donorRespondedAt}` : 'Awaiting donor response'}
+                  </div>
+                  {selectedRequestModal.channelStatuses?.donorRejectionReason && (
+                    <div className="text-[9px] text-red-600 font-sans">
+                      Note: {selectedRequestModal.channelStatuses.donorRejectionReason}
+                    </div>
+                  )}
+                </div>
+
+                {/* Hospital Status */}
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-[11px] text-slate-800 flex items-center gap-1">
+                      🏥 Hospital
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                      (selectedRequestModal.channelStatuses?.hospitalStatus || 'PENDING') === 'APPROVED'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : (selectedRequestModal.channelStatuses?.hospitalStatus || 'PENDING') === 'REJECTED'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {(selectedRequestModal.channelStatuses?.hospitalStatus || 'PENDING') === 'APPROVED' ? '🟢 APPROVED' : (selectedRequestModal.channelStatuses?.hospitalStatus || 'PENDING') === 'REJECTED' ? '🔴 REJECTED' : '🟡 PENDING'}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono">
+                    {selectedRequestModal.channelStatuses?.hospitalRespondedAt ? `Responded: ${selectedRequestModal.channelStatuses.hospitalRespondedAt}` : 'Awaiting medical review'}
+                  </div>
+                  {selectedRequestModal.channelStatuses?.hospitalRejectionReason && (
+                    <div className="text-[9px] text-red-600 font-sans">
+                      Reason: {selectedRequestModal.channelStatuses.hospitalRejectionReason}
+                    </div>
+                  )}
+                </div>
+
+                {/* Blood Bank Status */}
+                <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="font-extrabold text-[11px] text-slate-800 flex items-center gap-1">
+                      🩸 Blood Bank
+                    </span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                      (selectedRequestModal.channelStatuses?.bloodBankStatus || 'PENDING') === 'APPROVED'
+                        ? 'bg-emerald-100 text-emerald-800'
+                        : (selectedRequestModal.channelStatuses?.bloodBankStatus || 'PENDING') === 'REJECTED'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {(selectedRequestModal.channelStatuses?.bloodBankStatus || 'PENDING') === 'APPROVED' ? '🟢 APPROVED' : (selectedRequestModal.channelStatuses?.bloodBankStatus || 'PENDING') === 'REJECTED' ? '🔴 REJECTED' : '🟡 PENDING'}
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 font-mono">
+                    {selectedRequestModal.channelStatuses?.bloodBankRespondedAt ? `Responded: ${selectedRequestModal.channelStatuses.bloodBankRespondedAt}` : 'Awaiting inventory triage'}
+                  </div>
+                  {selectedRequestModal.channelStatuses?.bloodBankRejectionReason && (
+                    <div className="text-[9px] text-red-600 font-sans">
+                      Reason: {selectedRequestModal.channelStatuses.bloodBankRejectionReason}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
             {/* COMPLETE REAL TIMELINE SEQUENCE */}
             <div className="space-y-3">
               <strong className="text-xs font-black text-slate-800 uppercase tracking-wider block">
@@ -1402,37 +1522,58 @@ export const AdminControlCenterDesk: React.FC = () => {
 
                 <div className="relative">
                   <span className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-sky-500 ring-4 ring-white" />
-                  <div className="text-[10px] text-slate-400">10:03 AM</div>
-                  <strong className="text-slate-900 text-xs font-sans block">Routed to Hospital Queue</strong>
+                  <div className="text-[10px] text-slate-400">{selectedRequestModal.requestedAt || '10:03 AM'}</div>
+                  <strong className="text-slate-900 text-xs font-sans block">Dispatched to Selected Recipient Channels</strong>
                   <p className="text-[11px] text-slate-500 font-sans">
-                    Dispatched to {selectedRequestModal.hospitalName} for medical review
+                    Channels: {(selectedRequestModal.selectedChannels || ['hospital', 'donors', 'bloodbank']).join(', ')}
                   </p>
                 </div>
 
-                <div className="relative">
-                  <span className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-indigo-500 ring-4 ring-white" />
-                  <div className="text-[10px] text-slate-400">10:05 AM</div>
-                  <strong className="text-slate-900 text-xs font-sans block">Hospital Approved Request</strong>
-                  <p className="text-[11px] text-slate-500 font-sans">
-                    Doctor verified urgency as {selectedRequestModal.urgency}
-                  </p>
-                </div>
+                {selectedRequestModal.channelStatuses?.hospitalRespondedAt && (
+                  <div className="relative">
+                    <span className={`absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full ring-4 ring-white ${
+                      selectedRequestModal.channelStatuses.hospitalStatus === 'APPROVED' ? 'bg-emerald-500' : 'bg-red-500'
+                    }`} />
+                    <div className="text-[10px] text-slate-400">{selectedRequestModal.channelStatuses.hospitalRespondedAt}</div>
+                    <strong className="text-slate-900 text-xs font-sans block">Hospital Response Recorded</strong>
+                    <p className="text-[11px] text-slate-500 font-sans">
+                      {selectedRequestModal.hospitalName}: {selectedRequestModal.channelStatuses.hospitalStatus}
+                    </p>
+                  </div>
+                )}
+
+                {selectedRequestModal.channelStatuses?.bloodBankRespondedAt && (
+                  <div className="relative">
+                    <span className={`absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full ring-4 ring-white ${
+                      selectedRequestModal.channelStatuses.bloodBankStatus === 'APPROVED' ? 'bg-emerald-500' : 'bg-red-500'
+                    }`} />
+                    <div className="text-[10px] text-slate-400">{selectedRequestModal.channelStatuses.bloodBankRespondedAt}</div>
+                    <strong className="text-slate-900 text-xs font-sans block">Blood Bank Response Recorded</strong>
+                    <p className="text-[11px] text-slate-500 font-sans">
+                      Status: {selectedRequestModal.channelStatuses.bloodBankStatus}
+                    </p>
+                  </div>
+                )}
+
+                {selectedRequestModal.channelStatuses?.donorRespondedAt && (
+                  <div className="relative">
+                    <span className={`absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full ring-4 ring-white ${
+                      selectedRequestModal.channelStatuses.donorStatus === 'APPROVED' ? 'bg-emerald-500' : 'bg-red-500'
+                    }`} />
+                    <div className="text-[10px] text-slate-400">{selectedRequestModal.channelStatuses.donorRespondedAt}</div>
+                    <strong className="text-slate-900 text-xs font-sans block">Donor Response Recorded</strong>
+                    <p className="text-[11px] text-slate-500 font-sans">
+                      Status: {selectedRequestModal.channelStatuses.donorStatus}
+                    </p>
+                  </div>
+                )}
 
                 <div className="relative">
-                  <span className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-emerald-500 ring-4 ring-white" />
-                  <div className="text-[10px] text-slate-400">10:07 AM</div>
-                  <strong className="text-slate-900 text-xs font-sans block">Blood Bank Unit Reserved</strong>
+                  <span className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-slate-700 ring-4 ring-white" />
+                  <div className="text-[10px] text-slate-400">Current</div>
+                  <strong className="text-slate-900 text-xs font-sans block">Overall Lifecycle Status: {selectedRequestModal.status}</strong>
                   <p className="text-[11px] text-slate-500 font-sans">
-                    Regional Blood Bank reserved units in storage
-                  </p>
-                </div>
-
-                <div className="relative">
-                  <span className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-emerald-600 ring-4 ring-white" />
-                  <div className="text-[10px] text-slate-400">10:35 AM</div>
-                  <strong className="text-slate-900 text-xs font-sans block">Request Status: {selectedRequestModal.status}</strong>
-                  <p className="text-[11px] text-slate-500 font-sans">
-                    Current stage validated across network
+                    Single Request ID: {selectedRequestModal.id}
                   </p>
                 </div>
               </div>
