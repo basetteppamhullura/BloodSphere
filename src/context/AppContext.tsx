@@ -856,10 +856,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const createEmergencyRequest = (newReqData: Partial<EmergencyRequest>) => {
-    const newId = `req_${Date.now()}`;
+    const newId = newReqData.id || `BR-2026-00${Math.floor(100 + Math.random() * 900)}`;
     const dateStr = new Date().toISOString().split('T')[0];
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const isVerified = !!newReqData.isVerifiedByHospital;
+    const channels = newReqData.selectedChannels || ['hospital', 'donors', 'bloodbank'];
 
     const newRequest: EmergencyRequest = {
       id: newId,
@@ -869,11 +871,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       patientId: newReqData.patientId || `BN-HUB-2026-00${Math.floor(100 + Math.random() * 900)}`,
       verificationCode: newReqData.verificationCode || '739241',
       isVerifiedByHospital: isVerified,
-      selectedChannels: newReqData.selectedChannels || ['hospital', 'donors'],
+      selectedChannels: channels,
       channelStatuses: {
-        hospitalStatus: isVerified ? 'APPROVED' : 'PENDING',
-        donorStatus: 'SEARCHING',
-        bloodBankStatus: newReqData.selectedChannels?.includes('bloodbank') ? 'PENDING' : undefined
+        donorStatus: channels.includes('donors') ? 'PENDING' : undefined,
+        hospitalStatus: channels.includes('hospital') ? (isVerified ? 'APPROVED' : 'PENDING') : undefined,
+        bloodBankStatus: channels.includes('bloodbank') ? 'PENDING' : undefined,
+        hospitalRespondedAt: isVerified ? timeStr : undefined
       },
       bloodGroup: newReqData.bloodGroup || 'O+',
       bloodComponent: newReqData.bloodComponent || 'Whole Blood',
@@ -892,7 +895,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       maskedPhone: '98765*****',
       contactEmail: newReqData.contactEmail || 'contact@example.com',
       relationship: newReqData.relationship || 'Family',
-      requestedAt: `${dateStr} 10:00 AM`,
+      requestedAt: `${dateStr} ${timeStr}`,
       deadline: newReqData.requiredDate ? `${newReqData.requiredDate} ${newReqData.requiredTime || ''}` : `${dateStr} 06:00 PM`,
       requiredDate: newReqData.requiredDate || dateStr,
       requiredTime: newReqData.requiredTime || '10:00 AM',
@@ -902,7 +905,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       status: isVerified ? 'VERIFIED_SEARCHING_DONORS' : 'PENDING_HOSPITAL_APPROVAL',
       aiUrgencyScore: newReqData.urgency === 'CRITICAL' ? 98 : 85,
       decayScore: 0.95,
-      trendingReason: isVerified ? 'Hospital Verified • Donor Alert Dispatched' : 'Pending Hospital Review',
+      trendingReason: isVerified ? 'Hospital Verified • Multi-Channel Alert Dispatched' : 'Multi-Channel Alert Dispatched',
       sharesCount: 1,
       matchedDonorsCount: 4,
       lat: newReqData.lat || 15.3647,
@@ -915,14 +918,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newNotif: NotificationItem = {
       id: `notif_${Date.now()}`,
-      title: isVerified ? "🚨 Instant Donor Alert Broadcast!" : "🏥 Hospital Review Required",
-      message: `Emergency request created for ${newRequest.patientName} (${newRequest.bloodGroup}, ${newRequest.unitsNeeded} Units) at ${newRequest.hospitalName}.`,
+      title: "🚨 New Blood Request Broadcast!",
+      message: `Emergency request ${newId} created for ${newRequest.patientName} (${newRequest.bloodGroup}, ${newRequest.unitsNeeded} Units) across selected sources.`,
       time: "Just now",
       type: "urgent",
-      read: false
+      read: false,
+      requestId: newId
     };
 
     setNotifications(prev => [newNotif, ...prev]);
+
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'NEW_REQUEST_CREATED', request: newRequest });
+    }
     showToast(`Emergency Blood Request #${newId} created successfully!`);
   };
 
@@ -957,6 +965,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     responseStatus: 'ACCEPTED' | 'DECLINED'
   ) => {
     const donorObj = donors.find(d => d.id === donorId) || donors[0];
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     setRequests(prev =>
       prev.map(req => {
@@ -969,7 +978,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             donorName: donorObj.name,
             status: responseStatus,
             distanceKm: donorObj.distanceKm || 2.5,
-            respondedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            respondedAt: timeStr,
             unitsCommitted: responseStatus === 'ACCEPTED' ? 1 : 0
           };
 
@@ -979,10 +988,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
           const updatedTimeline = (req.requestTimeline || DEFAULT_TIMELINE).map(step => {
             if (step.id === 'step_response_received') {
-              return { ...step, status: 'completed' as const, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), description: `${acceptedCount} donor(s) responded` };
+              return { ...step, status: 'completed' as const, timestamp: timeStr, description: `${acceptedCount} donor(s) responded` };
             }
             if (step.id === 'step_blood_reserved' && isFullySecured) {
-              return { ...step, status: 'completed' as const, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), description: `Required ${req.unitsNeeded} units confirmed & secured!` };
+              return { ...step, status: 'completed' as const, timestamp: timeStr, description: `Required ${req.unitsNeeded} units confirmed & secured!` };
             }
             return step;
           });
@@ -995,6 +1004,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             confirmedUnits: acceptedCount,
             unitsFulfilled: acceptedCount,
             status: nextStatus,
+            channelStatuses: {
+              ...req.channelStatuses,
+              donorStatus: responseStatus === 'ACCEPTED' ? 'APPROVED' : 'REJECTED',
+              donorRespondedAt: timeStr,
+              ...(responseStatus === 'DECLINED' ? { donorRejectionReason: 'Donor is unavailable or unable to donate at this time' } : {})
+            },
             assignedDonorId: isFullySecured ? donorId : req.assignedDonorId,
             assignedDonorName: isFullySecured ? donorObj.name : req.assignedDonorName,
             requestTimeline: updatedTimeline,
@@ -1023,10 +1038,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createOrGetEmergencyChatSession(requestId, donorId);
     }
 
-    const notifTitle = responseStatus === 'ACCEPTED' ? "✅ Donor Accepted Your Request!" : "ℹ️ Donor Declined Request";
+    const notifTitle = responseStatus === 'ACCEPTED' ? "🟢 Donor Approved Blood Request" : "🔴 Donor Rejected Blood Request";
     const notifMsg = responseStatus === 'ACCEPTED'
-      ? `${donorObj.name} has accepted your blood request for ${requestId}. Coordination active.`
-      : `${donorObj.name} declined request ${requestId}. System searching next closest donor.`;
+      ? `Donor ${donorObj.name} approved your blood request. Request ID: ${requestId}. Direct coordination active.`
+      : `Donor ${donorObj.name} rejected your blood request. Request ID: ${requestId}. Searching other available sources.`;
 
     setNotifications(prev => [
       {
@@ -1040,6 +1055,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       },
       ...prev
     ]);
+
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'DONOR_STATUS_UPDATE', requestId, donorId, status: responseStatus === 'ACCEPTED' ? 'APPROVED' : 'REJECTED', timeStr });
+    }
+    socketManager.emitMessage(requestId, {
+      id: `sys_donor_${Date.now()}`,
+      senderId: donorId,
+      senderName: donorObj.name,
+      senderRole: 'donor',
+      message: responseStatus === 'ACCEPTED' ? `Donor ${donorObj.name} accepted your blood request.` : `Donor ${donorObj.name} declined request.`,
+      messageType: 'text',
+      timestamp: timeStr,
+      read: false
+    });
 
     showToast(responseStatus === 'ACCEPTED' ? `You accepted request ${requestId}! Private real-time chat channel opened.` : `Declined request ${requestId}.`);
   };
