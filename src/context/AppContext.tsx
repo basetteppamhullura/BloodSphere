@@ -1374,6 +1374,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const acceptBloodRequest = (requestId: string, centerName: string) => {
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const dateStr = new Date().toLocaleDateString();
+    const isBloodBank = centerName.toLowerCase().includes('blood') || centerName.toLowerCase().includes('bank') || centerName.toLowerCase().includes('vault');
 
     setRequests(prev =>
       prev.map(req => {
@@ -1381,23 +1382,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const timeline = req.requestTimeline || [];
           const newTimelineStep: TimelineStep = {
             id: `step_acc_${Date.now()}`,
-            label: `Request Accepted by ${centerName}`,
+            label: `Request Approved by ${centerName}`,
             timestamp: `${timeStr}`,
             status: 'completed',
-            description: `Blood request ${requestId} accepted by ${centerName}. Available stock verified.`
+            description: `Blood request ${requestId} approved by ${centerName}. Available stock verified.`
+          };
+
+          const newChannelStatuses: ChannelStatuses = {
+            ...req.channelStatuses,
+            ...(isBloodBank
+              ? { bloodBankStatus: 'APPROVED', bloodBankRespondedAt: timeStr }
+              : { hospitalStatus: 'APPROVED', hospitalRespondedAt: timeStr })
           };
 
           return {
             ...req,
             status: 'APPROVED',
-            hospitalName: centerName,
-            isVerifiedByHospital: true,
-            channelStatuses: {
-              ...req.channelStatuses,
-              hospitalStatus: 'APPROVED',
-              bloodBankStatus: 'RESERVED'
-            },
-            trendingReason: `Accepted by ${centerName} (${dateStr} ${timeStr})`,
+            hospitalName: isBloodBank ? req.hospitalName : centerName,
+            isVerifiedByHospital: isBloodBank ? req.isVerifiedByHospital : true,
+            channelStatuses: newChannelStatuses,
+            trendingReason: `Approved by ${centerName} (${dateStr} ${timeStr})`,
             requestTimeline: [...timeline, newTimelineStep]
           };
         }
@@ -1407,11 +1411,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newNotif: NotificationItem = {
       id: `notif_acc_${Date.now()}`,
-      title: "✅ Request Accepted!",
-      message: `Your blood request ${requestId} has been accepted by ${centerName}.`,
+      title: isBloodBank ? "🟢 Blood Bank Approved Request" : "🟢 Hospital Approved Request",
+      message: `${centerName} approved your blood request. Request ID: ${requestId}`,
       time: "Just now",
       type: "success",
-      read: false
+      read: false,
+      requestId
     };
 
     setNotifications(prev => [newNotif, ...prev]);
@@ -1419,29 +1424,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newLog: ImmutableActivityEntry = {
       activityId: `ACT-${Date.now()}`,
       staff: centerName,
-      action: 'Request Accepted',
+      action: 'Request Approved',
       requestId,
       date: new Date().toISOString().split('T')[0],
       time: timeStr,
-      details: `Accepted emergency blood request ${requestId}.`
+      details: `Approved emergency blood request ${requestId}.`
     };
     setActivityLogs(prev => [newLog, ...prev]);
 
     if (channelRef.current) {
-      channelRef.current.postMessage({ type: 'REQUEST_ACCEPTED', requestId, centerName });
+      channelRef.current.postMessage({ type: 'REQUEST_ACCEPTED', requestId, centerName, isBloodBank, timeStr });
     }
     socketManager.emitMessage(requestId, {
       id: `sys_${Date.now()}`,
       senderId: 'system',
       senderName: centerName,
-      senderRole: 'hospital',
-      message: `Your request ${requestId} has been accepted by ${centerName}.`,
+      senderRole: isBloodBank ? 'bloodbank' : 'hospital',
+      message: `${centerName} has approved your blood request #${requestId}.`,
       messageType: 'text',
       timestamp: timeStr,
       read: false
     });
 
-    showToast(`Request ${requestId} accepted by ${centerName}.`);
+    showToast(`Request ${requestId} approved by ${centerName}.`);
   };
 
   const rejectBloodRequest = (requestId: string, centerName: string, reason: string) => {
@@ -1451,6 +1456,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const isBloodBank = centerName.toLowerCase().includes('blood') || centerName.toLowerCase().includes('bank') || centerName.toLowerCase().includes('vault');
 
     setRequests(prev =>
       prev.map(req => {
@@ -1464,9 +1470,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             description: `Rejected by ${centerName}. Reason: "${reason.trim()}".`
           };
 
+          const newChannelStatuses: ChannelStatuses = {
+            ...req.channelStatuses,
+            ...(isBloodBank
+              ? { bloodBankStatus: 'REJECTED', bloodBankRespondedAt: timeStr, bloodBankRejectionReason: reason.trim() }
+              : { hospitalStatus: 'REJECTED', hospitalRespondedAt: timeStr, hospitalRejectionReason: reason.trim() })
+          };
+
           return {
             ...req,
-            status: 'REJECTED',
+            channelStatuses: newChannelStatuses,
             trendingReason: `Rejected by ${centerName}: ${reason.trim()}`,
             additionalNotes: `Rejected by ${centerName}. Reason: ${reason.trim()}`,
             requestTimeline: [...timeline, newTimelineStep]
@@ -1478,11 +1491,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newNotif: NotificationItem = {
       id: `notif_rej_${Date.now()}`,
-      title: "❌ Request Rejected",
-      message: `Your blood request ${requestId} was rejected by ${centerName}. Reason: ${reason.trim()}`,
+      title: isBloodBank ? "🔴 Blood Bank Rejected Request" : "🔴 Hospital Rejected Request",
+      message: `${centerName} rejected your blood request. Request ID: ${requestId}. Reason: ${reason.trim()}`,
       time: "Just now",
       type: "urgent",
-      read: false
+      read: false,
+      requestId
     };
 
     setNotifications(prev => [newNotif, ...prev]);
@@ -1499,8 +1513,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActivityLogs(prev => [newLog, ...prev]);
 
     if (channelRef.current) {
-      channelRef.current.postMessage({ type: 'REQUEST_REJECTED', requestId, centerName, reason });
+      channelRef.current.postMessage({ type: 'REQUEST_REJECTED', requestId, centerName, isBloodBank, reason: reason.trim(), timeStr });
     }
+    socketManager.emitMessage(requestId, {
+      id: `sys_${Date.now()}`,
+      senderId: 'system',
+      senderName: centerName,
+      senderRole: isBloodBank ? 'bloodbank' : 'hospital',
+      message: `${centerName} rejected blood request #${requestId}. Reason: ${reason.trim()}`,
+      messageType: 'text',
+      timestamp: timeStr,
+      read: false
+    });
+
+    showToast(`Request ${requestId} rejected by ${centerName}: ${reason.trim()}`);
+  };
 
     showToast(`Request ${requestId} rejected: ${reason.trim()}`);
   };
