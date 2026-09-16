@@ -155,13 +155,23 @@ export const EmergencyRequestsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                    isSecured
-                      ? 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                      : 'bg-indigo-100 text-indigo-800 border border-indigo-200'
-                  }`}>
-                    {isSecured ? 'Blood Secured' : req.status.replace(/_/g, ' ')}
-                  </span>
+                  {(() => {
+                    const rawStatus = req.channelStatuses?.donorStatus || (myResponse ? (myResponse.status === 'ACCEPTED' ? 'APPROVED' : 'REJECTED') : 'PENDING');
+                    const donorStatus = rawStatus === 'APPROVED' || rawStatus === 'DONOR_ACCEPTED' ? 'APPROVED' : (rawStatus === 'REJECTED' || (myResponse && myResponse.status === 'DECLINED') ? 'REJECTED' : 'PENDING');
+
+                    return (
+                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border ${
+                        donorStatus === 'APPROVED'
+                          ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                          : donorStatus === 'REJECTED'
+                          ? 'bg-red-100 text-red-800 border-red-300'
+                          : 'bg-amber-100 text-amber-800 border-amber-300'
+                      }`}>
+                        <span>{donorStatus === 'APPROVED' ? '🟢' : donorStatus === 'REJECTED' ? '🔴' : '🟡'}</span>
+                        <span>{donorStatus}</span>
+                      </span>
+                    );
+                  })()}
                 </div>
 
                 {/* DETAILS GRID */}
@@ -171,12 +181,12 @@ export const EmergencyRequestsPage: React.FC = () => {
                     <strong className="text-slate-900 font-bold">{req.unitsNeeded} Units ({req.bloodComponent || 'PRBC'})</strong>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 font-sans block">Required Within</span>
-                    <strong className="text-amber-600 font-bold">{req.requiredTime || 'Within 2 Hours'}</strong>
+                    <span className="text-[10px] text-slate-500 font-sans block">Required Date & Time</span>
+                    <strong className="text-amber-600 font-bold">{req.requiredDate || 'Today'} {req.requiredTime || 'Immediate'}</strong>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 font-sans block">Confirmed Responses</span>
-                    <strong className="text-emerald-600 font-bold">{req.confirmedUnits || 0} / {req.unitsNeeded} Units</strong>
+                    <span className="text-[10px] text-slate-500 font-sans block">Requester Contact</span>
+                    <strong className="text-slate-900 font-bold">{req.contactPerson} ({req.maskedPhone || req.contactPhone})</strong>
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-500 font-sans block">Medical Reason</span>
@@ -184,18 +194,18 @@ export const EmergencyRequestsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* ACTION BUTTONS */}
+                {/* ACTION BUTTONS (Requirement 6) */}
                 <div className="pt-1">
-                  {myResponse ? (
+                  {myResponse || req.channelStatuses?.donorStatus === 'APPROVED' || req.channelStatuses?.donorStatus === 'REJECTED' ? (
                     <div className="p-3 rounded-2xl bg-sky-50 border border-sky-100 text-slate-800 text-xs font-bold flex items-center justify-between">
                       <span className="text-slate-800 font-bold">
-                        {myResponse.status === 'ACCEPTED' ? '✅ You accepted this emergency request' : 'ℹ️ You declined this request'}
+                        {(myResponse?.status === 'ACCEPTED' || req.channelStatuses?.donorStatus === 'APPROVED') ? '🟢 You Approved this Request ("I Can Donate")' : '🔴 You Rejected this Request'}
                       </span>
                       <button
                         onClick={() => openEmergencyChat(req.id, loggedInDonor.id)}
                         className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-[11px] flex items-center gap-1 shadow-xs transition-all hover:scale-105"
                       >
-                        <MessageSquare className="w-3.5 h-3.5" /> Open Private Chat
+                        <MessageSquare className="w-3.5 h-3.5" /> 💬 Open Chat
                       </button>
                     </div>
                   ) : isSecured ? (
@@ -206,15 +216,15 @@ export const EmergencyRequestsPage: React.FC = () => {
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         onClick={() => donorRespondToRequest(req.id, loggedInDonor.id, 'ACCEPTED')}
-                        className="py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all hover:scale-105"
+                        className="py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all hover:scale-105 cursor-pointer"
                       >
-                        <Check className="w-4 h-4" /> ACCEPT
+                        <Check className="w-4 h-4" /> Approve / I Can Donate
                       </button>
                       <button
                         onClick={() => donorRespondToRequest(req.id, loggedInDonor.id, 'DECLINED')}
-                        className="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs border border-slate-200 flex items-center justify-center gap-1.5 transition-all"
+                        className="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs border border-slate-200 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                       >
-                        <X className="w-4 h-4" /> DECLINE
+                        <X className="w-4 h-4" /> Reject
                       </button>
                     </div>
                   )}

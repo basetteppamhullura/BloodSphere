@@ -48,10 +48,91 @@ export const RealtimeRequesterPortal: React.FC = () => {
   const [portalTab, setPortalTab] = useState<'tracking' | 'availability' | 'notifications' | 'history'>('tracking');
   const [activeSearchTab, setActiveSearchTab] = useState<'donors' | 'bloodbanks'>('donors');
   const [radiusKm, setRadiusKm] = useState<number>(25);
+  const [statusDetailModal, setStatusDetailModal] = useState<{
+    source: 'donor' | 'hospital' | 'bloodbank';
+    sourceLabel: string;
+    status: 'PENDING' | 'APPROVED' | 'REJECTED';
+    title: string;
+    message: string;
+    timestamp?: string;
+    reason?: string;
+    facilityName?: string;
+  } | null>(null);
 
   const activeReq = requests.find(r => r.id === activeReqId) || requests[0];
   const activeRequestsList = requests.filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED');
   const historyRequestsList = requests.filter(r => r.status === 'COMPLETED' || r.status === 'CANCELLED');
+
+  // Helper: Normalize recipient status to canonical 3 (PENDING, APPROVED, REJECTED)
+  const getNormalizedSourceStatus = (source: 'donor' | 'hospital' | 'bloodbank', req: typeof activeReq) => {
+    if (!req) return { status: 'PENDING' as const, badgeClass: 'bg-amber-50 text-amber-800 border-amber-300', dotClass: 'bg-amber-500', icon: '🟡', label: 'PENDING', time: '', desc: '' };
+    const cs = req.channelStatuses;
+
+    if (source === 'donor') {
+      const raw = cs?.donorStatus || (req.donorResponses && req.donorResponses.some(r => r.status === 'ACCEPTED') ? 'APPROVED' : (req.donorResponses && req.donorResponses.length > 0 && req.donorResponses.every(r => r.status === 'DECLINED') ? 'REJECTED' : 'PENDING'));
+      const isApproved = raw === 'APPROVED' || raw === 'DONOR_ACCEPTED' || raw === 'FULFILLED' || (req.confirmedUnits || 0) > 0;
+      const isRejected = raw === 'REJECTED' || (req.donorResponses && req.donorResponses.length > 0 && req.donorResponses.every(r => r.status === 'DECLINED'));
+      const status: 'PENDING' | 'APPROVED' | 'REJECTED' = isApproved ? 'APPROVED' : (isRejected ? 'REJECTED' : 'PENDING');
+      const time = cs?.donorRespondedAt || req.donorResponses?.[0]?.respondedAt || '';
+      return {
+        status,
+        badgeClass: status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (status === 'REJECTED' ? 'bg-red-50 text-red-800 border-red-300' : 'bg-amber-50 text-amber-800 border-amber-300'),
+        dotClass: status === 'APPROVED' ? 'bg-emerald-500' : (status === 'REJECTED' ? 'bg-red-500' : 'bg-amber-500 animate-pulse'),
+        icon: status === 'APPROVED' ? '🟢' : (status === 'REJECTED' ? '🔴' : '🟡'),
+        label: status,
+        time,
+        reason: cs?.donorRejectionReason,
+        desc: status === 'APPROVED'
+          ? (req.assignedDonorName ? `${req.assignedDonorName} accepted request` : 'Donor accepted request')
+          : status === 'REJECTED'
+          ? (cs?.donorRejectionReason || 'Declined by contacted donor')
+          : 'Waiting for voluntary donor response'
+      };
+    }
+
+    if (source === 'hospital') {
+      const raw = cs?.hospitalStatus || (req.isVerifiedByHospital ? 'APPROVED' : (req.status === 'REJECTED' ? 'REJECTED' : 'PENDING'));
+      const isApproved = raw === 'APPROVED' || raw === 'FULFILLED' || req.isVerifiedByHospital;
+      const isRejected = raw === 'REJECTED';
+      const status: 'PENDING' | 'APPROVED' | 'REJECTED' = isApproved ? 'APPROVED' : (isRejected ? 'REJECTED' : 'PENDING');
+      const time = cs?.hospitalRespondedAt || '';
+      return {
+        status,
+        badgeClass: status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (status === 'REJECTED' ? 'bg-red-50 text-red-800 border-red-300' : 'bg-amber-50 text-amber-800 border-amber-300'),
+        dotClass: status === 'APPROVED' ? 'bg-emerald-500' : (status === 'REJECTED' ? 'bg-red-500' : 'bg-amber-500 animate-pulse'),
+        icon: status === 'APPROVED' ? '🟢' : (status === 'REJECTED' ? '🔴' : '🟡'),
+        label: status,
+        time,
+        reason: cs?.hospitalRejectionReason,
+        desc: status === 'APPROVED'
+          ? `${req.hospitalName} has approved this request`
+          : status === 'REJECTED'
+          ? (cs?.hospitalRejectionReason || 'Hospital rejected request')
+          : `Waiting for clinical response from ${req.hospitalName}`
+      };
+    }
+
+    // bloodbank
+    const raw = cs?.bloodBankStatus || (req.fulfilledChannel === 'bloodbank' ? 'APPROVED' : (req.status === 'REJECTED' ? 'REJECTED' : 'PENDING'));
+    const isApproved = raw === 'APPROVED' || raw === 'RESERVED' || raw === 'FULFILLED' || req.fulfilledChannel === 'bloodbank';
+    const isRejected = raw === 'REJECTED';
+    const status: 'PENDING' | 'APPROVED' | 'REJECTED' = isApproved ? 'APPROVED' : (isRejected ? 'REJECTED' : 'PENDING');
+    const time = cs?.bloodBankRespondedAt || '';
+    return {
+      status,
+      badgeClass: status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (status === 'REJECTED' ? 'bg-red-50 text-red-800 border-red-300' : 'bg-amber-50 text-amber-800 border-amber-300'),
+      dotClass: status === 'APPROVED' ? 'bg-emerald-500' : (status === 'REJECTED' ? 'bg-red-500' : 'bg-amber-500 animate-pulse'),
+      icon: status === 'APPROVED' ? '🟢' : (status === 'REJECTED' ? '🔴' : '🟡'),
+      label: status,
+      time,
+      reason: cs?.bloodBankRejectionReason,
+      desc: status === 'APPROVED'
+        ? 'Blood units approved & reserved in blood bank'
+        : status === 'REJECTED'
+        ? (cs?.bloodBankRejectionReason || 'Blood bank stock unavailable')
+        : 'Waiting for vault availability response from Blood Bank'
+    };
+  };
 
   if (!activeReq) {
     return (
@@ -254,6 +335,201 @@ export const RealtimeRequesterPortal: React.FC = () => {
                     Cancel Request
                   </button>
                 )}
+              </div>
+            </div>
+
+            {/* FEATURE 4 & 2: DEDICATED MULTI-SOURCE REQUEST STATUS AREA (DONOR, HOSPITAL, BLOOD BANK) */}
+            <div className="p-5 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <RadioTower className="w-4 h-4 text-rose-500 animate-pulse" />
+                    <h3 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
+                      REQUEST STATUS
+                    </h3>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Real-time status tracking separated across Donor, Hospital, and Blood Bank sources.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
+                    Request ID: {activeReq.id}
+                  </span>
+                  <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-mono font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> Real-Time Sync
+                  </span>
+                </div>
+              </div>
+
+              {/* 3 SEPARATED RECIPIENT SOURCE STATUS CARDS */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                {/* 1. DONOR SOURCE */}
+                {(() => {
+                  const donorData = getNormalizedSourceStatus('donor', activeReq);
+                  return (
+                    <div
+                      onClick={() => setStatusDetailModal({
+                        source: 'donor',
+                        sourceLabel: 'Voluntary Donor Pool',
+                        status: donorData.status,
+                        title: donorData.status === 'APPROVED' ? 'Donor Approved Request' : (donorData.status === 'REJECTED' ? 'Donor Declined Request' : 'Waiting for Donor Response'),
+                        message: donorData.status === 'APPROVED' ? 'A voluntary donor has approved your blood request and confirmed commitment.' : (donorData.status === 'REJECTED' ? 'The contacted donor declined the request. System is searching next matching voluntary donors.' : 'Request has been broadcasted to nearby matching voluntary blood donors. Waiting for donor response.'),
+                        timestamp: donorData.time || activeReq.requestedAt,
+                        reason: donorData.reason
+                      })}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer hover:scale-[1.02] flex flex-col justify-between space-y-3 ${
+                        donorData.status === 'APPROVED'
+                          ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400'
+                          : donorData.status === 'REJECTED'
+                          ? 'bg-rose-950/40 border-rose-500/40 hover:border-rose-400'
+                          : 'bg-amber-950/30 border-amber-500/40 hover:border-amber-400'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-base shadow-xs">
+                            <Users className="w-4 h-4 text-rose-400" />
+                          </div>
+                          <div>
+                            <span className="font-extrabold text-xs text-white block">Donor</span>
+                            <span className="text-[10px] text-slate-400 block font-mono">Voluntary Network</span>
+                          </div>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border flex items-center gap-1.5 shadow-xs ${
+                          donorData.status === 'APPROVED'
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                            : donorData.status === 'REJECTED'
+                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                        }`}>
+                          <span>{donorData.icon}</span>
+                          <span>{donorData.status}</span>
+                        </span>
+                      </div>
+
+                      <div className="text-[11px] text-slate-300 space-y-1">
+                        <p className="line-clamp-2 leading-relaxed opacity-90">{donorData.desc}</p>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1.5 border-t border-slate-800">
+                          <span>{donorData.time ? `Responded: ${donorData.time}` : `Sent: ${activeReq.requestedAt.slice(-8)}`}</span>
+                          <span className="text-sky-400 font-bold hover:underline">Click for details →</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 2. HOSPITAL SOURCE */}
+                {(() => {
+                  const hospData = getNormalizedSourceStatus('hospital', activeReq);
+                  return (
+                    <div
+                      onClick={() => setStatusDetailModal({
+                        source: 'hospital',
+                        sourceLabel: activeReq.hospitalName || 'Hospital Medical Desk',
+                        status: hospData.status,
+                        title: hospData.status === 'APPROVED' ? `${activeReq.hospitalName} Approved Request` : (hospData.status === 'REJECTED' ? `${activeReq.hospitalName} Rejected Request` : `Waiting for Hospital Response`),
+                        message: hospData.status === 'APPROVED' ? `${activeReq.hospitalName} has approved this blood request and verified clinical requirement.` : (hospData.status === 'REJECTED' ? (hospData.reason || `${activeReq.hospitalName} rejected this blood request. Stock or bed capacity unavailable.`) : `Waiting for response from ${activeReq.hospitalName}. Clinical review in progress.`),
+                        timestamp: hospData.time || activeReq.requestedAt,
+                        reason: hospData.reason,
+                        facilityName: activeReq.hospitalName
+                      })}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer hover:scale-[1.02] flex flex-col justify-between space-y-3 ${
+                        hospData.status === 'APPROVED'
+                          ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400'
+                          : hospData.status === 'REJECTED'
+                          ? 'bg-rose-950/40 border-rose-500/40 hover:border-rose-400'
+                          : 'bg-amber-950/30 border-amber-500/40 hover:border-amber-400'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-base shadow-xs">
+                            <Building2 className="w-4 h-4 text-sky-400" />
+                          </div>
+                          <div>
+                            <span className="font-extrabold text-xs text-white block">Hospital</span>
+                            <span className="text-[10px] text-slate-400 block font-mono truncate max-w-[120px]">{activeReq.hospitalName}</span>
+                          </div>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border flex items-center gap-1.5 shadow-xs ${
+                          hospData.status === 'APPROVED'
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                            : hospData.status === 'REJECTED'
+                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                        }`}>
+                          <span>{hospData.icon}</span>
+                          <span>{hospData.status}</span>
+                        </span>
+                      </div>
+
+                      <div className="text-[11px] text-slate-300 space-y-1">
+                        <p className="line-clamp-2 leading-relaxed opacity-90">{hospData.desc}</p>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1.5 border-t border-slate-800">
+                          <span>{hospData.time ? `Responded: ${hospData.time}` : `Sent: ${activeReq.requestedAt.slice(-8)}`}</span>
+                          <span className="text-sky-400 font-bold hover:underline">Click for details →</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* 3. BLOOD BANK SOURCE */}
+                {(() => {
+                  const bankData = getNormalizedSourceStatus('bloodbank', activeReq);
+                  return (
+                    <div
+                      onClick={() => setStatusDetailModal({
+                        source: 'bloodbank',
+                        sourceLabel: 'Regional Blood Bank Vault',
+                        status: bankData.status,
+                        title: bankData.status === 'APPROVED' ? 'Blood Bank Approved & Reserved Units' : (bankData.status === 'REJECTED' ? 'Blood Bank Rejected Request' : 'Waiting for Blood Bank Response'),
+                        message: bankData.status === 'APPROVED' ? 'Blood Bank has approved this blood request and verified stock reservation.' : (bankData.status === 'REJECTED' ? (bankData.reason || 'Blood Bank has rejected this blood request. Storage stock unavailable.') : 'Waiting for response from Blood Bank. Checking cold vault stock inventory.'),
+                        timestamp: bankData.time || activeReq.requestedAt,
+                        reason: bankData.reason,
+                        facilityName: 'Rotary Regional Blood Centre'
+                      })}
+                      className={`p-4 rounded-2xl border transition-all cursor-pointer hover:scale-[1.02] flex flex-col justify-between space-y-3 ${
+                        bankData.status === 'APPROVED'
+                          ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400'
+                          : bankData.status === 'REJECTED'
+                          ? 'bg-rose-950/40 border-rose-500/40 hover:border-rose-400'
+                          : 'bg-amber-950/30 border-amber-500/40 hover:border-amber-400'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-base shadow-xs">
+                            <Droplet className="w-4 h-4 text-rose-400" />
+                          </div>
+                          <div>
+                            <span className="font-extrabold text-xs text-white block">Blood Bank</span>
+                            <span className="text-[10px] text-slate-400 block font-mono">Vault Storage</span>
+                          </div>
+                        </div>
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border flex items-center gap-1.5 shadow-xs ${
+                          bankData.status === 'APPROVED'
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                            : bankData.status === 'REJECTED'
+                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                        }`}>
+                          <span>{bankData.icon}</span>
+                          <span>{bankData.status}</span>
+                        </span>
+                      </div>
+
+                      <div className="text-[11px] text-slate-300 space-y-1">
+                        <p className="line-clamp-2 leading-relaxed opacity-90">{bankData.desc}</p>
+                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1.5 border-t border-slate-800">
+                          <span>{bankData.time ? `Responded: ${bankData.time}` : `Sent: ${activeReq.requestedAt.slice(-8)}`}</span>
+                          <span className="text-sky-400 font-bold hover:underline">Click for details →</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -545,6 +821,141 @@ export const RealtimeRequesterPortal: React.FC = () => {
               ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* INTERACTIVE SOURCE STATUS DETAIL MODAL (Requirements 9 & 10) */}
+      {statusDetailModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-6 space-y-5 text-xs shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-xl">
+                  {statusDetailModal.status === 'APPROVED' ? '🟢' : statusDetailModal.status === 'REJECTED' ? '🔴' : '🟡'}
+                </span>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">{statusDetailModal.title}</h3>
+                  <span className="text-[10px] font-mono text-slate-400">Request ID: {activeReq.id} • Source: {statusDetailModal.sourceLabel}</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setStatusDetailModal(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* STATUS SUMMARY BANNER */}
+            <div className={`p-4 rounded-2xl border space-y-2 ${
+              statusDetailModal.status === 'APPROVED'
+                ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
+                : statusDetailModal.status === 'REJECTED'
+                ? 'bg-red-50 border-red-300 text-red-950'
+                : 'bg-amber-50 border-amber-300 text-amber-950'
+            }`}>
+              <div className="flex items-center justify-between">
+                <span className="font-extrabold text-xs uppercase tracking-wider">
+                  Current Status: {statusDetailModal.status}
+                </span>
+                {statusDetailModal.timestamp && (
+                  <span className="text-[10px] font-mono font-bold opacity-80">
+                    Timestamp: {statusDetailModal.timestamp}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs font-bold leading-relaxed">
+                {statusDetailModal.status === 'PENDING' && (
+                  `Waiting for response from ${statusDetailModal.sourceLabel}.`
+                )}
+                {statusDetailModal.status === 'APPROVED' && (
+                  `${statusDetailModal.sourceLabel} has approved this blood request.`
+                )}
+                {statusDetailModal.status === 'REJECTED' && (
+                  `${statusDetailModal.sourceLabel} has rejected this blood request.`
+                )}
+              </p>
+              <p className="text-[11px] opacity-90">{statusDetailModal.message}</p>
+            </div>
+
+            {/* STATUS TIMELINE & AUDIT TRAIL */}
+            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 font-mono text-[11px]">
+              <span className="text-[10px] font-sans font-extrabold text-slate-500 uppercase tracking-wider block">
+                Audit Timeline Record:
+              </span>
+              <div className="space-y-1.5 text-slate-700">
+                <div className="flex items-center justify-between">
+                  <span>1. Request Dispatched to {statusDetailModal.sourceLabel}:</span>
+                  <strong>{activeReq.requestedAt}</strong>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>2. Status Decision:</span>
+                  <strong className={statusDetailModal.status === 'APPROVED' ? 'text-emerald-700' : (statusDetailModal.status === 'REJECTED' ? 'text-red-700' : 'text-amber-700')}>
+                    {statusDetailModal.status} {statusDetailModal.timestamp ? `(${statusDetailModal.timestamp})` : ''}
+                  </strong>
+                </div>
+                {statusDetailModal.reason && (
+                  <div className="pt-1 text-[11px] text-red-700 font-sans border-t border-slate-200">
+                    <strong>Recorded Reason:</strong> "{statusDetailModal.reason}"
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* HELPFUL GUIDANCE & NEXT ACTIONS (Requirement 10 & 12) */}
+            <div className="space-y-2 pt-1">
+              {statusDetailModal.status === 'APPROVED' && (
+                <div className="space-y-2">
+                  <p className="text-[11px] text-slate-600">
+                    You can coordinate directly with the approving {statusDetailModal.source === 'donor' ? 'donor' : 'facility'} via real-time private chat connected to Request ID <strong>{activeReq.id}</strong>.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setStatusDetailModal(null);
+                        openEmergencyChat(activeReq.id);
+                      }}
+                      className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-102 active:scale-95"
+                    >
+                      <MessageSquare className="w-4 h-4" /> 💬 Open Chat with {statusDetailModal.sourceLabel}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {statusDetailModal.status === 'REJECTED' && (
+                <div className="space-y-2">
+                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold">
+                    💡 <strong>Next Step:</strong> Try another available source (e.g. voluntary donors or nearby regional blood bank stock).
+                  </div>
+                  <button
+                    onClick={() => {
+                      setStatusDetailModal(null);
+                      setPortalTab('availability');
+                    }}
+                    className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Search className="w-4 h-4 text-sky-400" /> Search Available Stocks & Donors
+                  </button>
+                </div>
+              )}
+
+              {statusDetailModal.status === 'PENDING' && (
+                <div className="space-y-2">
+                  <p className="text-[11px] text-slate-500">
+                    The request is currently pending review. Live WebSocket listeners are active — this page will automatically update the moment {statusDetailModal.sourceLabel} responds.
+                  </p>
+                  <button
+                    onClick={() => setStatusDetailModal(null)}
+                    className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
+            </div>
+
+          </div>
         </div>
       )}
 

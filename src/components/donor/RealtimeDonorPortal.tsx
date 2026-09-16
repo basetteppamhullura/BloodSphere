@@ -327,37 +327,50 @@ export const RealtimeDonorPortal: React.FC = () => {
                         </div>
                       </div>
 
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-indigo-100 text-indigo-800 border border-indigo-200">
-                        {req.unitsNeeded} Units
-                      </span>
+                      {(() => {
+                        const rawStatus = req.channelStatuses?.donorStatus || (isAccepted ? 'APPROVED' : (isDeclined ? 'REJECTED' : 'PENDING'));
+                        const donorStatus = rawStatus === 'APPROVED' || rawStatus === 'DONOR_ACCEPTED' ? 'APPROVED' : (rawStatus === 'REJECTED' ? 'REJECTED' : 'PENDING');
+                        return (
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border ${
+                            donorStatus === 'APPROVED'
+                              ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                              : donorStatus === 'REJECTED'
+                              ? 'bg-red-100 text-red-800 border-red-300'
+                              : 'bg-amber-100 text-amber-800 border-amber-300'
+                          }`}>
+                            <span>{donorStatus === 'APPROVED' ? '🟢' : donorStatus === 'REJECTED' ? '🔴' : '🟡'}</span>
+                            <span>{donorStatus}</span>
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 text-[11px] bg-sky-50/50 p-3 rounded-2xl border border-sky-100 font-mono">
                       <div>
-                        <span className="text-[10px] text-slate-500 font-sans block">Required Within</span>
-                        <strong className="text-amber-600 font-bold">{req.requiredTime || 'Within 2 Hours'}</strong>
+                        <span className="text-[10px] text-slate-500 font-sans block">Required Date & Time</span>
+                        <strong className="text-amber-600 font-bold">{req.requiredDate || 'Today'} {req.requiredTime || 'Immediate'}</strong>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-500 font-sans block">Confirmed Donors</span>
-                        <strong className="text-emerald-600 font-bold">{req.confirmedUnits || 0} / {req.unitsNeeded} Units</strong>
+                        <span className="text-[10px] text-slate-500 font-sans block">Requester / Contact</span>
+                        <strong className="text-slate-900 font-bold">{req.contactPerson} ({req.maskedPhone || req.contactPhone})</strong>
                       </div>
                     </div>
 
-                    {/* ACTION BUTTONS WITH "I CAN DONATE" (Feature 2) */}
+                    {/* ACTION BUTTONS WITH "APPROVE / I CAN DONATE" & "REJECT" (Requirement 6) */}
                     <div className="pt-1">
-                      {isAccepted ? (
+                      {isAccepted || req.channelStatuses?.donorStatus === 'APPROVED' ? (
                         <div className="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-between">
-                          <span>✅ Response Recorded: "I Can Donate"</span>
+                          <span>🟢 Response: "I Can Donate" (Approved)</span>
                           <button
                             onClick={() => openEmergencyChat(req.id, loggedInDonor.id)}
-                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white text-[11px] font-extrabold flex items-center gap-1 shadow-xs transition-all hover:scale-105"
+                            className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white text-[11px] font-extrabold flex items-center gap-1 shadow-xs transition-all hover:scale-105 cursor-pointer"
                           >
-                            <MessageSquare className="w-3.5 h-3.5" /> Open Chat
+                            <MessageSquare className="w-3.5 h-3.5" /> 💬 Open Chat
                           </button>
                         </div>
-                      ) : isDeclined ? (
-                        <div className="p-3 rounded-2xl bg-slate-100 text-slate-500 text-xs font-bold text-center">
-                          ℹ️ You declined this request.
+                      ) : isDeclined || req.channelStatuses?.donorStatus === 'REJECTED' ? (
+                        <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold text-center">
+                          🔴 Response: Rejected / Unavailable
                         </div>
                       ) : (
                         <div className="grid grid-cols-2 gap-2">
@@ -368,7 +381,7 @@ export const RealtimeDonorPortal: React.FC = () => {
                             }}
                             className="py-3 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-extrabold text-xs shadow-md shadow-emerald-500/20 flex items-center justify-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
                           >
-                            <Check className="w-4 h-4" /> I CAN DONATE
+                            <Check className="w-4 h-4" /> Approve / I Can Donate
                           </button>
 
                           <button
@@ -378,7 +391,7 @@ export const RealtimeDonorPortal: React.FC = () => {
                             }}
                             className="py-3 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs border border-slate-200 flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
                           >
-                            <X className="w-4 h-4" /> DECLINE
+                            <X className="w-4 h-4" /> Reject
                           </button>
                         </div>
                       )}

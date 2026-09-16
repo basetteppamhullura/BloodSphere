@@ -1682,6 +1682,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const approveRequestByHospital = (requestId: string, notes?: string) => {
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
     setRequests(prev =>
       prev.map(r => {
         if (r.id === requestId) {
@@ -1691,7 +1693,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             isVerifiedByHospital: true,
             channelStatuses: {
               ...r.channelStatuses,
-              hospitalStatus: 'APPROVED'
+              hospitalStatus: 'APPROVED',
+              hospitalRespondedAt: timeStr
             },
             additionalNotes: notes ? `${r.additionalNotes} (Hospital Note: ${notes})` : r.additionalNotes
           };
@@ -1699,13 +1702,82 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return r;
       })
     );
+
+    const notifReq: NotificationItem = {
+      id: `notif_hosp_app_${Date.now()}`,
+      title: "🟢 Hospital Approved Blood Request",
+      message: `Hospital has approved blood request ${requestId}. Clinical verification complete.`,
+      time: "Just now",
+      type: "success",
+      read: false,
+      requestId
+    };
+    setNotifications(prev => [notifReq, ...prev]);
+
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'HOSPITAL_APPROVED', requestId, timeStr, notes });
+    }
+    socketManager.emitMessage(requestId, {
+      id: `sys_hosp_${Date.now()}`,
+      senderId: 'system',
+      senderName: 'Hospital Review Desk',
+      senderRole: 'hospital',
+      message: `Hospital approved your request #${requestId}. Clinical verification complete.`,
+      messageType: 'text',
+      timestamp: timeStr,
+      read: false
+    });
+
     showToast(`Request ${requestId} approved by hospital.`);
   };
 
   const rejectRequestByHospital = (requestId: string, reason?: string) => {
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const finalReason = reason || 'Hospital unable to fulfill requirement';
+
     setRequests(prev =>
-      prev.map(r => (r.id === requestId ? { ...r, status: 'REJECTED' as const } : r))
+      prev.map(r => {
+        if (r.id === requestId) {
+          return {
+            ...r,
+            channelStatuses: {
+              ...r.channelStatuses,
+              hospitalStatus: 'REJECTED',
+              hospitalRespondedAt: timeStr,
+              hospitalRejectionReason: finalReason
+            },
+            additionalNotes: `Hospital Rejection: ${finalReason}`
+          };
+        }
+        return r;
+      })
     );
+
+    const notifReq: NotificationItem = {
+      id: `notif_hosp_rej_${Date.now()}`,
+      title: "🔴 Hospital Rejected Blood Request",
+      message: `Hospital has rejected blood request ${requestId}. Reason: ${finalReason}`,
+      time: "Just now",
+      type: "urgent",
+      read: false,
+      requestId
+    };
+    setNotifications(prev => [notifReq, ...prev]);
+
+    if (channelRef.current) {
+      channelRef.current.postMessage({ type: 'HOSPITAL_REJECTED', requestId, timeStr, reason: finalReason });
+    }
+    socketManager.emitMessage(requestId, {
+      id: `sys_hosp_${Date.now()}`,
+      senderId: 'system',
+      senderName: 'Hospital Review Desk',
+      senderRole: 'hospital',
+      message: `Hospital rejected blood request #${requestId}. Reason: ${finalReason}`,
+      messageType: 'text',
+      timestamp: timeStr,
+      read: false
+    });
+
     showToast(`Request ${requestId} rejected by hospital.`);
   };
 
