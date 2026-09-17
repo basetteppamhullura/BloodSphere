@@ -488,7 +488,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
           /* VIEW 2: PORTAL LOCK-IN AUTHENTICATION SCREEN       */
           /* Rendered when a specific portal is selected        */
           /* (No cross-portal options displayed - locked-in)    */
-          /* ================================================== */}
+          /* ================================================== */
           <div className="space-y-6">
             
             {/* TOP BAR: BACK TO PORTAL SELECTION & BRAND LOGO */}
