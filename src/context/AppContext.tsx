@@ -1529,9 +1529,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     showToast(`Request ${requestId} rejected by ${centerName}: ${reason.trim()}`);
   };
 
-    showToast(`Request ${requestId} rejected: ${reason.trim()}`);
-  };
-
   const rejectBloodBankRequest = (requestId: string, reason?: string) => {
     rejectBloodRequest(requestId, 'Regional Blood Bank', reason || 'Stock unavailable');
     return { success: true, message: `Request ${requestId} rejected successfully.` };

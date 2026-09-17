@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { BloodNetLogo } from '../components/common/BloodNetLogo';
-import { ShieldCheck, LogIn, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
+import { ShieldCheck, LogIn, Eye, EyeOff, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 
 export const AdminLoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -53,8 +53,16 @@ export const AdminLoginPage: React.FC = () => {
           <div className="flex justify-center">
             <BloodNetLogo size="lg" showTagline={true} />
           </div>
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900 text-white font-mono text-xs font-black mt-2 shadow-sm">
-            🛡️ National Super Admin Desk
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <button
+              onClick={() => navigate('/login')}
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1 rounded-full transition-colors cursor-pointer"
+            >
+              <ArrowLeft className="w-3 h-3" /> Back to Portal Selection
+            </button>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 text-white font-mono text-xs font-black shadow-sm">
+              🛡️ National Super Admin Desk
+            </div>
           </div>
         </div>
 
