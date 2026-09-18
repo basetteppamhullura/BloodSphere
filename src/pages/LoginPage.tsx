@@ -156,9 +156,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
     setLoginError(null);
 
     const effectiveRole: UserRole =
-      (selectedPortal === 'donor' || selectedPortal === 'requester')
-        ? donorRequesterSubRole
-        : (activePortalTab as UserRole);
+      (selectedPortal as UserRole) || (activePortalTab as UserRole);
 
     if (!email || !password) {
       setLoginError('Please enter your email and password.');
@@ -233,9 +231,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
     setLoginError(null);
 
     const effectiveRole: UserRole =
-      (selectedPortal === 'donor' || selectedPortal === 'requester')
-        ? donorRequesterSubRole
-        : (activePortalTab as UserRole);
+      (selectedPortal as UserRole) || (activePortalTab as UserRole);
 
     if (!regName || !regEmail || !regPhone || !regPassword) {
       setLoginError('Please fill in all required registration fields.');
@@ -271,20 +267,33 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
 
   const currentAttempts = failedAttemptsMap[`${email}_${activePortalTab}`] || 0;
 
-  // 4 Portal Cards Metadata
+  // 5 Portal Cards Metadata
   const portalCards = [
     {
-      id: 'donor-requester',
-      title: 'Donor & Requester',
-      desc: 'Donate blood or request blood through the BloodNet network.',
+      id: 'donor',
+      title: 'Donor Portal',
+      desc: 'Donate blood and help save lives.',
       route: '/login/donor',
       icon: Heart,
       accent: 'red',
-      tag: 'Voluntary & Patient',
+      tag: 'Voluntary Donors',
       iconBg: 'bg-red-50 text-red-600 border-red-100',
       badgeBg: 'bg-rose-50 text-rose-700 border-rose-200/60',
       cardHover: 'hover:border-red-200 hover:shadow-red-500/5 hover:bg-gradient-to-b hover:from-white hover:to-rose-50/20',
       buttonClasses: 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white shadow-sm shadow-red-500/20 group-hover:translate-x-0.5'
+    },
+    {
+      id: 'requester',
+      title: 'Requester Portal',
+      desc: 'Request blood for patients and those in need.',
+      route: '/login/requester',
+      icon: Users,
+      accent: 'rose',
+      tag: 'Patient Requesters',
+      iconBg: 'bg-rose-50 text-rose-600 border-rose-100',
+      badgeBg: 'bg-rose-50 text-rose-700 border-rose-200/60',
+      cardHover: 'hover:border-rose-200 hover:shadow-rose-500/5 hover:bg-gradient-to-b hover:from-white hover:to-rose-50/20',
+      buttonClasses: 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white shadow-sm shadow-rose-500/20 group-hover:translate-x-0.5'
     },
     {
       id: 'hospital',
@@ -386,7 +395,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
       <div className="w-full max-w-4xl space-y-8 relative z-10 animate-in fade-in duration-300">
         
         {/* ================================================== */}
-        {/* VIEW 1: PORTAL LOGIN SELECTION (2x2 CARDS)        */}
+        {/* VIEW 1: PORTAL LOGIN SELECTION (CARDS GRID)        */}
         {/* Rendered when no individual portal is selected    */}
         {/* ================================================== */}
         {!selectedPortal ? (
@@ -415,7 +424,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
               </p>
             </div>
 
-            {/* 4 PORTAL CARDS (2 × 2 Grid on Desktop/Tablet, 1-Col on Mobile) */}
+            {/* PORTAL CARDS GRID */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 pt-2">
               {portalCards.map((card) => {
                 const IconComponent = card.icon;
@@ -448,27 +457,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
 
                     {/* Portal Name & Short Description */}
                     <div className="space-y-1.5">
-                      <h2 className="text-lg sm:text-xl font-black text-[#0F172A] tracking-tight group-hover:text-slate-900 transition-colors">
+                      <h2 className="text-xl sm:text-2xl font-black text-[#0F172A] tracking-tight group-hover:text-sky-950 transition-colors">
                         {card.title}
                       </h2>
-                      <p className="text-xs text-slate-500 leading-relaxed font-normal">
+                      <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed">
                         {card.desc}
                       </p>
                     </div>
 
-                    {/* Action Button: Login / Sign Up → */}
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
-                      <span className="text-[11px] font-semibold text-slate-400 group-hover:text-slate-600 transition-colors">
-                        Secure Authentication
+                    {/* Bottom Action Row */}
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-400 group-hover:text-slate-600 transition-colors">
+                        {card.tag}
                       </span>
 
                       <button
                         type="button"
                         tabIndex={-1}
-                        className={`px-4 py-2.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all duration-200 cursor-pointer ${card.buttonClasses}`}
+                        className={`px-4 py-2 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer ${card.buttonClasses}`}
                       >
                         <span>Login / Sign Up</span>
-                        <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                        <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </div>
@@ -476,10 +485,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
               })}
             </div>
 
-            {/* Bottom Security Assurance */}
-            <div className="text-center pt-2 flex items-center justify-center gap-2 text-slate-400 text-xs font-medium">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>BloodNet Multi-Tier Role-Based Security & 2FA Protected</span>
+            {/* SUPER ADMIN DESK FOOTER LINK */}
+            <div className="text-center pt-3 flex flex-col sm:flex-row items-center justify-center gap-4 text-xs">
+              <div className="flex items-center gap-2 text-slate-400 font-medium">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>BloodNet Multi-Tier Role-Based Security & 2FA Protected</span>
+              </div>
+              <span className="hidden sm:inline text-slate-300">•</span>
+              <button
+                type="button"
+                onClick={() => navigate('/login/admin')}
+                className="text-slate-500 hover:text-amber-700 font-bold hover:underline inline-flex items-center gap-1 cursor-pointer"
+              >
+                <Shield className="w-3.5 h-3.5 text-amber-600" />
+                <span>Super Admin Portal Sign In →</span>
+              </button>
             </div>
 
           </div>
@@ -487,7 +507,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
           /* ================================================== */
           /* VIEW 2: PORTAL LOCK-IN AUTHENTICATION SCREEN       */
           /* Rendered when a specific portal is selected        */
-          /* (No cross-portal options displayed - locked-in)    */
           /* ================================================== */
           <div className="space-y-6">
             
@@ -521,19 +540,24 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                         ? 'bg-emerald-50 text-emerald-600 border border-emerald-100'
                         : selectedPortal === 'admin'
                         ? 'bg-amber-50 text-amber-700 border border-amber-100'
+                        : selectedPortal === 'requester'
+                        ? 'bg-rose-50 text-rose-600 border border-rose-100'
                         : 'bg-red-50 text-red-600 border border-red-100'
                     }`}
                   >
                     {selectedPortal === 'hospital' && <Building2 className="w-6 h-6" />}
                     {selectedPortal === 'bloodbank' && <Droplet className="w-6 h-6" />}
                     {selectedPortal === 'admin' && <Shield className="w-6 h-6" />}
-                    {(selectedPortal === 'donor' || selectedPortal === 'requester') && <Heart className="w-6 h-6" />}
+                    {selectedPortal === 'requester' && <Users className="w-6 h-6" />}
+                    {selectedPortal === 'donor' && <Heart className="w-6 h-6" />}
                   </div>
 
                   <div>
                     <h2 className="font-black text-lg sm:text-xl text-[#0F172A] leading-tight">
-                      {selectedPortal === 'donor' || selectedPortal === 'requester' ? (
-                        authMode === 'signin' ? 'Donor & Requester Sign In' : 'Donor & Requester Registration'
+                      {selectedPortal === 'requester' ? (
+                        authMode === 'signin' ? 'Requester Portal Sign In' : 'Requester Account Registration'
+                      ) : selectedPortal === 'donor' ? (
+                        authMode === 'signin' ? 'Donor Portal Sign In' : 'Donor Account Registration'
                       ) : selectedPortal === 'hospital' ? (
                         authMode === 'signin' ? 'Hospital Portal Sign In' : 'Hospital Account Registration'
                       ) : selectedPortal === 'bloodbank' ? (
@@ -543,8 +567,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                       )}
                     </h2>
                     <span className="text-[11px] text-slate-500 font-medium">
-                      {selectedPortal === 'donor' || selectedPortal === 'requester'
-                        ? 'Voluntary donors and patient emergency requesters'
+                      {selectedPortal === 'requester'
+                        ? 'Request blood for patients and those in need'
+                        : selectedPortal === 'donor'
+                        ? 'Voluntary blood donors network access'
                         : selectedPortal === 'hospital'
                         ? 'Authorized hospital trauma center access'
                         : selectedPortal === 'bloodbank'
@@ -558,43 +584,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                   🟢 256-BIT SSL
                 </span>
               </div>
-
-              {/* DONOR & REQUESTER SUB-ROLE SWITCHER (ONLY INSIDE DONOR/REQUESTER PORTAL) */}
-              {(selectedPortal === 'donor' || selectedPortal === 'requester') && (
-                <div className="flex items-center gap-2 p-1 rounded-2xl bg-slate-100 border border-slate-200 text-xs font-bold">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDonorRequesterSubRole('donor');
-                      applyPortalCredentials('donor');
-                    }}
-                    className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      donorRequesterSubRole === 'donor'
-                        ? 'bg-white text-red-600 shadow-xs font-extrabold'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <Heart className="w-3.5 h-3.5 text-red-600" />
-                    <span>Voluntary Donor</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDonorRequesterSubRole('requester');
-                      applyPortalCredentials('requester');
-                    }}
-                    className={`flex-1 py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                      donorRequesterSubRole === 'requester'
-                        ? 'bg-white text-rose-600 shadow-xs font-extrabold'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    <Users className="w-3.5 h-3.5 text-rose-600" />
-                    <span>Patient Requester</span>
-                  </button>
-                </div>
-              )}
 
               {/* FAILED ATTEMPTS WARNING */}
               {currentAttempts > 0 && currentAttempts < 5 && (
@@ -629,9 +618,9 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                           ? 'Blood Bank ID / Email *'
                           : selectedPortal === 'admin'
                           ? 'Super Admin Email / Username *'
-                          : donorRequesterSubRole === 'donor'
-                          ? 'Donor Registered Email / Phone *'
-                          : 'Requester Registered Email / Phone *'}
+                          : selectedPortal === 'requester'
+                          ? 'Requester Registered Email / Phone *'
+                          : 'Donor Registered Email / Phone *'}
                       </label>
                       <input
                         type="text"
@@ -644,7 +633,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                             ? 'contact@rotaryblood.org'
                             : selectedPortal === 'admin'
                             ? 'admin@bloodnet.gov.in'
-                            : donorRequesterSubRole === 'requester'
+                            : selectedPortal === 'requester'
                             ? 'rohan.deshmukh@example.com'
                             : 'ananya.sharma@example.com'
                         }
@@ -716,7 +705,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                           ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white shadow-emerald-500/20'
                           : selectedPortal === 'admin'
                           ? 'bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 text-white shadow-amber-500/20'
-                          : donorRequesterSubRole === 'requester'
+                          : selectedPortal === 'requester'
                           ? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 text-white shadow-rose-500/20'
                           : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white shadow-red-500/20'
                       } ${isSubmitting ? 'opacity-70 cursor-wait' : 'hover:scale-[1.01]'}`}
@@ -733,10 +722,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                             {selectedPortal === 'hospital' && 'Sign In to Hospital Portal'}
                             {selectedPortal === 'bloodbank' && 'Sign In to Blood Bank Portal'}
                             {selectedPortal === 'admin' && 'Sign In to Super Admin Desk'}
-                            {(selectedPortal === 'donor' || selectedPortal === 'requester') &&
-                              (donorRequesterSubRole === 'donor'
-                                ? 'Sign In as Voluntary Donor'
-                                : 'Sign In as Patient Requester')}
+                            {selectedPortal === 'donor' && 'Sign In as Voluntary Donor'}
+                            {selectedPortal === 'requester' && 'Sign In as Patient Requester'}
                           </span>
                         </>
                       )}
@@ -802,7 +789,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                       ) : (
                         <>
                           <Check className="w-4 h-4" />
-                          <span>Verify OTP & Open {selectedPortal.toUpperCase()} Portal</span>
+                          <span>Verify OTP & Open {selectedPortal?.toUpperCase()} Portal</span>
                         </>
                       )}
                     </button>
@@ -864,7 +851,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                   </div>
 
                   {/* DONOR BLOOD GROUP SELECTION */}
-                  {(selectedPortal === 'donor' || (selectedPortal === 'requester' && donorRequesterSubRole === 'donor')) && (
+                  {selectedPortal === 'donor' && (
                     <div>
                       <label className="text-slate-700 font-extrabold block mb-1">Blood Group *</label>
                       <select
@@ -929,7 +916,15 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                   <button
                     type="submit"
                     disabled={isRegistering}
-                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-black text-xs shadow-md shadow-red-500/20 flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.01]"
+                    className={`w-full py-4 rounded-2xl font-black text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.01] ${
+                      selectedPortal === 'hospital'
+                        ? 'bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 text-white shadow-sky-500/20'
+                        : selectedPortal === 'bloodbank'
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white shadow-emerald-500/20'
+                        : selectedPortal === 'requester'
+                        ? 'bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 text-white shadow-rose-500/20'
+                        : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white shadow-red-500/20'
+                    }`}
                   >
                     {isRegistering ? (
                       <>
@@ -939,7 +934,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                     ) : (
                       <>
                         <ShieldCheck className="w-4 h-4" />
-                        <span>Register {selectedPortal.toUpperCase()} Account</span>
+                        <span>
+                          {selectedPortal === 'requester'
+                            ? 'Register Requester Account'
+                            : selectedPortal === 'donor'
+                            ? 'Register Donor Account'
+                            : `Register ${selectedPortal?.toUpperCase()} Account`}
+                        </span>
                       </>
                     )}
                   </button>
@@ -953,22 +954,37 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                 <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   {authMode === 'signin' ? (
                     <>
-                      <span className="text-slate-500 font-medium">Need a new portal account?</span>
+                      <span className="text-slate-500 font-medium">
+                        {selectedPortal === 'requester'
+                          ? 'Need a new requester account?'
+                          : selectedPortal === 'donor'
+                          ? 'Need a new donor account?'
+                          : 'Need a new portal account?'}
+                      </span>
                       <button
                         type="button"
                         onClick={() => {
                           setAuthMode('signup');
                           setLoginError(null);
                         }}
-                        className="text-sky-600 font-extrabold hover:underline flex items-center gap-1 cursor-pointer"
+                        className="text-rose-600 hover:text-rose-700 font-extrabold hover:underline flex items-center gap-1 cursor-pointer"
                       >
-                        Register {selectedPortal === 'hospital' ? 'Hospital Account' : selectedPortal === 'bloodbank' ? 'Blood Bank Account' : 'Donor / Requester Account'}
-                        <ArrowRight className="w-3.5 h-3.5" />
+                        {selectedPortal === 'hospital'
+                          ? 'Register Hospital Account →'
+                          : selectedPortal === 'bloodbank'
+                          ? 'Register Blood Bank Account →'
+                          : selectedPortal === 'requester'
+                          ? 'Register Requester Account →'
+                          : 'Register Donor Account →'}
                       </button>
                     </>
                   ) : (
                     <>
-                      <span className="text-slate-500 font-medium">Already have an account?</span>
+                      <span className="text-slate-500 font-medium">
+                        {selectedPortal === 'requester'
+                          ? 'Already have a requester account?'
+                          : 'Already have an account?'}
+                      </span>
                       <button
                         type="button"
                         onClick={() => {
@@ -977,7 +993,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ initialPortal }) => {
                         }}
                         className="text-sky-600 font-extrabold hover:underline flex items-center gap-1 cursor-pointer"
                       >
-                        ← Back to {selectedPortal.toUpperCase()} Sign In
+                        ← Back to {selectedPortal === 'requester' ? 'Requester Sign In' : `${selectedPortal?.toUpperCase()} Sign In`}
                       </button>
                     </>
                   )}
