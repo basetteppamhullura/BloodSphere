@@ -3,37 +3,26 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { checkDonorEligibility } from '../utils/matchingEngine';
+import { BloodNetLogo } from '../components/common/BloodNetLogo';
 import {
   Heart,
   Search,
-  PlusCircle,
   ShieldCheck,
   Zap,
   Users,
   Activity,
-  Award,
-  ChevronRight,
   ArrowRight,
   Sparkles,
   Building2,
-  Clock,
-  PhoneCall,
   Droplet,
-  Lock,
-  UserCheck,
-  AlertTriangle,
   MapPin,
-  Calendar,
+  AlertTriangle,
   Bell,
-  CheckCircle2,
-  Radio,
-  RadioTower,
   Hospital
 } from 'lucide-react';
 
 export const LandingPage: React.FC = () => {
   const {
-    navigateTo,
     setActiveEmergencyPostModal,
     requests,
     donors,
@@ -94,7 +83,215 @@ export const LandingPage: React.FC = () => {
   return (
     <div className="space-y-8 py-2 animate-in fade-in text-xs">
       
-      {/* 1. HERO SECTION WITH WATER BUBBLES & NETWORK GRAPHIC */}
+      {/* ================================================== */}
+      {/* 1. BLOODNET MAIN PORTAL-SELECTION SECTION          */}
+      {/* ================================================== */}
+      <section className="relative overflow-hidden p-8 sm:p-12 rounded-3xl bg-gradient-to-br from-white via-sky-50/40 to-slate-50 border border-sky-100/90 shadow-xs space-y-8">
+        
+        {/* Ambient Medical Orbs */}
+        <div className="absolute top-4 right-10 w-48 h-48 rounded-full bg-sky-100/40 blur-3xl pointer-events-none" />
+        <div className="absolute bottom-4 left-10 w-48 h-48 rounded-full bg-red-100/30 blur-3xl pointer-events-none" />
+
+        {/* Branding & Header */}
+        <div className="text-center space-y-2 max-w-2xl mx-auto relative z-10">
+          <div className="flex justify-center mb-1">
+            <BloodNetLogo size="lg" showTagline={true} />
+          </div>
+
+          <h1 className="text-3xl sm:text-4xl font-black text-[#0F172A] tracking-tight pt-2">
+            Choose Your Portal
+          </h1>
+
+          <p className="text-sm font-semibold text-slate-500 italic">
+            "Join hands in saving lives — Donate, Request, Support."
+          </p>
+        </div>
+
+        {/* 4 Clean Rounded Portal Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6 pt-2 relative z-10">
+          
+          {/* Card 1: Donor Portal */}
+          <div
+            onClick={() => navigate('/login/donor')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate('/login/donor');
+              }
+            }}
+            className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-red-200 hover:bg-gradient-to-b hover:from-white hover:to-rose-50/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-5 group focus:outline-none focus:ring-2 focus:ring-red-400"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Heart className="w-6 h-6 text-red-600" />
+              </div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-red-50 text-red-700 border border-red-200/60">
+                Voluntary
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-xl font-black text-[#0F172A] tracking-tight flex items-center gap-1.5">
+                <span>🩸</span> Donor Portal
+              </h2>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Donate blood and help save lives.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-400">Voluntary Donors</span>
+              <button
+                type="button"
+                tabIndex={-1}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-bold text-xs flex items-center gap-1.5 group-hover:translate-x-0.5 transition-transform cursor-pointer"
+              >
+                <span>Login / Sign Up</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 2: Requester Portal */}
+          <div
+            onClick={() => navigate('/login/requester')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate('/login/requester');
+              }
+            }}
+            className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-rose-200 hover:bg-gradient-to-b hover:from-white hover:to-rose-50/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-5 group focus:outline-none focus:ring-2 focus:ring-rose-400"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 border border-rose-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Users className="w-6 h-6 text-rose-600" />
+              </div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200/60">
+                Emergency Need
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-xl font-black text-[#0F172A] tracking-tight flex items-center gap-1.5">
+                <span>👤</span> Requester Portal
+              </h2>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Request blood for patients and those in need.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-400">Patient Requests</span>
+              <button
+                type="button"
+                tabIndex={-1}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 text-white font-bold text-xs flex items-center gap-1.5 group-hover:translate-x-0.5 transition-transform cursor-pointer"
+              >
+                <span>Login / Sign Up</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 3: Hospital Portal */}
+          <div
+            onClick={() => navigate('/login/hospital')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate('/login/hospital');
+              }
+            }}
+            className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-sky-200 hover:bg-gradient-to-b hover:from-white hover:to-sky-50/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-5 group focus:outline-none focus:ring-2 focus:ring-sky-400"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 border border-sky-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Building2 className="w-6 h-6 text-sky-600" />
+              </div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-200/60">
+                Trauma Center
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-xl font-black text-[#0F172A] tracking-tight flex items-center gap-1.5">
+                <span>🏥</span> Hospital Portal
+              </h2>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Manage patient requests, stock and operations.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-400">Clinical Operations</span>
+              <button
+                type="button"
+                tabIndex={-1}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-sky-600 to-blue-600 hover:from-sky-500 text-white font-bold text-xs flex items-center gap-1.5 group-hover:translate-x-0.5 transition-transform cursor-pointer"
+              >
+                <span>Login / Sign Up</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Card 4: Blood Bank Portal */}
+          <div
+            onClick={() => navigate('/login/bloodbank')}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                navigate('/login/bloodbank');
+              }
+            }}
+            className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs hover:shadow-lg hover:border-emerald-200 hover:bg-gradient-to-b hover:from-white hover:to-emerald-50/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-5 group focus:outline-none focus:ring-2 focus:ring-emerald-400"
+          >
+            <div className="flex items-center justify-between">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Droplet className="w-6 h-6 text-emerald-600" />
+              </div>
+              <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+                Inventory & 2FA
+              </span>
+            </div>
+
+            <div className="space-y-1.5">
+              <h2 className="text-xl font-black text-[#0F172A] tracking-tight flex items-center gap-1.5">
+                <span>🩸</span> Blood Bank Portal
+              </h2>
+              <p className="text-xs text-slate-500 font-medium leading-relaxed">
+                Manage inventory, requests and blood units.
+              </p>
+            </div>
+
+            <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-slate-400">Inventory Units</span>
+              <button
+                type="button"
+                tabIndex={-1}
+                className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 group-hover:translate-x-0.5 transition-transform cursor-pointer"
+              >
+                <span>Login / Sign Up</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* ================================================== */}
+      {/* 2. REAL-TIME DONOR STATUS & NETWORK OVERVIEW       */}
+      {/* ================================================== */}
       <section className="relative overflow-hidden p-8 sm:p-14 rounded-3xl bg-gradient-to-br from-white via-sky-50/60 to-red-50/30 border border-sky-100 shadow-sm space-y-8">
         
         {/* Floating Water Bubble Background Orbs */}
@@ -111,10 +308,10 @@ export const LandingPage: React.FC = () => {
             </div>
 
             <div className="space-y-2">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 tracking-tight leading-tight">
+              <h2 className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
                 Find. Donate. <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-600 via-rose-600 to-rose-700">Save Lives.</span>
-              </h1>
+              </h2>
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed font-medium pt-2 max-w-xl">
                 <strong>Blood Net</strong> connects voluntary donors, patient requesters, hospitals, and blood banks in real time to help blood reach the people who need it most.
               </p>
@@ -124,21 +321,22 @@ export const LandingPage: React.FC = () => {
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link
                 to={getFindBloodPath()}
-                className="px-6 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-md shadow-sky-500/25 flex items-center gap-2 transition-all hover:scale-105"
+                className="px-6 py-3.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-md shadow-sky-500/25 flex items-center gap-2 transition-all hover:scale-105 cursor-pointer"
               >
                 <Search className="w-4 h-4" /> Find Blood Now
               </Link>
 
               <Link
                 to={getDonateBloodPath()}
-                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md shadow-red-500/25 flex items-center gap-2 transition-all hover:scale-105"
+                className="px-6 py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md shadow-red-500/25 flex items-center gap-2 transition-all hover:scale-105 cursor-pointer"
               >
                 <Heart className="w-4 h-4 fill-white" /> Donate Blood
               </Link>
 
               <button
+                type="button"
                 onClick={() => setActiveEmergencyPostModal(true)}
-                className="px-5 py-3.5 rounded-2xl bg-white hover:bg-red-50 text-red-600 font-extrabold text-xs border border-red-200 shadow-xs flex items-center gap-2 transition-all"
+                className="px-5 py-3.5 rounded-2xl bg-white hover:bg-red-50 text-red-600 font-extrabold text-xs border border-red-200 shadow-xs flex items-center gap-2 transition-all cursor-pointer"
               >
                 <Zap className="w-4 h-4 text-red-600" /> Emergency Request
               </button>
@@ -202,7 +400,9 @@ export const LandingPage: React.FC = () => {
         </div>
       </section>
 
-      {/* 2. REAL-TIME DONOR STATUS SUMMARY CARD */}
+      {/* ================================================== */}
+      {/* 3. REAL-TIME DONOR STATUS SUMMARY CARD             */}
+      {/* ================================================== */}
       <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sky-100 pb-4">
           <div className="flex items-center gap-3">
@@ -226,8 +426,9 @@ export const LandingPage: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               onClick={() => navigate(getDonateBloodPath())}
-              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center gap-1.5"
+              className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center gap-1.5 cursor-pointer"
             >
               <AlertTriangle className="w-4 h-4" /> View Emergency Board
             </button>
@@ -263,7 +464,9 @@ export const LandingPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 3. SHORTAGE ALERTS & REAL-TIME NOTIFICATIONS */}
+      {/* ================================================== */}
+      {/* 4. SHORTAGE ALERTS & REAL-TIME NOTIFICATIONS       */}
+      {/* ================================================== */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* Shortage Alerts Card */}
