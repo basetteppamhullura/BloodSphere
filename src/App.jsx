@@ -1,110 +1,184 @@
-import React, { useState } from 'react';
-import { AppProvider, useApp } from './context/AppContext';
-import Navbar from './components/Navbar';
-import SocialProofToast from './components/dashboard/SocialProofToast';
-import TrendingFeed from './components/dashboard/TrendingFeed';
-import ShortageHeatmap from './components/dashboard/ShortageHeatmap';
-import Leaderboard from './components/dashboard/Leaderboard';
-import DemandForecastChart from './components/ai/DemandForecastChart';
-import SmartMatchModal from './components/ai/SmartMatchModal';
-import AIPostExtractorModal from './components/ai/AIPostExtractorModal';
-import BloodBankInventory from './components/inventory/BloodBankInventory';
-import CampsManager from './components/inventory/CampsManager';
-import DonorProfile from './components/profile/DonorProfile';
-import CertificateModal from './components/profile/CertificateModal';
-import PrivacyChatModal from './components/chat/PrivacyChatModal';
-import Footer from './components/Footer';
-
-import {
-  Flame,
-  Map,
-  TrendingUp,
-  Building2,
-  Tent,
-  Trophy,
-  User,
-  Heart,
-  Sparkles
-} from 'lucide-react';
-
-function MainAppContent() {
-  const [activeNavTab, setActiveNavTab] = useState('trending');
-
-  return (
-    <div className="min-h-screen flex flex-col bg-[#0f1117] text-slate-100 selection:bg-red-600 selection:text-white">
-      
-      {/* Top Navigation */}
-      <Navbar />
-
-      {/* Live Activity Ticker */}
-      <SocialProofToast />
-
-      {/* Secondary Category Nav Tabs */}
-      <div className="bg-slate-900/60 border-b border-slate-800/80 sticky top-[61px] z-30 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-4 lg:px-8 flex items-center justify-between overflow-x-auto py-2.5">
-          
-          <div className="flex items-center gap-1 sm:gap-2">
-            {[
-              { id: 'trending', label: 'Urgent Requests', icon: Flame },
-              { id: 'shortage', label: 'City Shortage Map', icon: Map },
-              { id: 'forecast', label: 'AI Demand Forecast', icon: TrendingUp },
-              { id: 'inventory', label: 'Blood Bank Inventory', icon: Building2 },
-              { id: 'camps', label: 'Donation Camps', icon: Tent },
-              { id: 'leaderboard', label: 'Top Donors', icon: Trophy },
-              { id: 'profile', label: 'My Profile & Eligibility', icon: User }
-            ].map(tab => {
-              const IconComp = tab.icon;
-              const isActive = activeNavTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveNavTab(tab.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                    isActive
-                      ? 'bg-gradient-to-r from-red-600 to-rose-600 text-white shadow-md shadow-red-950'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
-                  }`}
-                >
-                  <IconComp className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </div>
-
-        </div>
-      </div>
-
-      {/* Main View Container */}
-      <main className="max-w-7xl mx-auto px-4 lg:px-8 py-8 flex-1 w-full space-y-8">
-        
-        {activeNavTab === 'trending' && <TrendingFeed />}
-        {activeNavTab === 'shortage' && <ShortageHeatmap />}
-        {activeNavTab === 'forecast' && <DemandForecastChart />}
-        {activeNavTab === 'inventory' && <BloodBankInventory />}
-        {activeNavTab === 'camps' && <CampsManager />}
-        {activeNavTab === 'leaderboard' && <Leaderboard />}
-        {activeNavTab === 'profile' && <DonorProfile />}
-
-      </main>
-
-      {/* All Active Modals */}
-      <SmartMatchModal />
-      <AIPostExtractorModal />
-      <CertificateModal />
-      <PrivacyChatModal />
-
-      {/* Footer */}
-      <Footer />
-
-    </div>
-  );
-}
-
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from './context/ThemeContext';
+import { AuthProvider } from './context/AuthContext';
+import { AppProvider } from './context/AppContext';
+// Layouts & Role Guard
+import { PublicLayout } from './components/layout/PublicLayout';
+import { DonorLayout } from './components/layout/DonorLayout';
+import { RequesterLayout } from './components/layout/RequesterLayout';
+import { HospitalLayout } from './components/layout/HospitalLayout';
+import { BloodBankLayout } from './components/layout/BloodBankLayout';
+import { AdminLayout } from './components/layout/AdminLayout';
+import { RoleProtectedRoute } from './components/common/RoleProtectedRoute';
+// Public Pages
+import { LandingPage } from './pages/LandingPage';
+import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+// Common / Shared Pages
+import { EmergencyRequestsPage } from './pages/EmergencyRequestsPage';
+import { RareRegistryPage } from './pages/RareRegistryPage';
+import { GroupCirclesPage } from './pages/GroupCirclesPage';
+import { DonorSearchPage } from './pages/DonorSearchPage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
+import { ProfilePage } from './pages/ProfilePage';
+// Role Home Pages
+import { DonorHomePage } from './pages/DonorHomePage';
+import { RequesterHomePage } from './pages/RequesterHomePage';
+import { HospitalHomePage } from './pages/HospitalHomePage';
+import { BloodBankHomePage } from './pages/BloodBankHomePage';
+import { AdminHomePage } from './pages/AdminHomePage';
+// Role Portal Specific Views & Desks
+import { RealtimeDonorPortal } from './components/donor/RealtimeDonorPortal';
+import { RealtimeRequesterPortal } from './components/requester/RealtimeRequesterPortal';
+import { RequesterActionHub } from './components/requester/RequesterActionHub';
+import { HospitalBloodStockFinder } from './components/requester/HospitalBloodStockFinder';
+import { HospitalMonitorDesk } from './components/hospital/HospitalMonitorDesk';
+import { HospitalEmergencyBoard } from './components/hospital/HospitalEmergencyBoard';
+import { HospitalDonationDrives } from './components/hospital/HospitalDonationDrives';
+import { HospitalInterCitySupply } from './components/hospital/HospitalInterCitySupply';
+import { HospitalBloodUnitDetails } from './components/hospital/HospitalBloodUnitDetails';
+import { BloodBankPortalDesk } from './components/bloodbank/BloodBankPortalDesk';
+import { AdminControlCenterDesk } from './components/admin/AdminControlCenterDesk';
 export default function App() {
-  return (
-    <AppProvider>
-      <MainAppContent />
-    </AppProvider>
-  );
+    return (<ThemeProvider>
+      <AuthProvider>
+        <AppProvider>
+          <BrowserRouter>
+            <Routes>
+              {/* ================================================== */}
+              {/* PUBLIC ROUTES                                      */}
+              {/* ================================================== */}
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<LandingPage />}/>
+                <Route path="/login" element={<LoginPage />}/>
+                <Route path="/login/donor" element={<LoginPage initialPortal="donor"/>}/>
+                <Route path="/login/requester" element={<LoginPage initialPortal="requester"/>}/>
+                <Route path="/login/hospital" element={<LoginPage initialPortal="hospital"/>}/>
+                <Route path="/login/bloodbank" element={<LoginPage initialPortal="bloodbank"/>}/>
+                <Route path="/login/admin" element={<LoginPage initialPortal="admin"/>}/>
+                <Route path="/register" element={<RegisterPage />}/>
+                <Route path="/register/donor" element={<RegisterPage forcedPortal="donor"/>}/>
+                <Route path="/register/requester" element={<RegisterPage forcedPortal="requester"/>}/>
+                <Route path="/register/hospital" element={<RegisterPage forcedPortal="hospital"/>}/>
+                <Route path="/register/bloodbank" element={<RegisterPage forcedPortal="bloodbank"/>}/>
+              </Route>
+
+              {/* ================================================== */}
+              {/* DONOR PORTAL ROUTES (/donor/*)                    */}
+              {/* ================================================== */}
+              <Route path="/donor" element={<RoleProtectedRoute requiredRole="donor">
+                    <DonorLayout />
+                  </RoleProtectedRoute>}>
+                <Route index element={<Navigate to="/donor/home" replace/>}/>
+                <Route path="home" element={<DonorHomePage />}/>
+                <Route path="dashboard" element={<RealtimeDonorPortal />}/>
+                <Route path="emergency" element={<EmergencyRequestsPage />}/>
+                <Route path="rare-blood" element={<RareRegistryPage />}/>
+                <Route path="family" element={<GroupCirclesPage />}/>
+                <Route path="directory" element={<DonorSearchPage />}/>
+                <Route path="leaderboard" element={<LeaderboardPage />}/>
+                <Route path="profile" element={<ProfilePage />}/>
+              </Route>
+
+              {/* ================================================== */}
+              {/* REQUESTER PORTAL ROUTES (/requester/*)              */}
+              {/* ================================================== */}
+              <Route path="/requester" element={<RoleProtectedRoute requiredRole="requester">
+                    <RequesterLayout />
+                  </RoleProtectedRoute>}>
+                <Route index element={<Navigate to="/requester/home" replace/>}/>
+                <Route path="home" element={<RequesterHomePage />}/>
+                <Route path="dashboard" element={<RealtimeRequesterPortal />}/>
+                <Route path="create-request" element={<RequesterActionHub />}/>
+                <Route path="requests" element={<EmergencyRequestsPage />}/>
+                <Route path="find-blood" element={<HospitalBloodStockFinder />}/>
+                <Route path="notifications" element={<RealtimeRequesterPortal />}/>
+                <Route path="profile" element={<ProfilePage />}/>
+              </Route>
+
+              {/* ================================================== */}
+              {/* HOSPITAL PORTAL ROUTES (/hospital/*)               */}
+              {/* ================================================== */}
+              <Route path="/hospital" element={<RoleProtectedRoute requiredRole="hospital">
+                    <HospitalLayout />
+                  </RoleProtectedRoute>}>
+                <Route index element={<Navigate to="/hospital/home" replace/>}/>
+                <Route path="home" element={<HospitalHomePage />}/>
+                <Route path="dashboard" element={<HospitalMonitorDesk initialTab="monitor"/>}/>
+                <Route path="requests" element={<HospitalEmergencyBoard />}/>
+                <Route path="blood-availability" element={<HospitalBloodStockFinder />}/>
+                <Route path="unit-details" element={<HospitalBloodUnitDetails />}/>
+                <Route path="units/:unitId" element={<HospitalBloodUnitDetails />}/>
+                <Route path="donors" element={<HospitalDonationDrives />}/>
+                <Route path="blood-banks" element={<HospitalInterCitySupply />}/>
+                <Route path="reports" element={<HospitalMonitorDesk initialTab="audit_log"/>}/>
+              </Route>
+
+              {/* ================================================== */}
+              {/* BLOOD BANK PORTAL ROUTES (/bloodbank/*)            */}
+              {/* ================================================== */}
+              <Route path="/bloodbank" element={<RoleProtectedRoute requiredRole="bloodbank">
+                    <BloodBankLayout />
+                  </RoleProtectedRoute>}>
+                <Route index element={<Navigate to="/bloodbank/home" replace/>}/>
+                <Route path="home" element={<BloodBankHomePage />}/>
+                <Route path="dashboard" element={<BloodBankPortalDesk />}/>
+                <Route path="requests" element={<BloodBankPortalDesk />}/>
+                <Route path="requests/:requestId" element={<BloodBankPortalDesk />}/>
+                <Route path="hospital-requests" element={<BloodBankPortalDesk />}/>
+                <Route path="bloodbank-requests" element={<BloodBankPortalDesk />}/>
+                <Route path="inventory" element={<BloodBankPortalDesk />}/>
+                <Route path="units" element={<BloodBankPortalDesk />}/>
+                <Route path="units/:unitId" element={<BloodBankPortalDesk />}/>
+                <Route path="unit-tracking" element={<Navigate to="/bloodbank/units" replace/>}/>
+                <Route path="preservation" element={<BloodBankPortalDesk />}/>
+                <Route path="reservations" element={<BloodBankPortalDesk />}/>
+                <Route path="issue" element={<BloodBankPortalDesk />}/>
+                <Route path="issue-blood" element={<Navigate to="/bloodbank/issue" replace/>}/>
+                <Route path="alerts" element={<BloodBankPortalDesk />}/>
+                <Route path="notifications" element={<BloodBankPortalDesk />}/>
+                <Route path="activity" element={<BloodBankPortalDesk />}/>
+                <Route path="activity-log" element={<Navigate to="/bloodbank/activity" replace/>}/>
+                <Route path="reports" element={<BloodBankPortalDesk />}/>
+                <Route path="settings" element={<BloodBankPortalDesk />}/>
+              </Route>
+
+              {/* ================================================== */}
+              {/* SUPER ADMIN PORTAL ROUTES (/admin/*)              */}
+              {/* ================================================== */}
+              <Route path="/admin" element={<RoleProtectedRoute requiredRole="admin">
+                    <AdminLayout />
+                  </RoleProtectedRoute>}>
+                <Route index element={<Navigate to="/admin/home" replace/>}/>
+                <Route path="home" element={<AdminHomePage />}/>
+                <Route path="dashboard" element={<AdminControlCenterDesk />}/>
+                <Route path="accounts" element={<AdminControlCenterDesk />}/>
+                <Route path="users" element={<Navigate to="/admin/accounts" replace/>}/>
+                <Route path="donors" element={<AdminControlCenterDesk />}/>
+                <Route path="donors/:donorId" element={<AdminControlCenterDesk />}/>
+                <Route path="requesters" element={<AdminControlCenterDesk />}/>
+                <Route path="requesters/:requesterId" element={<AdminControlCenterDesk />}/>
+                <Route path="hospitals" element={<AdminControlCenterDesk />}/>
+                <Route path="hospitals/:hospitalId" element={<AdminControlCenterDesk />}/>
+                <Route path="blood-banks" element={<AdminControlCenterDesk />}/>
+                <Route path="bloodbanks" element={<Navigate to="/admin/blood-banks" replace/>}/>
+                <Route path="blood-banks/:bloodBankId" element={<AdminControlCenterDesk />}/>
+                <Route path="requests" element={<AdminControlCenterDesk />}/>
+                <Route path="inventory" element={<AdminControlCenterDesk />}/>
+                <Route path="live-activity" element={<AdminControlCenterDesk />}/>
+                <Route path="analytics" element={<AdminControlCenterDesk />}/>
+                <Route path="reports" element={<Navigate to="/admin/analytics" replace/>}/>
+                <Route path="audit-logs" element={<AdminControlCenterDesk />}/>
+                <Route path="audit" element={<Navigate to="/admin/audit-logs" replace/>}/>
+                <Route path="settings" element={<AdminControlCenterDesk />}/>
+              </Route>
+
+              {/* Fallback redirect */}
+              <Route path="*" element={<Navigate to="/" replace/>}/>
+            </Routes>
+          </BrowserRouter>
+        </AppProvider>
+      </AuthProvider>
+    </ThemeProvider>);
 }
