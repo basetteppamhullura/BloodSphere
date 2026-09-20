@@ -61,17 +61,17 @@ export const LandingPage = () => {
         <div className="space-y-8 py-2 animate-in fade-in text-xs">
 
             {/* ================================================== */}
-            {/* 1. BLOODNET HERO BANNER SECTION (MATCHES SCREENSHOT) */}
+            {/* 1. BLOODNET HERO BANNER SECTION (USER IMAGE SET)   */}
             {/* ================================================== */}
             <section
-                className="relative w-full rounded-3xl overflow-hidden shadow-sm border border-sky-100 min-h-[460px] sm:min-h-[520px] lg:min-h-[560px] flex items-center bg-cover bg-center bg-no-repeat"
-                style={{ backgroundImage: "url('/bloodnet-hero-bg.jpg')" }}
+                className="relative w-full rounded-3xl overflow-hidden shadow-sm border border-sky-100 min-h-[420px] sm:min-h-[480px] lg:min-h-[520px] flex items-center bg-cover bg-right sm:bg-center bg-no-repeat"
+                style={{ backgroundImage: "url('WhatsApp Image 2026-09-20 at 9.51.40 PMTTT.jpeg')" }}
             >
-                {/* Gradient overlay on left side for maximum readability */}
-                <div className="absolute inset-0 bg-gradient-to-r from-white/95 via-white/80 to-transparent pointer-events-none z-0" />
+                {/* Subtle gradient to ensure text contrast on left while keeping right image 100% visible */}
+                <div className="absolute inset-0 bg-gradient-to-r from-white/80 via-white/40 to-transparent pointer-events-none z-0 sm:from-white/70" />
 
                 {/* Hero Content Container */}
-                <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 py-10 flex flex-col justify-between min-h-[460px] sm:min-h-[520px] lg:min-h-[560px]">
+                <div className="relative z-10 w-full max-w-7xl mx-auto px-6 sm:px-10 lg:px-12 py-8 flex flex-col justify-between min-h-[420px] sm:min-h-[480px] lg:min-h-[520px]">
 
                     {/* Top Left Typography & Call to Actions */}
                     <div className="max-w-xl space-y-4 pt-4 sm:pt-6">
