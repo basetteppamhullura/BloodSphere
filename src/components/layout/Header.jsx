@@ -42,6 +42,45 @@ export const Header = () => {
     const portalRef = useRef(null);
     const profileRef = useRef(null);
 
+    // Connected segmented navigation ref & sliding pill style state
+    const navContainerRef = useRef(null);
+    const tabRefs = useRef([]);
+    const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, opacity: 0 });
+
+    // Determine active nav index for sliding pill
+    const getActiveNavIndex = () => {
+        const path = location.pathname;
+        if (path.startsWith('/donor') || path === '/login/donor') return 1;
+        if (path.startsWith('/requester') || path === '/login/requester') return 2;
+        if (path.startsWith('/hospital') || path === '/login/hospital') return 3;
+        if (path.startsWith('/bloodbank') || path === '/login/bloodbank') return 4;
+        return 0; // Home default
+    };
+
+    const activeNavIndex = getActiveNavIndex();
+
+    // Position sliding active pill smoothly
+    useEffect(() => {
+        const updatePillPosition = () => {
+            const activeTabEl = tabRefs.current[activeNavIndex];
+            if (activeTabEl && navContainerRef.current) {
+                setPillStyle({
+                    left: activeTabEl.offsetLeft,
+                    width: activeTabEl.offsetWidth,
+                    opacity: 1
+                });
+            }
+        };
+
+        updatePillPosition();
+        const timer = setTimeout(updatePillPosition, 60);
+        window.addEventListener('resize', updatePillPosition);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', updatePillPosition);
+        };
+    }, [activeNavIndex, location.pathname]);
+
     // Close dropdowns on outside click or Escape key
     useEffect(() => {
         const handleClickOutside = (event) => {
@@ -227,71 +266,89 @@ export const Header = () => {
                 </div>
 
                 {/* ================================================== */}
-                {/* 2. CENTER — MAIN PORTAL NAVIGATION LINKS          */}
+                {/* 2. CENTER — CONNECTED SEGMENTED SLIDING NAVIGATION  */}
                 {/* ================================================== */}
-                <nav className="hidden lg:flex items-center gap-1 xl:gap-1.5 text-xs font-bold text-slate-700 min-w-0 shrink">
+                <nav
+                    ref={navContainerRef}
+                    className="hidden lg:flex items-center bg-slate-100/90 border border-slate-200/80 p-1 rounded-full relative min-w-0 shrink shadow-2xs"
+                >
+                    {/* Sliding Active Blue Pill Indicator */}
+                    <div
+                        className="absolute top-1 bottom-1 bg-gradient-to-r from-sky-600 to-sky-700 shadow-xs rounded-full transition-all duration-300 ease-in-out z-0 pointer-events-none"
+                        style={{
+                            transform: `translateX(${pillStyle.left}px)`,
+                            width: `${pillStyle.width}px`,
+                            opacity: pillStyle.opacity
+                        }}
+                    />
+
                     {/* Home Link */}
                     <Link
+                        ref={el => tabRefs.current[0] = el}
                         to="/"
-                        className={`px-2.5 py-1.5 rounded-full flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
-                            isPathActive('home')
-                                ? 'bg-[#E0F2FE] text-[#0369A1] font-extrabold border border-[#BAE6FD] shadow-2xs'
-                                : 'hover:bg-slate-100/90 text-slate-700 hover:text-slate-900'
+                        className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap z-10 relative ${
+                            activeNavIndex === 0
+                                ? 'text-white font-extrabold'
+                                : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
                         }`}
                     >
-                        <Home className={`w-3.5 h-3.5 ${isPathActive('home') ? 'text-[#0284C7]' : 'text-slate-500'}`} />
+                        <Home className={`w-3.5 h-3.5 transition-colors ${activeNavIndex === 0 ? 'text-white' : 'text-sky-600'}`} />
                         <span>Home</span>
                     </Link>
 
                     {/* Donor Portal Link */}
                     <Link
+                        ref={el => tabRefs.current[1] = el}
                         to={getPortalUrl('donor')}
-                        className={`px-2.5 py-1.5 rounded-full flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
-                            isPathActive('donor')
-                                ? 'bg-red-50 text-red-700 font-extrabold border border-red-200 shadow-2xs'
-                                : 'hover:bg-red-50/70 text-slate-700 hover:text-red-700'
+                        className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap z-10 relative ${
+                            activeNavIndex === 1
+                                ? 'text-white font-extrabold'
+                                : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
                         }`}
                     >
-                        <Heart className={`w-3.5 h-3.5 ${isPathActive('donor') ? 'text-red-600 fill-red-600' : 'text-red-500'}`} />
+                        <Heart className={`w-3.5 h-3.5 transition-colors ${activeNavIndex === 1 ? 'text-white fill-white' : 'text-red-500'}`} />
                         <span>Donor<span className="hidden xl:inline"> Portal</span></span>
                     </Link>
 
                     {/* Requester Portal Link */}
                     <Link
+                        ref={el => tabRefs.current[2] = el}
                         to={getPortalUrl('requester')}
-                        className={`px-2.5 py-1.5 rounded-full flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
-                            isPathActive('requester')
-                                ? 'bg-rose-50 text-rose-700 font-extrabold border border-rose-200 shadow-2xs'
-                                : 'hover:bg-rose-50/70 text-slate-700 hover:text-rose-700'
+                        className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap z-10 relative ${
+                            activeNavIndex === 2
+                                ? 'text-white font-extrabold'
+                                : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
                         }`}
                     >
-                        <Users className={`w-3.5 h-3.5 ${isPathActive('requester') ? 'text-rose-600' : 'text-rose-500'}`} />
+                        <Users className={`w-3.5 h-3.5 transition-colors ${activeNavIndex === 2 ? 'text-white' : 'text-rose-500'}`} />
                         <span>Requester<span className="hidden xl:inline"> Portal</span></span>
                     </Link>
 
                     {/* Hospital Portal Link */}
                     <Link
+                        ref={el => tabRefs.current[3] = el}
                         to={getPortalUrl('hospital')}
-                        className={`px-2.5 py-1.5 rounded-full flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
-                            isPathActive('hospital')
-                                ? 'bg-sky-50 text-sky-700 font-extrabold border border-sky-200 shadow-2xs'
-                                : 'hover:bg-sky-50/70 text-slate-700 hover:text-sky-700'
+                        className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap z-10 relative ${
+                            activeNavIndex === 3
+                                ? 'text-white font-extrabold'
+                                : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
                         }`}
                     >
-                        <Building2 className={`w-3.5 h-3.5 ${isPathActive('hospital') ? 'text-sky-600' : 'text-sky-500'}`} />
+                        <Building2 className={`w-3.5 h-3.5 transition-colors ${activeNavIndex === 3 ? 'text-white' : 'text-sky-500'}`} />
                         <span>Hospital<span className="hidden xl:inline"> Portal</span></span>
                     </Link>
 
                     {/* Blood Bank Portal Link */}
                     <Link
+                        ref={el => tabRefs.current[4] = el}
                         to={getPortalUrl('bloodbank')}
-                        className={`px-2.5 py-1.5 rounded-full flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
-                            isPathActive('bloodbank')
-                                ? 'bg-emerald-50 text-emerald-700 font-extrabold border border-emerald-200 shadow-2xs'
-                                : 'hover:bg-emerald-50/70 text-slate-700 hover:text-emerald-700'
+                        className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap z-10 relative ${
+                            activeNavIndex === 4
+                                ? 'text-white font-extrabold'
+                                : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
                         }`}
                     >
-                        <Droplet className={`w-3.5 h-3.5 ${isPathActive('bloodbank') ? 'text-emerald-600' : 'text-emerald-500'}`} />
+                        <Droplet className={`w-3.5 h-3.5 transition-colors ${activeNavIndex === 4 ? 'text-white' : 'text-emerald-500'}`} />
                         <span>Blood Bank<span className="hidden xl:inline"> Portal</span></span>
                     </Link>
                 </nav>
@@ -410,7 +467,7 @@ export const Header = () => {
                         )}
                     </div>
 
-                    {/* 3.4 USER PROFILE CONTROL - GUARANTEED NO CLIPPING */}
+                    {/* 3.4 USER PROFILE CONTROL */}
                     {currentUser ? (
                         <div className="relative shrink-0" ref={profileRef}>
                             <button
