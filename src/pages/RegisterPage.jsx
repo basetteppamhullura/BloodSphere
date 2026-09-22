@@ -89,12 +89,12 @@ export const RegisterPage = ({ forcedPortal }) => {
           
           {/* ONLY SHOW ROLE SELECTOR IF NOT DETECTED FROM PORTAL LINK */}
           {!detectedPortal && (<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-bold">
-              <button type="button" onClick={() => setRole('donor')} className={`p-3 rounded-2xl border text-center transition-all ${role === 'donor' ? 'bg-red-600 text-white border-red-600 shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200'}`}>
+              <button type="button" onClick={() => setRole('donor')} className={`p-3 rounded-2xl border text-center transition-all ${role === 'donor' ? 'bg-[#2563EB] text-white border-[#2563EB] shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200'}`}>
                 <User className="w-5 h-5 mx-auto mb-1"/>
                 <span>Donor</span>
               </button>
 
-              <button type="button" onClick={() => setRole('requester')} className={`p-3 rounded-2xl border text-center transition-all ${role === 'requester' ? 'bg-rose-600 text-white border-rose-600 shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200'}`}>
+              <button type="button" onClick={() => setRole('requester')} className={`p-3 rounded-2xl border text-center transition-all ${role === 'requester' ? 'bg-cyan-600 text-white border-cyan-600 shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200'}`}>
                 <User className="w-5 h-5 mx-auto mb-1"/>
                 <span>Requester</span>
               </button>

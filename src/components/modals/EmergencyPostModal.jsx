@@ -202,8 +202,8 @@ export const EmergencyPostModal = () => {
         {/* Modal Header */}
         <div className="p-5 border-b border-sky-100 flex justify-between items-center bg-gradient-to-r from-sky-50 via-white to-blue-50 relative z-10">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-red-600 text-white font-extrabold flex items-center justify-center shadow-md shadow-red-500/20">
-              <AlertTriangle className="w-5 h-5"/>
+            <div className="w-10 h-10 rounded-2xl bg-[#EF4444] text-white font-extrabold flex items-center justify-center shadow-md shadow-red-500/10">
+              <AlertTriangle className="w-5 h-5 text-white"/>
             </div>
             <div>
               <h3 className="font-extrabold text-base text-slate-900">Create Blood Request Wizard</h3>
@@ -222,8 +222,8 @@ export const EmergencyPostModal = () => {
             const stepNum = idx + 1;
             const isActive = currentStep === stepNum;
             const isDone = currentStep > stepNum;
-            return (<div key={label} onClick={() => isDone && setCurrentStep(stepNum)} className={`flex items-center gap-1 cursor-pointer shrink-0 ${isActive ? 'text-red-600 font-black' : isDone ? 'text-emerald-600' : 'text-slate-400'}`}>
-                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] ${isActive ? 'bg-red-600 text-white shadow-xs' : isDone ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : 'bg-white text-slate-400 border border-sky-100'}`}>
+            return (<div key={label} onClick={() => isDone && setCurrentStep(stepNum)} className={`flex items-center gap-1 cursor-pointer shrink-0 ${isActive ? 'text-[#2563EB] font-black' : isDone ? 'text-emerald-600' : 'text-slate-400'}`}>
+                <span className={`w-5 h-5 rounded-full flex items-center justify-center text-[9px] ${isActive ? 'bg-[#2563EB] text-white shadow-xs' : isDone ? 'bg-emerald-100 text-emerald-700 border border-emerald-300' : 'bg-white text-slate-400 border border-sky-100'}`}>
                   {isDone ? '✓' : stepNum}
                 </span>
                 <span className="hidden sm:inline">{label}</span>

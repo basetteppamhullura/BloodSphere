@@ -49,11 +49,11 @@ export const DonorRequesterLoginPage = () => {
         
         {/* Role Toggle Pill */}
         <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-sky-50 border border-sky-100 font-extrabold text-xs">
-          <button type="button" onClick={() => handleRoleToggle('donor')} className={`flex-1 py-2.5 rounded-xl transition-all ${selectedRole === 'donor' ? 'bg-red-600 text-white shadow-md shadow-red-500/20' : 'text-slate-600 hover:text-slate-900'}`}>
+          <button type="button" onClick={() => handleRoleToggle('donor')} className={`flex-1 py-2.5 rounded-xl transition-all ${selectedRole === 'donor' ? 'bg-[#2563EB] text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:text-slate-900'}`}>
             ❤️ Voluntary Donor
           </button>
 
-          <button type="button" onClick={() => handleRoleToggle('requester')} className={`flex-1 py-2.5 rounded-xl transition-all ${selectedRole === 'requester' ? 'bg-red-600 text-white shadow-md shadow-red-500/20' : 'text-slate-600 hover:text-slate-900'}`}>
+          <button type="button" onClick={() => handleRoleToggle('requester')} className={`flex-1 py-2.5 rounded-xl transition-all ${selectedRole === 'requester' ? 'bg-[#2563EB] text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:text-slate-900'}`}>
             🆘 Patient Requester
           </button>
         </div>
@@ -74,7 +74,7 @@ export const DonorRequesterLoginPage = () => {
             <input type="password" value={password} onChange={e => setPassword(e.target.value)} className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs focus:outline-none focus:border-sky-500" required/>
           </div>
 
-          <button type="submit" className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
+          <button type="submit" className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-500 text-white font-extrabold text-xs shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-all hover:scale-[1.02]">
             <LogIn className="w-4 h-4"/> Log In as {selectedRole === 'donor' ? 'Donor' : 'Requester'}
           </button>
         </form>
