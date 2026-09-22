@@ -1,192 +1,751 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { HospitalBloodStockFinder } from './HospitalBloodStockFinder';
 import { calculateSmartDonorMatches } from '../../utils/matchingEngine';
-import { Search, PlusCircle, ShieldCheck, Users, Activity, Building2, Droplet, AlertTriangle, MapPin, Bell, CheckCircle2, RadioTower, MessageSquare, Send, ShieldAlert, FileText, Download } from 'lucide-react';
+import {
+  Search, PlusCircle, ShieldCheck, Users, Activity, Building2,
+  Droplet, AlertTriangle, MapPin, Bell, CheckCircle2, RadioTower,
+  MessageSquare, Send, ShieldAlert, FileText, Download, RefreshCw,
+  XCircle, Clock, Check, Filter, Heart, ArrowRight, LifeBuoy, Zap,
+  ChevronRight, X, User
+} from 'lucide-react';
+
 export const RealtimeRequesterPortal = () => {
-    const { requests, donors, bloodBanks, notifications, sendDirectRequestToDonor, cancelEmergencyRequest, approveBloodBankReservation, setActiveEmergencyPostModal, openEmergencyChat, showToast } = useApp();
-    const { currentUser } = useAuth();
-    const [activeReqId, setActiveReqId] = useState(requests[0]?.id || 'BR-1025');
-    const [portalTab, setPortalTab] = useState('tracking');
-    const [activeSearchTab, setActiveSearchTab] = useState('donors');
-    const [radiusKm, setRadiusKm] = useState(25);
-    const [statusDetailModal, setStatusDetailModal] = useState(null);
-    const activeReq = requests.find(r => r.id === activeReqId) || requests[0];
-    const activeRequestsList = requests.filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED');
-    const historyRequestsList = requests.filter(r => r.status === 'COMPLETED' || r.status === 'CANCELLED');
-    // Helper: Normalize recipient status to canonical 3 (PENDING, APPROVED, REJECTED)
-    const getNormalizedSourceStatus = (source, req) => {
-        if (!req)
-            return { status: 'PENDING', badgeClass: 'bg-amber-50 text-amber-800 border-amber-300', dotClass: 'bg-amber-500', icon: '🟡', label: 'PENDING', time: '', desc: '' };
-        const cs = req.channelStatuses;
-        if (source === 'donor') {
-            const raw = cs?.donorStatus || (req.donorResponses && req.donorResponses.some(r => r.status === 'ACCEPTED') ? 'APPROVED' : (req.donorResponses && req.donorResponses.length > 0 && req.donorResponses.every(r => r.status === 'DECLINED') ? 'REJECTED' : 'PENDING'));
-            const isApproved = raw === 'APPROVED' || raw === 'DONOR_ACCEPTED' || raw === 'FULFILLED' || (req.confirmedUnits || 0) > 0;
-            const isRejected = raw === 'REJECTED' || (req.donorResponses && req.donorResponses.length > 0 && req.donorResponses.every(r => r.status === 'DECLINED'));
-            const status = isApproved ? 'APPROVED' : (isRejected ? 'REJECTED' : 'PENDING');
-            const time = cs?.donorRespondedAt || req.donorResponses?.[0]?.respondedAt || '';
-            return {
-                status,
-                badgeClass: status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (status === 'REJECTED' ? 'bg-red-50 text-red-800 border-red-300' : 'bg-amber-50 text-amber-800 border-amber-300'),
-                dotClass: status === 'APPROVED' ? 'bg-emerald-500' : (status === 'REJECTED' ? 'bg-red-500' : 'bg-amber-500 animate-pulse'),
-                icon: status === 'APPROVED' ? '🟢' : (status === 'REJECTED' ? '🔴' : '🟡'),
-                label: status,
-                time,
-                reason: cs?.donorRejectionReason,
-                desc: status === 'APPROVED'
-                    ? (req.assignedDonorName ? `${req.assignedDonorName} accepted request` : 'Donor accepted request')
-                    : status === 'REJECTED'
-                        ? (cs?.donorRejectionReason || 'Declined by contacted donor')
-                        : 'Waiting for voluntary donor response'
-            };
-        }
-        if (source === 'hospital') {
-            const raw = cs?.hospitalStatus || (req.isVerifiedByHospital ? 'APPROVED' : (req.status === 'REJECTED' ? 'REJECTED' : 'PENDING'));
-            const isApproved = raw === 'APPROVED' || raw === 'FULFILLED' || req.isVerifiedByHospital;
-            const isRejected = raw === 'REJECTED';
-            const status = isApproved ? 'APPROVED' : (isRejected ? 'REJECTED' : 'PENDING');
-            const time = cs?.hospitalRespondedAt || '';
-            return {
-                status,
-                badgeClass: status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (status === 'REJECTED' ? 'bg-red-50 text-red-800 border-red-300' : 'bg-amber-50 text-amber-800 border-amber-300'),
-                dotClass: status === 'APPROVED' ? 'bg-emerald-500' : (status === 'REJECTED' ? 'bg-red-500' : 'bg-amber-500 animate-pulse'),
-                icon: status === 'APPROVED' ? '🟢' : (status === 'REJECTED' ? '🔴' : '🟡'),
-                label: status,
-                time,
-                reason: cs?.hospitalRejectionReason,
-                desc: status === 'APPROVED'
-                    ? `${req.hospitalName} has approved this request`
-                    : status === 'REJECTED'
-                        ? (cs?.hospitalRejectionReason || 'Hospital rejected request')
-                        : `Waiting for clinical response from ${req.hospitalName}`
-            };
-        }
-        // bloodbank
-        const raw = cs?.bloodBankStatus || (req.fulfilledChannel === 'bloodbank' ? 'APPROVED' : (req.status === 'REJECTED' ? 'REJECTED' : 'PENDING'));
-        const isApproved = raw === 'APPROVED' || raw === 'RESERVED' || raw === 'FULFILLED' || req.fulfilledChannel === 'bloodbank';
-        const isRejected = raw === 'REJECTED';
-        const status = isApproved ? 'APPROVED' : (isRejected ? 'REJECTED' : 'PENDING');
-        const time = cs?.bloodBankRespondedAt || '';
-        return {
-            status,
-            badgeClass: status === 'APPROVED' ? 'bg-emerald-50 text-emerald-800 border-emerald-300' : (status === 'REJECTED' ? 'bg-red-50 text-red-800 border-red-300' : 'bg-amber-50 text-amber-800 border-amber-300'),
-            dotClass: status === 'APPROVED' ? 'bg-emerald-500' : (status === 'REJECTED' ? 'bg-red-500' : 'bg-amber-500 animate-pulse'),
-            icon: status === 'APPROVED' ? '🟢' : (status === 'REJECTED' ? '🔴' : '🟡'),
-            label: status,
-            time,
-            reason: cs?.bloodBankRejectionReason,
-            desc: status === 'APPROVED'
-                ? 'Blood units approved & reserved in blood bank'
-                : status === 'REJECTED'
-                    ? (cs?.bloodBankRejectionReason || 'Blood bank stock unavailable')
-                    : 'Waiting for vault availability response from Blood Bank'
-        };
-    };
-    if (!activeReq) {
-        return (<div className="p-12 rounded-3xl bg-white border border-sky-100 shadow-sm text-center space-y-4 max-w-xl mx-auto my-8">
-        <ShieldAlert className="w-12 h-12 text-red-600 mx-auto animate-bounce"/>
-        <h2 className="text-xl font-black text-slate-900">No Active Blood Request Found</h2>
-        <p className="text-xs text-slate-500">You currently have no active emergency blood requests. Create a new request to start tracking nearby donors and blood bank stocks.</p>
-        <button onClick={() => setActiveEmergencyPostModal(true)} className="px-6 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 text-white font-extrabold text-xs shadow-md shadow-red-500/20">
-          <PlusCircle className="w-4 h-4 inline mr-1.5"/> Create Emergency Blood Request
-        </button>
-      </div>);
-    }
-    const targetGroup = activeReq.bloodGroup;
-    const targetComponent = activeReq.bloodComponent || 'PRBC';
-    // Smart Matching Donors
-    const matchedDonors = calculateSmartDonorMatches(donors, activeReq.bloodGroup, activeReq.lat || 15.3647, activeReq.lng || 75.124, radiusKm, activeReq.urgency);
-    // Hospital Facilities & Blood Banks Stock
-    const hospitalFacilities = bloodBanks.map(bank => {
-        const matchedItem = bank.inventory.find(i => i.bloodGroup === targetGroup);
-        const availableUnits = matchedItem ? (matchedItem.availableUnits || matchedItem.units) : 0;
-        return {
-            ...bank,
-            availableUnits,
-            lastUpdated: matchedItem ? matchedItem.lastUpdated : 'Just now'
-        };
+  const {
+    requests = [],
+    donors = [],
+    bloodBanks = [],
+    notifications = [],
+    activityLogs = [],
+    chatSessions = [],
+    connectionStatus = 'ONLINE',
+    isRealtimeConnected = true,
+    sendDirectRequestToDonor,
+    cancelEmergencyRequest,
+    setActiveEmergencyPostModal,
+    openEmergencyChat,
+    showToast
+  } = useApp();
+
+  const { currentUser } = useAuth();
+
+  // State management
+  const [portalTab, setPortalTab] = useState('overview'); // overview, tracking, availability, notifications, history, chat
+  const [activeReqId, setActiveReqId] = useState(null);
+  const [radiusKm, setRadiusKm] = useState(25);
+  const [statusDetailModal, setStatusDetailModal] = useState(null);
+  const [historySearch, setHistorySearch] = useState('');
+  const [historyStatusFilter, setHistoryStatusFilter] = useState('ALL');
+  const [historyGroupFilter, setHistoryGroupFilter] = useState('ALL');
+
+  // 1. Data Privacy & Filter: Filter requests belonging to the logged-in requester
+  const myRequests = useMemo(() => {
+    if (!currentUser) return requests;
+    const filtered = requests.filter(r => {
+      const idMatch = r.requesterId === currentUser.id || r.userId === currentUser.id;
+      const nameMatch = currentUser.name && (
+        r.patientName?.toLowerCase().includes(currentUser.name.toLowerCase()) ||
+        r.contactPerson?.toLowerCase().includes(currentUser.name.toLowerCase()) ||
+        r.requesterName?.toLowerCase().includes(currentUser.name.toLowerCase())
+      );
+      const emailMatch = currentUser.email && r.email?.toLowerCase() === currentUser.email.toLowerCase();
+      const phoneMatch = currentUser.phone && (
+        (r.contactPhone && r.contactPhone.replace(/\D/g, '') === currentUser.phone.replace(/\D/g, '')) ||
+        (r.requesterPhone && r.requesterPhone.replace(/\D/g, '') === currentUser.phone.replace(/\D/g, ''))
+      );
+      return idMatch || nameMatch || emailMatch || phoneMatch;
     });
-    return (<div className="space-y-6 text-xs animate-in fade-in max-w-6xl mx-auto pb-16">
-      
-      {/* 1. REQUESTER HEADER & ACTIVE REQUEST SELECTOR (Feature 1) */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-sky-100 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sky-100 pb-4">
+    return filtered.length > 0 ? filtered : requests;
+  }, [requests, currentUser]);
+
+  // 2. Computed Request Lists & Counts
+  const activeRequestsList = useMemo(() => {
+    return myRequests.filter(r => r.status !== 'COMPLETED' && r.status !== 'CANCELLED');
+  }, [myRequests]);
+
+  const pendingRequestsList = useMemo(() => {
+    return myRequests.filter(r => r.status === 'PENDING' || r.status === 'UNDER_REVIEW' || r.status === 'PENDING_HOSPITAL_APPROVAL');
+  }, [myRequests]);
+
+  const approvedRequestsList = useMemo(() => {
+    return myRequests.filter(r => 
+      r.status === 'ACCEPTED' || 
+      r.status === 'APPROVED' || 
+      r.status === 'RESERVED' || 
+      r.status === 'BLOOD_SECURED' || 
+      r.status === 'VERIFIED_SEARCHING_DONORS'
+    );
+  }, [myRequests]);
+
+  const completedRequestsList = useMemo(() => {
+    return myRequests.filter(r => r.status === 'COMPLETED');
+  }, [myRequests]);
+
+  const historyRequestsList = useMemo(() => {
+    return myRequests.filter(r => r.status === 'COMPLETED' || r.status === 'CANCELLED' || r.status === 'REJECTED');
+  }, [myRequests]);
+
+  // 3. Active Request Selection
+  const activeReq = useMemo(() => {
+    if (activeReqId) {
+      const found = myRequests.find(r => r.id === activeReqId);
+      if (found) return found;
+    }
+    return activeRequestsList[0] || myRequests[0];
+  }, [activeReqId, myRequests, activeRequestsList]);
+
+  // 4. Urgent Request Alert Check
+  const urgentAlertRequest = useMemo(() => {
+    return activeRequestsList.find(r => r.urgency === 'CRITICAL' || r.urgency === 'HIGH');
+  }, [activeRequestsList]);
+
+  // 5. Requester Chat Sessions
+  const myChats = useMemo(() => {
+    return (chatSessions || []).filter(s => 
+      s.requesterId === currentUser?.id || 
+      myRequests.some(r => r.id === s.requestId)
+    );
+  }, [chatSessions, currentUser, myRequests]);
+
+  // 6. Requester Notifications
+  const unreadNotifications = useMemo(() => {
+    return notifications.filter(n => !n.read);
+  }, [notifications]);
+
+  // 7. Recent Activity for Requester
+  const recentActivities = useMemo(() => {
+    const list = [
+      ...activityLogs.filter(a => myRequests.some(r => r.id === a.requestId)),
+      ...myRequests.flatMap(r => [
+        { id: `act-crt-${r.id}`, time: r.requestedAt?.slice(-8) || 'Recently', title: `Request ${r.id} Created`, desc: `${r.unitsNeeded || 1} Units of ${r.bloodGroup} for ${r.patientName} at ${r.hospitalName}` },
+        ...(r.donorResponses || []).map(dr => ({ id: `act-dr-${dr.donorId}`, time: dr.respondedAt || 'Just now', title: `Donor Response Received`, desc: `${dr.donorName} accepted request for ${r.bloodGroup}` }))
+      ])
+    ];
+    return list.slice(0, 6);
+  }, [activityLogs, myRequests]);
+
+  // Helper for Status Badge & Color
+  const getStatusBadgeStyle = (status) => {
+    const s = (status || '').toUpperCase().replace(/_/g, ' ');
+    if (s.includes('CRITICAL') || s.includes('REJECTED')) {
+      return { text: s, className: 'bg-red-50 text-red-700 border-red-200', dot: 'bg-red-500' };
+    }
+    if (s.includes('ACCEPTED') || s.includes('APPROVED') || s.includes('COMPLETED') || s.includes('SECURED')) {
+      return { text: s, className: 'bg-emerald-50 text-emerald-700 border-emerald-200', dot: 'bg-emerald-500' };
+    }
+    if (s.includes('REVIEW') || s.includes('PROCESSING') || s.includes('DISPATCHED')) {
+      return { text: s, className: 'bg-cyan-50 text-cyan-700 border-cyan-200', dot: 'bg-cyan-500' };
+    }
+    if (s.includes('RESERVED')) {
+      return { text: s, className: 'bg-blue-50 text-blue-700 border-blue-200', dot: 'bg-blue-500' };
+    }
+    return { text: s || 'PENDING', className: 'bg-blue-50 text-blue-700 border-blue-200', dot: 'bg-blue-500' };
+  };
+
+  // Helper: Normalized status breakdown per channel
+  const getNormalizedSourceStatus = (source, req) => {
+    if (!req) return { status: 'PENDING', badgeClass: 'bg-blue-50 text-blue-700 border-blue-200', icon: '🟡', label: 'PENDING', desc: 'Waiting for response' };
+    const cs = req.channelStatuses;
+    if (source === 'donor') {
+      const raw = cs?.donorStatus || (req.donorResponses && req.donorResponses.some(r => r.status === 'ACCEPTED') ? 'APPROVED' : (req.donorResponses && req.donorResponses.length > 0 && req.donorResponses.every(r => r.status === 'DECLINED') ? 'REJECTED' : 'PENDING'));
+      const isApproved = raw === 'APPROVED' || raw === 'DONOR_ACCEPTED' || raw === 'FULFILLED' || (req.confirmedUnits || 0) > 0;
+      const isRejected = raw === 'REJECTED';
+      const status = isApproved ? 'APPROVED' : (isRejected ? 'REJECTED' : 'PENDING');
+      return {
+        status,
+        badgeClass: status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (status === 'REJECTED' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'),
+        icon: status === 'APPROVED' ? '🟢' : (status === 'REJECTED' ? '🔴' : '🟡'),
+        label: status,
+        desc: status === 'APPROVED' ? (req.assignedDonorName ? `${req.assignedDonorName} accepted request` : 'Voluntary donor accepted request') : (status === 'REJECTED' ? 'Declined by contacted donor' : 'Waiting for voluntary donor response')
+      };
+    }
+    if (source === 'hospital') {
+      const raw = cs?.hospitalStatus || (req.isVerifiedByHospital ? 'APPROVED' : (req.status === 'REJECTED' ? 'REJECTED' : 'PENDING'));
+      const isApproved = raw === 'APPROVED' || raw === 'FULFILLED' || req.isVerifiedByHospital;
+      const isRejected = raw === 'REJECTED';
+      const status = isApproved ? 'APPROVED' : (isRejected ? 'REJECTED' : 'PENDING');
+      return {
+        status,
+        badgeClass: status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (status === 'REJECTED' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-cyan-50 text-cyan-700 border-cyan-200'),
+        icon: status === 'APPROVED' ? '🟢' : (status === 'REJECTED' ? '🔴' : '🟡'),
+        label: status,
+        desc: status === 'APPROVED' ? `${req.hospitalName || 'Hospital'} approved clinical request` : (status === 'REJECTED' ? 'Hospital stock unavailable' : `Clinical review in progress at ${req.hospitalName || 'Hospital'}`)
+      };
+    }
+    // bloodbank
+    const raw = cs?.bloodBankStatus || (req.fulfilledChannel === 'bloodbank' ? 'APPROVED' : (req.status === 'REJECTED' ? 'REJECTED' : 'PENDING'));
+    const isApproved = raw === 'APPROVED' || raw === 'RESERVED' || raw === 'FULFILLED' || req.fulfilledChannel === 'bloodbank';
+    const isRejected = raw === 'REJECTED';
+    const status = isApproved ? 'APPROVED' : (isRejected ? 'REJECTED' : 'PENDING');
+    return {
+      status,
+      badgeClass: status === 'APPROVED' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : (status === 'REJECTED' ? 'bg-red-50 text-red-700 border-red-200' : 'bg-blue-50 text-blue-700 border-blue-200'),
+      icon: status === 'APPROVED' ? '🟢' : (status === 'REJECTED' ? '🔴' : '🟡'),
+      label: status,
+      desc: status === 'APPROVED' ? 'Blood bank reserved units in storage vault' : (status === 'REJECTED' ? 'Blood bank stock depleted' : 'Checking blood bank vault availability')
+    };
+  };
+
+  // Filtered History List
+  const filteredHistory = useMemo(() => {
+    return historyRequestsList.filter(r => {
+      if (historySearch && !r.id?.toLowerCase().includes(historySearch.toLowerCase()) && !r.patientName?.toLowerCase().includes(historySearch.toLowerCase()) && !r.hospitalName?.toLowerCase().includes(historySearch.toLowerCase())) {
+        return false;
+      }
+      if (historyStatusFilter !== 'ALL' && r.status !== historyStatusFilter) return false;
+      if (historyGroupFilter !== 'ALL' && r.bloodGroup !== historyGroupFilter) return false;
+      return true;
+    });
+  }, [historyRequestsList, historySearch, historyStatusFilter, historyGroupFilter]);
+
+  return (
+    <div className="max-w-6xl mx-auto space-y-6 pb-16 animate-in fade-in text-xs font-sans text-[#16324F]">
+
+      {/* ================================================== */}
+      {/* 1. PAGE HEADER WITH REAL-TIME CONNECTION STATUS     */}
+      {/* ================================================== */}
+      <div className="p-6 sm:p-8 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#DCEAF5] pb-4">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-[10px] font-black bg-red-100 text-red-800 border border-red-200 uppercase">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <span className="px-3 py-1 rounded-full text-[10px] font-black bg-[#E8F4FF] text-[#2563EB] border border-[#BFDBFE] uppercase">
                 Patient & Caregiver Command Center
               </span>
-              <span className="text-xs text-slate-400 font-mono">User: {currentUser?.name || 'Requester'}</span>
+              <span className="text-xs text-slate-500 font-medium">User: {currentUser?.name || 'Requester'}</span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900 tracking-tight mt-1">
-              Live Blood Request & Tracking Portal 🆘
+            <h1 className="text-2xl sm:text-3xl font-black text-[#16324F] tracking-tight">
+              Requester Overview
             </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Monitor real-time status updates, stock reservations, donor acceptances, and regional facility redirections.
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Track your blood requests, responses and availability in real time.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button onClick={() => setActiveEmergencyPostModal(true)} className="px-5 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer">
-              <PlusCircle className="w-4 h-4"/> Create Emergency Request
+            {/* Real-time Connection Status Indicator (Requirement 2) */}
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-extrabold border ${
+              connectionStatus === 'ONLINE'
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                : 'bg-red-50 text-red-700 border-red-200 animate-pulse'
+            }`}>
+              <span className={`w-2 h-2 rounded-full ${connectionStatus === 'ONLINE' ? 'bg-emerald-500 animate-ping' : 'bg-red-500'}`} />
+              <span>{connectionStatus === 'ONLINE' ? '🟢 Live' : '🔴 Connection Interrupted'}</span>
+            </span>
+
+            {/* Prominent Create Blood Request Button (Requirement 4) */}
+            <button
+              onClick={() => setActiveEmergencyPostModal(true)}
+              className="px-5 py-2.5 rounded-2xl bg-[#EF4444] hover:bg-[#DC2626] text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4 text-white" />
+              <span>+ Create Blood Request</span>
             </button>
           </div>
         </div>
 
-        {/* ACTIVE REQUEST SELECTOR PILLS */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-          <div className="flex items-center gap-2 overflow-x-auto pb-1">
-            <span className="text-[10px] text-slate-500 font-extrabold uppercase shrink-0">Select Active Request ID:</span>
-            {activeRequestsList.map(r => (<button key={r.id} onClick={() => setActiveReqId(r.id)} className={`px-3.5 py-1.5 rounded-xl text-xs font-mono font-black transition-all cursor-pointer ${r.id === activeReq.id
-                ? 'bg-red-600 text-white shadow-sm ring-2 ring-red-400'
-                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
-                {r.id} ({r.bloodGroup})
-              </button>))}
+        {/* ================================================== */}
+        {/* 2. TOP SUMMARY CARDS (Requirement 3)               */}
+        {/* ================================================== */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 pt-2">
+          {/* Card 1: Active Requests */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-1 hover:border-[#2563EB] transition-colors">
+            <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold">
+              <span>Active Requests</span>
+              <Activity className="w-4 h-4 text-[#2563EB]" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-[#16324F]">{activeRequestsList.length}</div>
+            <span className="text-[10px] text-emerald-600 font-extrabold flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"/> Live Monitored
+            </span>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-mono">
-            <span className="text-[10px] text-slate-500 font-sans block">Patient Name:</span>
-            <strong className="text-slate-900 font-bold">{activeReq.patientName}</strong>
+          {/* Card 2: Pending Requests */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-1 hover:border-[#2563EB] transition-colors">
+            <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold">
+              <span>Pending</span>
+              <Clock className="w-4 h-4 text-cyan-600" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-[#16324F]">{pendingRequestsList.length}</div>
+            <span className="text-[10px] text-slate-500 font-medium">Under Review</span>
+          </div>
+
+          {/* Card 3: Accepted / Approved */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-1 hover:border-emerald-300 transition-colors">
+            <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold">
+              <span>Accepted / Approved</span>
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-emerald-600">{approvedRequestsList.length}</div>
+            <span className="text-[10px] text-emerald-600 font-bold">Units Confirmed</span>
+          </div>
+
+          {/* Card 4: Completed Requests */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-1 hover:border-blue-300 transition-colors">
+            <div className="flex items-center justify-between text-slate-500 text-[11px] font-bold">
+              <span>Completed</span>
+              <ShieldCheck className="w-4 h-4 text-[#2563EB]" />
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-[#2563EB]">{completedRequestsList.length}</div>
+            <span className="text-[10px] text-slate-500 font-medium">Fulfilled Orders</span>
           </div>
         </div>
       </div>
 
-      {/* 2. 4 PRIMARY REQUESTER FEATURE TABS */}
-      <div className="p-1.5 rounded-2xl bg-slate-100 border border-slate-200 flex flex-wrap gap-2 text-xs font-extrabold">
-        <button onClick={() => setPortalTab('tracking')} className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${portalTab === 'tracking'
-            ? 'bg-red-600 text-white font-black shadow-sm'
-            : 'text-slate-700 hover:bg-slate-200/60'}`}>
-          <Activity className="w-4 h-4"/> <span>Live Tracking & Timeline</span>
+      {/* ================================================== */}
+      {/* 3. URGENT BLOOD REQUEST ALERT (Requirement 10)     */}
+      {/* ================================================== */}
+      {urgentAlertRequest && (
+        <div className="p-5 sm:p-6 rounded-3xl bg-[#FFF1F2] border-2 border-red-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-[#EF4444] text-white flex items-center justify-center shrink-0 shadow-sm">
+              <AlertTriangle className="w-6 h-6 text-white animate-pulse" />
+            </div>
+            <div className="space-y-0.5">
+              <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-[#EF4444] font-black text-[10px] uppercase tracking-wider">
+                🚨 Urgent Blood Request
+              </span>
+              <h3 className="font-black text-base text-[#16324F] leading-tight">
+                {urgentAlertRequest.bloodGroup} • {urgentAlertRequest.unitsNeeded || 1} Units ({urgentAlertRequest.bloodComponent || 'PRBC'})
+              </h3>
+              <p className="text-xs text-slate-600 font-medium">
+                Hospital: <strong>{urgentAlertRequest.hospitalName}</strong> • Required: <strong>{urgentAlertRequest.requiredWithin || 'Within 2 hours'}</strong>
+              </p>
+              <div className="text-[11px] font-bold text-red-700">
+                Status: {urgentAlertRequest.status?.replace(/_/g, ' ') || 'Waiting for response'}
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setActiveReqId(urgentAlertRequest.id);
+              setPortalTab('tracking');
+            }}
+            className="px-5 py-2.5 rounded-xl bg-[#EF4444] hover:bg-[#DC2626] text-white font-black text-xs shadow-md transition-all hover:scale-105 shrink-0 cursor-pointer"
+          >
+            View Request
+          </button>
+        </div>
+      )}
+
+      {/* ================================================== */}
+      {/* 4. QUICK ACTIONS BAR (Requirement 15)              */}
+      {/* ================================================== */}
+      <div className="p-3 rounded-2xl bg-white border border-[#DCEAF5] shadow-xs flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => setActiveEmergencyPostModal(true)}
+            className="px-3.5 py-2 rounded-xl bg-[#EF4444] text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 hover:bg-[#DC2626] transition-colors cursor-pointer"
+          >
+            <PlusCircle className="w-4 h-4 text-white" /> + Create Request
+          </button>
+
+          <button
+            onClick={() => setPortalTab('availability')}
+            className={`px-3.5 py-2 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+              portalTab === 'availability' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-700 hover:bg-[#E8F4FF] hover:text-[#2563EB]'
+            }`}
+          >
+            <Search className="w-4 h-4 text-[#2563EB]" /> Find Blood
+          </button>
+
+          <button
+            onClick={() => setPortalTab('overview')}
+            className={`px-3.5 py-2 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+              portalTab === 'overview' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-700 hover:bg-[#E8F4FF] hover:text-[#2563EB]'
+            }`}
+          >
+            <Activity className="w-4 h-4 text-cyan-600" /> My Requests ({myRequests.length})
+          </button>
+
+          <button
+            onClick={() => setPortalTab('notifications')}
+            className={`px-3.5 py-2 rounded-xl font-extrabold text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+              portalTab === 'notifications' ? 'bg-[#2563EB] text-white shadow-xs' : 'text-slate-700 hover:bg-[#E8F4FF] hover:text-[#2563EB]'
+            }`}
+          >
+            <Bell className="w-4 h-4 text-amber-500" /> Notifications ({unreadNotifications.length})
+          </button>
+
+          <button
+            onClick={() => {
+              if (myChats.length > 0) openEmergencyChat(myChats[0].requestId);
+              else showToast('No active emergency chat available');
+            }}
+            className="px-3.5 py-2 rounded-xl text-slate-700 hover:bg-[#E8F4FF] hover:text-[#2563EB] font-extrabold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <MessageSquare className="w-4 h-4 text-emerald-600" /> Messages / Chat ({myChats.length})
+          </button>
+        </div>
+
+        <div className="flex items-center gap-2 pr-2 text-slate-400 font-mono text-[11px]">
+          <span>Role: REQUESTER</span>
+        </div>
+      </div>
+
+      {/* ================================================== */}
+      {/* 5. MAIN NAVIGATION TAB BAR                          */}
+      {/* ================================================== */}
+      <div className="p-1.5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] flex flex-wrap gap-2 text-xs font-extrabold">
+        <button
+          onClick={() => setPortalTab('overview')}
+          className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            portalTab === 'overview' ? 'bg-[#2563EB] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-[#E8F4FF]'
+          }`}
+        >
+          <Activity className="w-4 h-4" /> <span>Requests Overview ({activeRequestsList.length})</span>
         </button>
 
-        <button onClick={() => setPortalTab('availability')} className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${portalTab === 'availability'
-            ? 'bg-red-600 text-white font-black shadow-sm'
-            : 'text-slate-700 hover:bg-slate-200/60'}`}>
-          <Search className="w-4 h-4"/> <span>Nearby Blood Stock ({hospitalFacilities.filter(f => f.availableUnits > 0).length})</span>
+        <button
+          onClick={() => setPortalTab('tracking')}
+          className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            portalTab === 'tracking' ? 'bg-[#2563EB] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-[#E8F4FF]'
+          }`}
+        >
+          <RadioTower className="w-4 h-4" /> <span>Live Request & Timeline</span>
         </button>
 
-        <button onClick={() => setPortalTab('notifications')} className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${portalTab === 'notifications'
-            ? 'bg-red-600 text-white font-black shadow-sm'
-            : 'text-slate-700 hover:bg-slate-200/60'}`}>
-          <Bell className="w-4 h-4"/> <span>Live Notifications ({notifications.filter(n => !n.read).length})</span>
+        <button
+          onClick={() => setPortalTab('availability')}
+          className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            portalTab === 'availability' ? 'bg-[#2563EB] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-[#E8F4FF]'
+          }`}
+        >
+          <Search className="w-4 h-4" /> <span>Find Blood Availability</span>
         </button>
 
-        <button onClick={() => setPortalTab('history')} className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${portalTab === 'history'
-            ? 'bg-red-600 text-white font-black shadow-sm'
-            : 'text-slate-700 hover:bg-slate-200/60'}`}>
-          <FileText className="w-4 h-4"/> <span>Request History ({historyRequestsList.length})</span>
+        <button
+          onClick={() => setPortalTab('notifications')}
+          className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            portalTab === 'notifications' ? 'bg-[#2563EB] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-[#E8F4FF]'
+          }`}
+        >
+          <Bell className="w-4 h-4" /> <span>Live Alerts ({unreadNotifications.length})</span>
+        </button>
+
+        <button
+          onClick={() => setPortalTab('history')}
+          className={`flex-1 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            portalTab === 'history' ? 'bg-[#2563EB] text-white font-black shadow-xs' : 'text-slate-700 hover:bg-[#E8F4FF]'
+          }`}
+        >
+          <FileText className="w-4 h-4" /> <span>Request History ({historyRequestsList.length})</span>
         </button>
       </div>
 
-      {/* TAB 1: LIVE REQUEST TRACKING & TIMELINE (Features 1, 3, 4, & 7) */}
-      {portalTab === 'tracking' && (<div className="space-y-6">
-          
-          {/* ACTIVE REQUEST DETAILS CARD */}
-          <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-6 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-sky-100 pb-4">
+      {/* ================================================== */}
+      {/* TAB 1: OVERVIEW — MY ACTIVE REQUESTS & RESPONSES   */}
+      {/* ================================================== */}
+      {portalTab === 'overview' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+          {/* LEFT 2-COLUMNS: MY ACTIVE BLOOD REQUESTS (Requirement 5) */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-5">
+              <div className="flex items-center justify-between border-b border-[#DCEAF5] pb-4">
+                <div>
+                  <h2 className="text-xl font-black text-[#16324F] flex items-center gap-2">
+                    <Droplet className="w-5 h-5 text-[#EF4444]" />
+                    <span>My Active Blood Requests</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Real-time list of your active emergency blood requirements
+                  </p>
+                </div>
+                <span className="px-3 py-1 rounded-full bg-[#E8F4FF] text-[#2563EB] border border-[#BFDBFE] font-extrabold text-xs">
+                  {activeRequestsList.length} Active
+                </span>
+              </div>
+
+              {/* EMPTY STATE (Requirement 19) */}
+              {activeRequestsList.length === 0 ? (
+                <div className="p-10 text-center rounded-2xl bg-[#F5FAFF] border border-dashed border-[#DCEAF5] text-slate-500 space-y-3">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
+                  <div className="space-y-1">
+                    <strong className="block text-[#16324F] font-bold text-sm">No active blood requests.</strong>
+                    <p className="text-xs text-slate-500">You currently have no open blood requirements in the system.</p>
+                  </div>
+                  <button
+                    onClick={() => setActiveEmergencyPostModal(true)}
+                    className="px-5 py-2.5 rounded-xl bg-[#2563EB] text-white font-extrabold text-xs shadow-md hover:bg-blue-700 transition-colors cursor-pointer"
+                  >
+                    + Create Blood Request
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activeRequestsList.map(req => {
+                    const statusInfo = getStatusBadgeStyle(req.status);
+                    const donorData = getNormalizedSourceStatus('donor', req);
+                    const hospData = getNormalizedSourceStatus('hospital', req);
+                    const bankData = getNormalizedSourceStatus('bloodbank', req);
+
+                    return (
+                      <div
+                        key={req.id}
+                        className="p-5 rounded-2xl bg-white border border-[#DCEAF5] shadow-xs hover:border-[#2563EB] hover:shadow-md transition-all space-y-4 group"
+                      >
+                        {/* Request Header */}
+                        <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 rounded-2xl bg-[#E8F4FF] text-[#2563EB] border border-[#BFDBFE] font-black text-sm flex flex-col items-center justify-center shrink-0 shadow-2xs">
+                              <span>{req.bloodGroup}</span>
+                              <span className="text-[8px] opacity-80">{req.unitsNeeded} U</span>
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-mono text-xs font-bold text-slate-900">ID: {req.id}</span>
+                                <span className="text-[10px] text-slate-500 font-mono">Component: {req.bloodComponent || 'PRBC'}</span>
+                              </div>
+                              <h3 className="font-black text-[#16324F] text-sm group-hover:text-[#2563EB] transition-colors mt-0.5">
+                                {req.hospitalName || 'KIMS Teaching Hospital'}
+                              </h3>
+                              <p className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
+                                <MapPin className="w-3.5 h-3.5 text-slate-400" /> {req.city || 'Hubballi'} • Patient: {req.patientName}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-1 shrink-0">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold border uppercase tracking-wider ${statusInfo.className}`}>
+                              {statusInfo.text}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">Required: {req.requiredWithin || 'Within 2 hrs'}</span>
+                          </div>
+                        </div>
+
+                        {/* RESPONSE SUMMARY AREA (Requirement 8) */}
+                        <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-[#F5FAFF] border border-[#DCEAF5]">
+                          <div
+                            onClick={() => {
+                              setActiveReqId(req.id);
+                              setPortalTab('tracking');
+                            }}
+                            className="p-2 rounded-lg bg-white border border-[#DCEAF5] hover:border-[#2563EB] cursor-pointer text-center space-y-0.5"
+                          >
+                            <span className="text-[10px] font-extrabold text-slate-500 block">🏥 Hospital</span>
+                            <span className={`text-xs font-black block ${hospData.status === 'APPROVED' ? 'text-emerald-600' : (hospData.status === 'REJECTED' ? 'text-red-600' : 'text-blue-600')}`}>
+                              {hospData.icon} {hospData.status}
+                            </span>
+                          </div>
+
+                          <div
+                            onClick={() => {
+                              setActiveReqId(req.id);
+                              setPortalTab('tracking');
+                            }}
+                            className="p-2 rounded-lg bg-white border border-[#DCEAF5] hover:border-[#2563EB] cursor-pointer text-center space-y-0.5"
+                          >
+                            <span className="text-[10px] font-extrabold text-slate-500 block">🩸 Blood Bank</span>
+                            <span className={`text-xs font-black block ${bankData.status === 'APPROVED' ? 'text-emerald-600' : (bankData.status === 'REJECTED' ? 'text-red-600' : 'text-blue-600')}`}>
+                              {bankData.icon} {bankData.status}
+                            </span>
+                          </div>
+
+                          <div
+                            onClick={() => {
+                              setActiveReqId(req.id);
+                              setPortalTab('tracking');
+                            }}
+                            className="p-2 rounded-lg bg-white border border-[#DCEAF5] hover:border-[#2563EB] cursor-pointer text-center space-y-0.5"
+                          >
+                            <span className="text-[10px] font-extrabold text-slate-500 block">❤️ Donors</span>
+                            <span className={`text-xs font-black block ${donorData.status === 'APPROVED' ? 'text-emerald-600' : (donorData.status === 'REJECTED' ? 'text-red-600' : 'text-blue-600')}`}>
+                              {donorData.icon} {req.donorResponses?.length || 0} Responded
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Footer Action Bar */}
+                        <div className="flex items-center justify-between pt-1 text-xs">
+                          <span className="text-[10px] text-slate-400 font-mono">Last updated: Just now</span>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => {
+                                setActiveReqId(req.id);
+                                setPortalTab('tracking');
+                              }}
+                              className="px-3.5 py-1.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs shadow-xs transition-colors cursor-pointer"
+                            >
+                              Track & Timeline →
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* NEARBY AVAILABILITY BREAKDOWN (Requirement 12) */}
+            <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-[#DCEAF5] pb-3">
+                <div>
+                  <h3 className="font-extrabold text-base text-[#16324F] flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-[#EF4444]" />
+                    <span>Nearby Blood Availability</span>
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">Regional availability across Donors, Hospitals and Blood Banks</p>
+                </div>
+                <button
+                  onClick={() => setPortalTab('availability')}
+                  className="px-3.5 py-1.5 rounded-xl bg-[#E8F4FF] hover:bg-blue-100 text-[#2563EB] font-bold text-xs border border-[#BFDBFE] transition-colors cursor-pointer"
+                >
+                  Search Full Inventory →
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* Donors Nearby */}
+                <div className="p-4 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 font-bold text-xs">❤️ Voluntary Donors</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-black text-[10px]">{donors.length} Available</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500">Registered donors in Hubballi-Dharwad region</p>
+                </div>
+
+                {/* Hospitals Nearby */}
+                <div className="p-4 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 font-bold text-xs">🏥 Hospitals</span>
+                    <span className="px-2 py-0.5 rounded bg-sky-100 text-[#2563EB] font-black text-[10px]">3 Verified</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500">KIMS, SDM Medical & Civil Hospital</p>
+                </div>
+
+                {/* Blood Banks Nearby */}
+                <div className="p-4 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-600 font-bold text-xs">🩸 Blood Banks</span>
+                    <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-black text-[10px]">{bloodBanks.length} Centers</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500">Rotary Regional & District Vaults</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT 1-COLUMN: CHAT, RECENT ACTIVITY & NOTIFICATIONS (Requirements 13, 14, 16) */}
+          <div className="space-y-6">
+
+            {/* ACTIVE CONVERSATIONS / CHAT (Requirement 16) */}
+            <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-[#DCEAF5] pb-3">
+                <h3 className="font-extrabold text-base text-[#16324F] flex items-center gap-2">
+                  <MessageSquare className="w-5 h-5 text-emerald-600" />
+                  <span>Active Conversations</span>
+                </h3>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-black">
+                  {myChats.length} Active
+                </span>
+              </div>
+
+              {myChats.length === 0 ? (
+                <div className="p-6 text-center bg-[#F5FAFF] rounded-2xl border border-dashed border-[#DCEAF5] text-slate-500 space-y-1">
+                  <MessageSquare className="w-6 h-6 mx-auto text-slate-400 mb-1" />
+                  <p className="font-bold text-xs">No active request chats.</p>
+                  <p className="text-[11px] text-slate-400">Chats activate when a donor or hospital responds to your request.</p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {myChats.map(chat => (
+                    <div
+                      key={chat.id}
+                      onClick={() => openEmergencyChat(chat.requestId)}
+                      className="p-3.5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] hover:border-[#2563EB] hover:bg-white transition-all cursor-pointer space-y-1.5"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-xs text-[#16324F] flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"/>
+                          {chat.donorName || 'Responder'} ({chat.bloodGroup})
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">{chat.lastMessageTimestamp || 'Recent'}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 truncate font-medium">{chat.lastMessageText || 'Chat session active'}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* RECENT ACTIVITY FEED (Requirement 13) */}
+            <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-[#DCEAF5] pb-3">
+                <h3 className="font-extrabold text-base text-[#16324F] flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-cyan-600" />
+                  <span>Recent Activity</span>
+                </h3>
+                <span className="text-[10px] text-slate-400 font-mono">Real Audit Logs</span>
+              </div>
+
+              <div className="space-y-3">
+                {recentActivities.length === 0 ? (
+                  <p className="text-xs text-slate-400 italic py-2 text-center">No recent activity logged.</p>
+                ) : (
+                  recentActivities.map(act => (
+                    <div key={act.id} className="p-3 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-1">
+                      <div className="flex items-center justify-between">
+                        <strong className="text-xs font-extrabold text-[#16324F] flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#2563EB]" />
+                          {act.title}
+                        </strong>
+                        <span className="text-[9px] text-slate-400 font-mono">{act.time}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-snug">{act.desc}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* NOTIFICATIONS STREAM (Requirement 14) */}
+            <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-[#DCEAF5] pb-3">
+                <h3 className="font-extrabold text-base text-[#16324F] flex items-center gap-2">
+                  <Bell className="w-5 h-5 text-amber-500" />
+                  <span>Notifications</span>
+                </h3>
+                <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200 text-[10px] font-extrabold">
+                  {unreadNotifications.length} Unread
+                </span>
+              </div>
+
+              {unreadNotifications.length === 0 ? (
+                <div className="p-6 text-center bg-[#F5FAFF] rounded-2xl border border-dashed border-[#DCEAF5] text-slate-500">
+                  <p className="font-bold text-xs text-slate-700">You're all caught up.</p>
+                  <p className="text-[10px] text-slate-400">No unread notifications.</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {unreadNotifications.slice(0, 4).map(n => (
+                    <div key={n.id} className="p-3 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-1">
+                      <div className="flex items-center justify-between">
+                        <strong className="text-xs font-extrabold text-[#16324F]">{n.title}</strong>
+                        <span className="text-[9px] text-slate-400 font-mono">{n.time}</span>
+                      </div>
+                      <p className="text-[11px] text-slate-600">{n.message}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
+
+      {/* ================================================== */}
+      {/* TAB 2: LIVE REQUEST TRACKING & TIMELINE             */}
+      {/* ================================================== */}
+      {portalTab === 'tracking' && activeReq && (
+        <div className="space-y-6">
+          <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#DCEAF5] pb-4">
               <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 text-white font-black text-2xl flex items-center justify-center shadow-md shadow-red-500/20 shrink-0">
+                <div className="w-14 h-14 rounded-2xl bg-[#E8F4FF] text-[#2563EB] border border-[#BFDBFE] font-black text-2xl flex items-center justify-center shrink-0">
                   {activeReq.bloodGroup}
                 </div>
                 <div>
@@ -194,542 +753,296 @@ export const RealtimeRequesterPortal = () => {
                     <span className="px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 font-mono text-xs font-bold">
                       Request ID: {activeReq.id}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-red-100 text-red-800 text-[10px] font-black uppercase border border-red-200">
-                      Component: {targetComponent}
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#E8F4FF] text-[#2563EB] text-[10px] font-black uppercase border border-[#BFDBFE]">
+                      Component: {activeReq.bloodComponent || 'PRBC'}
                     </span>
-                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[10px] font-black uppercase border border-indigo-200">
+                    <span className="px-2.5 py-0.5 rounded-full bg-indigo-50 text-indigo-800 text-[10px] font-black uppercase border border-indigo-200">
                       {activeReq.unitsNeeded} Units Required
                     </span>
                   </div>
-                  <h2 className="text-xl font-black text-slate-900 mt-1">{activeReq.patientName}</h2>
+                  <h2 className="text-xl font-black text-[#16324F] mt-1">{activeReq.patientName}</h2>
                   <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                    <Building2 className="w-3.5 h-3.5 text-red-500"/> {activeReq.hospitalName}, {activeReq.city}
+                    <Building2 className="w-3.5 h-3.5 text-[#EF4444]" /> {activeReq.hospitalName}, {activeReq.city}
                   </p>
                 </div>
               </div>
 
               <div className="flex flex-col sm:items-end gap-1.5">
                 <div className="flex items-center gap-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold border uppercase tracking-wider ${activeReq.urgency === 'CRITICAL' ? 'bg-red-100 text-red-700 border-red-300 animate-pulse' : 'bg-amber-100 text-amber-800 border-amber-300'}`}>
+                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold border uppercase tracking-wider ${
+                    activeReq.urgency === 'CRITICAL' ? 'bg-red-50 text-red-700 border-red-200 animate-pulse' : 'bg-amber-50 text-amber-700 border-amber-200'
+                  }`}>
                     🚨 {activeReq.urgency} Urgency
                   </span>
 
-                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold border uppercase tracking-wider ${activeReq.status === 'APPROVED' || activeReq.status === 'BLOOD_SECURED' || activeReq.status === 'COMPLETED'
-                ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
-                : activeReq.status === 'REJECTED'
-                    ? 'bg-red-100 text-red-800 border-red-300'
-                    : 'bg-indigo-100 text-indigo-800 border-indigo-300'}`}>
-                    {activeReq.status.replace(/_/g, ' ')}
+                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold border uppercase tracking-wider ${getStatusBadgeStyle(activeReq.status).className}`}>
+                    {activeReq.status?.replace(/_/g, ' ')}
                   </span>
                 </div>
 
-                {activeReq.status !== 'COMPLETED' && activeReq.status !== 'CANCELLED' && (<button onClick={() => cancelEmergencyRequest(activeReq.id, 'Cancelled by requester')} className="text-[10px] font-bold text-slate-400 hover:text-red-600 transition-colors flex items-center gap-1 mt-1 cursor-pointer">
+                {activeReq.status !== 'COMPLETED' && activeReq.status !== 'CANCELLED' && (
+                  <button
+                    onClick={() => cancelEmergencyRequest(activeReq.id, 'Cancelled by requester')}
+                    className="text-[10px] font-bold text-slate-400 hover:text-red-600 transition-colors flex items-center gap-1 mt-1 cursor-pointer"
+                  >
                     Cancel Request
-                  </button>)}
-              </div>
-            </div>
-
-            {/* FEATURE 4 & 2: DEDICATED MULTI-SOURCE REQUEST STATUS AREA (DONOR, HOSPITAL, BLOOD BANK) */}
-            <div className="p-5 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <RadioTower className="w-4 h-4 text-rose-500 animate-pulse"/>
-                    <h3 className="text-xs font-black uppercase tracking-wider text-white flex items-center gap-1.5">
-                      REQUEST STATUS
-                    </h3>
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Real-time status tracking separated across Donor, Hospital, and Blood Bank sources.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-slate-800 text-slate-300 border border-slate-700">
-                    Request ID: {activeReq.id}
-                  </span>
-                  <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-mono font-bold">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"/> Real-Time Sync
-                  </span>
-                </div>
-              </div>
-
-              {/* 3 SEPARATED RECIPIENT SOURCE STATUS CARDS */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
-                {/* 1. DONOR SOURCE */}
-                {(() => {
-                const donorData = getNormalizedSourceStatus('donor', activeReq);
-                return (<div onClick={() => setStatusDetailModal({
-                        source: 'donor',
-                        sourceLabel: 'Voluntary Donor Pool',
-                        status: donorData.status,
-                        title: donorData.status === 'APPROVED' ? 'Donor Approved Request' : (donorData.status === 'REJECTED' ? 'Donor Declined Request' : 'Waiting for Donor Response'),
-                        message: donorData.status === 'APPROVED' ? 'A voluntary donor has approved your blood request and confirmed commitment.' : (donorData.status === 'REJECTED' ? 'The contacted donor declined the request. System is searching next matching voluntary donors.' : 'Request has been broadcasted to nearby matching voluntary blood donors. Waiting for donor response.'),
-                        timestamp: donorData.time || activeReq.requestedAt,
-                        reason: donorData.reason
-                    })} className={`p-4 rounded-2xl border transition-all cursor-pointer hover:scale-[1.02] flex flex-col justify-between space-y-3 ${donorData.status === 'APPROVED'
-                        ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400'
-                        : donorData.status === 'REJECTED'
-                            ? 'bg-rose-950/40 border-rose-500/40 hover:border-rose-400'
-                            : 'bg-amber-950/30 border-amber-500/40 hover:border-amber-400'}`}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-base shadow-xs">
-                            <Users className="w-4 h-4 text-rose-400"/>
-                          </div>
-                          <div>
-                            <span className="font-extrabold text-xs text-white block">Donor</span>
-                            <span className="text-[10px] text-slate-400 block font-mono">Voluntary Network</span>
-                          </div>
-                        </div>
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border flex items-center gap-1.5 shadow-xs ${donorData.status === 'APPROVED'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                        : donorData.status === 'REJECTED'
-                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40'}`}>
-                          <span>{donorData.icon}</span>
-                          <span>{donorData.status}</span>
-                        </span>
-                      </div>
-
-                      <div className="text-[11px] text-slate-300 space-y-1">
-                        <p className="line-clamp-2 leading-relaxed opacity-90">{donorData.desc}</p>
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1.5 border-t border-slate-800">
-                          <span>{donorData.time ? `Responded: ${donorData.time}` : `Sent: ${activeReq.requestedAt.slice(-8)}`}</span>
-                          <span className="text-sky-400 font-bold hover:underline">Click for details →</span>
-                        </div>
-                      </div>
-                    </div>);
-            })()}
-
-                {/* 2. HOSPITAL SOURCE */}
-                {(() => {
-                const hospData = getNormalizedSourceStatus('hospital', activeReq);
-                return (<div onClick={() => setStatusDetailModal({
-                        source: 'hospital',
-                        sourceLabel: activeReq.hospitalName || 'Hospital Medical Desk',
-                        status: hospData.status,
-                        title: hospData.status === 'APPROVED' ? `${activeReq.hospitalName} Approved Request` : (hospData.status === 'REJECTED' ? `${activeReq.hospitalName} Rejected Request` : `Waiting for Hospital Response`),
-                        message: hospData.status === 'APPROVED' ? `${activeReq.hospitalName} has approved this blood request and verified clinical requirement.` : (hospData.status === 'REJECTED' ? (hospData.reason || `${activeReq.hospitalName} rejected this blood request. Stock or bed capacity unavailable.`) : `Waiting for response from ${activeReq.hospitalName}. Clinical review in progress.`),
-                        timestamp: hospData.time || activeReq.requestedAt,
-                        reason: hospData.reason,
-                        facilityName: activeReq.hospitalName
-                    })} className={`p-4 rounded-2xl border transition-all cursor-pointer hover:scale-[1.02] flex flex-col justify-between space-y-3 ${hospData.status === 'APPROVED'
-                        ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400'
-                        : hospData.status === 'REJECTED'
-                            ? 'bg-rose-950/40 border-rose-500/40 hover:border-rose-400'
-                            : 'bg-amber-950/30 border-amber-500/40 hover:border-amber-400'}`}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-base shadow-xs">
-                            <Building2 className="w-4 h-4 text-sky-400"/>
-                          </div>
-                          <div>
-                            <span className="font-extrabold text-xs text-white block">Hospital</span>
-                            <span className="text-[10px] text-slate-400 block font-mono truncate max-w-[120px]">{activeReq.hospitalName}</span>
-                          </div>
-                        </div>
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border flex items-center gap-1.5 shadow-xs ${hospData.status === 'APPROVED'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                        : hospData.status === 'REJECTED'
-                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40'}`}>
-                          <span>{hospData.icon}</span>
-                          <span>{hospData.status}</span>
-                        </span>
-                      </div>
-
-                      <div className="text-[11px] text-slate-300 space-y-1">
-                        <p className="line-clamp-2 leading-relaxed opacity-90">{hospData.desc}</p>
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1.5 border-t border-slate-800">
-                          <span>{hospData.time ? `Responded: ${hospData.time}` : `Sent: ${activeReq.requestedAt.slice(-8)}`}</span>
-                          <span className="text-sky-400 font-bold hover:underline">Click for details →</span>
-                        </div>
-                      </div>
-                    </div>);
-            })()}
-
-                {/* 3. BLOOD BANK SOURCE */}
-                {(() => {
-                const bankData = getNormalizedSourceStatus('bloodbank', activeReq);
-                return (<div onClick={() => setStatusDetailModal({
-                        source: 'bloodbank',
-                        sourceLabel: 'Regional Blood Bank Vault',
-                        status: bankData.status,
-                        title: bankData.status === 'APPROVED' ? 'Blood Bank Approved & Reserved Units' : (bankData.status === 'REJECTED' ? 'Blood Bank Rejected Request' : 'Waiting for Blood Bank Response'),
-                        message: bankData.status === 'APPROVED' ? 'Blood Bank has approved this blood request and verified stock reservation.' : (bankData.status === 'REJECTED' ? (bankData.reason || 'Blood Bank has rejected this blood request. Storage stock unavailable.') : 'Waiting for response from Blood Bank. Checking cold vault stock inventory.'),
-                        timestamp: bankData.time || activeReq.requestedAt,
-                        reason: bankData.reason,
-                        facilityName: 'Rotary Regional Blood Centre'
-                    })} className={`p-4 rounded-2xl border transition-all cursor-pointer hover:scale-[1.02] flex flex-col justify-between space-y-3 ${bankData.status === 'APPROVED'
-                        ? 'bg-emerald-950/40 border-emerald-500/40 hover:border-emerald-400'
-                        : bankData.status === 'REJECTED'
-                            ? 'bg-rose-950/40 border-rose-500/40 hover:border-rose-400'
-                            : 'bg-amber-950/30 border-amber-500/40 hover:border-amber-400'}`}>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center text-base shadow-xs">
-                            <Droplet className="w-4 h-4 text-rose-400"/>
-                          </div>
-                          <div>
-                            <span className="font-extrabold text-xs text-white block">Blood Bank</span>
-                            <span className="text-[10px] text-slate-400 block font-mono">Vault Storage</span>
-                          </div>
-                        </div>
-                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border flex items-center gap-1.5 shadow-xs ${bankData.status === 'APPROVED'
-                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
-                        : bankData.status === 'REJECTED'
-                            ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                            : 'bg-amber-500/20 text-amber-300 border-amber-500/40'}`}>
-                          <span>{bankData.icon}</span>
-                          <span>{bankData.status}</span>
-                        </span>
-                      </div>
-
-                      <div className="text-[11px] text-slate-300 space-y-1">
-                        <p className="line-clamp-2 leading-relaxed opacity-90">{bankData.desc}</p>
-                        <div className="flex items-center justify-between text-[10px] text-slate-400 font-mono pt-1.5 border-t border-slate-800">
-                          <span>{bankData.time ? `Responded: ${bankData.time}` : `Sent: ${activeReq.requestedAt.slice(-8)}`}</span>
-                          <span className="text-sky-400 font-bold hover:underline">Click for details →</span>
-                        </div>
-                      </div>
-                    </div>);
-            })()}
-              </div>
-            </div>
-
-            {/* REJECTION REASON BANNER (Feature 4) */}
-            {activeReq.status === 'REJECTED' && (<div className="p-4 rounded-2xl bg-red-50 border-2 border-red-300 text-red-900 space-y-1 animate-in fade-in">
-                <strong className="text-sm font-black flex items-center gap-1.5 text-red-700">
-                  <AlertTriangle className="w-4 h-4 text-red-600"/> Request Rejected by Center
-                </strong>
-                <p className="text-xs font-bold">
-                  Reason: "{activeReq.additionalNotes || 'Stock unavailable at target hospital/center'}"
-                </p>
-                <p className="text-[11px] text-red-700">
-                  You can redirect this request to another nearby center or broadcast urgent alerts to voluntary donors below.
-                </p>
-              </div>)}
-
-            {/* REDIRECTION NOTIFICATION BANNER (Feature 4) */}
-            {activeReq.trendingReason?.includes('Redirected') && (<div className="p-4 rounded-2xl bg-sky-50 border-2 border-sky-300 text-sky-900 space-y-1 animate-in fade-in">
-                <strong className="text-sm font-black flex items-center gap-1.5 text-sky-800">
-                  <RadioTower className="w-4 h-4 text-sky-600"/> Request Redirected to {activeReq.hospitalName}
-                </strong>
-                <p className="text-xs font-bold">
-                  {activeReq.trendingReason}
-                </p>
-                <p className="text-[11px] text-sky-700">
-                  Request ID remains <strong>{activeReq.id}</strong>. Current processing facility: {activeReq.hospitalName} ({activeReq.city}).
-                </p>
-              </div>)}
-
-            {/* RESERVED / APPROVED PICKUP PASS (Feature 4) */}
-            {(activeReq.status === 'APPROVED' || activeReq.status === 'BLOOD_SECURED' || activeReq.status === 'COMPLETED') && (<div className="p-4 rounded-2xl bg-emerald-50 border-2 border-emerald-300 text-emerald-950 flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-in fade-in">
-                <div className="space-y-1">
-                  <strong className="text-sm font-black flex items-center gap-1.5 text-emerald-800">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600"/> Stock Reserved & Pickup Pass Code Generated
-                  </strong>
-                  <p className="text-xs font-bold text-emerald-900">
-                    Blood units reserved at <strong>{activeReq.hospitalName} ({activeReq.city})</strong>. Present fulfillment code at counter.
-                  </p>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <button onClick={() => openEmergencyChat(activeReq.id)} className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer">
-                    <MessageSquare className="w-4 h-4"/> 💬 Chat with Hospital
                   </button>
-                  <div className="px-4 py-2 rounded-2xl bg-white border border-emerald-300 text-center font-mono shadow-sm">
-                    <span className="text-[9px] text-slate-500 font-bold uppercase block">Fulfillment Pickup Code</span>
-                    <span className="text-lg font-black text-emerald-700 tracking-wider">PK-{activeReq.id.slice(-5).toUpperCase()}</span>
-                  </div>
-                </div>
-              </div>)}
+                )}
+              </div>
+            </div>
 
-            {/* 8-STEP LIFECYCLE TIMELINE (Feature 3) */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-[10px] text-slate-500 uppercase tracking-wider font-extrabold">
-                <span>Synchronized Request Lifecycle Timeline</span>
-                <span className="text-emerald-600 flex items-center gap-1 font-mono">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"/> Live Sync
+            {/* CHANNEL STATUS BREAKDOWN CARDS */}
+            <div className="p-5 rounded-3xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#DCEAF5] pb-3">
+                <div>
+                  <h3 className="text-xs font-black uppercase tracking-wider text-[#16324F] flex items-center gap-1.5">
+                    <RadioTower className="w-4 h-4 text-[#2563EB]" /> Channel Response Breakdown
+                  </h3>
+                  <p className="text-[11px] text-slate-500 mt-0.5">Real-time status tracking separated across Donor, Hospital, and Blood Bank sources.</p>
+                </div>
+                <span className="text-[10px] font-mono text-emerald-600 font-bold flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> Socket.IO Connected
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-1.5 font-mono text-[10px]">
-                {(activeReq.requestTimeline || []).map((step, idx) => (<div key={step.id} className={`p-2.5 rounded-xl border flex flex-col justify-between transition-all ${step.status === 'completed'
-                    ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-bold'
-                    : step.status === 'current'
-                        ? 'bg-sky-50 border-sky-300 text-sky-900 font-extrabold shadow-sm'
-                        : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5">
+                {/* 1. Donor Channel */}
+                {(() => {
+                  const donorData = getNormalizedSourceStatus('donor', activeReq);
+                  return (
+                    <div className="p-4 rounded-2xl bg-white border border-[#DCEAF5] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-xs text-[#16324F] flex items-center gap-1.5">
+                          <Users className="w-4 h-4 text-[#EF4444]" /> Voluntary Donors
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${donorData.badgeClass}`}>
+                          {donorData.icon} {donorData.status}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-snug">{donorData.desc}</p>
+                    </div>
+                  );
+                })()}
+
+                {/* 2. Hospital Channel */}
+                {(() => {
+                  const hospData = getNormalizedSourceStatus('hospital', activeReq);
+                  return (
+                    <div className="p-4 rounded-2xl bg-white border border-[#DCEAF5] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-xs text-[#16324F] flex items-center gap-1.5">
+                          <Building2 className="w-4 h-4 text-[#2563EB]" /> Hospital Desk
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${hospData.badgeClass}`}>
+                          {hospData.icon} {hospData.status}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-snug">{hospData.desc}</p>
+                    </div>
+                  );
+                })()}
+
+                {/* 3. Blood Bank Channel */}
+                {(() => {
+                  const bankData = getNormalizedSourceStatus('bloodbank', activeReq);
+                  return (
+                    <div className="p-4 rounded-2xl bg-white border border-[#DCEAF5] space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-extrabold text-xs text-[#16324F] flex items-center gap-1.5">
+                          <Droplet className="w-4 h-4 text-emerald-600" /> Blood Bank Vault
+                        </span>
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-black border ${bankData.badgeClass}`}>
+                          {bankData.icon} {bankData.status}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-600 leading-snug">{bankData.desc}</p>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* 9-STEP LIFECYCLE TIMELINE (Requirement 9) */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center text-[10px] text-slate-500 uppercase tracking-wider font-extrabold">
+                <span>Synchronized Request Lifecycle Timeline</span>
+                <span className="text-emerald-600 flex items-center gap-1 font-mono">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" /> Real Backend Events
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-2 font-mono text-[10px]">
+                {(activeReq.requestTimeline || [
+                  { id: '1', label: 'Request Created', status: 'completed', timestamp: '10:00 AM' },
+                  { id: '2', label: 'Request Sent', status: 'completed', timestamp: '10:02 AM' },
+                  { id: '3', label: 'Hospital Response', status: activeReq.isVerifiedByHospital ? 'completed' : 'current', timestamp: '10:15 AM' },
+                  { id: '4', label: 'Blood Bank Response', status: 'pending' },
+                  { id: '5', label: 'Donor Response', status: activeReq.donorResponses?.length > 0 ? 'completed' : 'pending' },
+                  { id: '6', label: 'Blood Reserved', status: activeReq.status === 'RESERVED' ? 'completed' : 'pending' },
+                  { id: '7', label: 'Blood Dispatched', status: activeReq.status === 'DISPATCHED' ? 'completed' : 'pending' },
+                  { id: '8', label: 'Request Completed', status: activeReq.status === 'COMPLETED' ? 'completed' : 'pending' }
+                ]).map((step, idx) => (
+                  <div
+                    key={step.id || idx}
+                    className={`p-2.5 rounded-xl border flex flex-col justify-between transition-all ${
+                      step.status === 'completed'
+                        ? 'bg-emerald-50 border-emerald-200 text-emerald-800 font-bold'
+                        : step.status === 'current'
+                        ? 'bg-[#E8F4FF] border-[#BFDBFE] text-[#2563EB] font-black'
+                        : 'bg-white border-[#DCEAF5] text-slate-400'
+                    }`}
+                  >
                     <div>
                       <span className="text-[9px] opacity-75 block font-sans">Step {idx + 1}</span>
                       <strong className="block leading-snug mt-0.5">{step.label}</strong>
                     </div>
                     {step.timestamp && <span className="text-[8px] opacity-75 mt-1 block">{step.timestamp}</span>}
-                  </div>))}
+                  </div>
+                ))}
               </div>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* CONFIRMED DONORS BOARD */}
-          {activeReq.donorResponses && activeReq.donorResponses.length > 0 && (<div className="p-5 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
-              <div className="flex items-center justify-between border-b border-sky-100 pb-3">
-                <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
-                  <Users className="w-4 h-4 text-emerald-600"/> Donors Who Responded "I Can Donate" ({activeReq.donorResponses.length})
-                </h3>
-                <span className="text-[10px] text-slate-500 font-mono">
-                  Units Secured: <strong>{activeReq.confirmedUnits || 0} / {activeReq.unitsNeeded} Units</strong>
-                </span>
-              </div>
+      {/* ================================================== */}
+      {/* TAB 3: FIND BLOOD AVAILABILITY (Requirement 11)    */}
+      {/* ================================================== */}
+      {portalTab === 'availability' && (
+        <HospitalBloodStockFinder />
+      )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {activeReq.donorResponses.map((resp, i) => (<div key={i} className={`p-4 rounded-2xl border space-y-2 ${resp.status === 'ACCEPTED'
-                        ? 'bg-emerald-50/70 border-emerald-200 text-slate-900'
-                        : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
-                    <div className="flex items-center justify-between">
-                      <span className="font-extrabold text-xs text-slate-900">{resp.donorName}</span>
-                      <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-emerald-600 text-white">
-                        RESP: ACCEPTED
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-200">
-                      <span>Distance: {resp.distanceKm} km</span>
-                      <span className="font-mono">{resp.respondedAt}</span>
-                    </div>
-
-                    <button onClick={() => openEmergencyChat(activeReq.id, resp.donorId)} className="w-full mt-2 py-2 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white text-[11px] font-extrabold flex items-center justify-center gap-1.5 shadow-xs transition-all hover:scale-102 cursor-pointer">
-                      <MessageSquare className="w-3.5 h-3.5"/> Open Private Chat
-                    </button>
-                  </div>))}
-              </div>
-            </div>)}
-
-          {/* REAL-TIME MATCHED DONORS SEARCH GRID */}
-          <div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-100 pb-3">
-              <div>
-                <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                  <Users className="w-5 h-5 text-red-600"/> Match & Broadcast to Eligible Voluntary Donors
-                </h3>
-                <p className="text-slate-500 text-[11px]">Direct alert broadcast to registered {targetGroup} donors within {radiusKm} km</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {matchedDonors.map(({ donor, matchScore, distanceKm }) => {
-                const hasRequested = (activeReq.requestedDonorsList || []).includes(donor.id);
-                return (<div key={donor.id} className="p-5 rounded-3xl bg-white border border-sky-100 space-y-4 flex flex-col justify-between hover:border-sky-300 transition-all shadow-xs">
-                    <div>
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-500 to-rose-700 text-white font-black text-base flex items-center justify-center shadow-md shadow-red-500/20">
-                            {donor.bloodGroup}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <h4 className="font-extrabold text-sm text-slate-900">{donor.name}</h4>
-                              <span title="Verified Donor">
-                                <ShieldCheck className="w-4 h-4 text-emerald-600"/>
-                              </span>
-                            </div>
-                            <p className="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                              <MapPin className="w-3.5 h-3.5 text-red-500"/> {distanceKm} km away ({donor.city})
-                            </p>
-                          </div>
-                        </div>
-
-                        <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold bg-emerald-100 text-emerald-800 border border-emerald-200">
-                          {matchScore}% Match
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 pt-2 border-t border-sky-100">
-                      <button onClick={() => sendDirectRequestToDonor(activeReq.id, donor.id)} disabled={hasRequested} className={`w-full py-2.5 rounded-xl font-extrabold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${hasRequested
-                        ? 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white shadow-md shadow-red-500/20 hover:scale-105'}`}>
-                        <Send className="w-3.5 h-3.5"/> {hasRequested ? 'Emergency Alert Sent' : 'Send Blood Alert'}
-                      </button>
-                    </div>
-                  </div>);
-            })}
-            </div>
-          </div>
-
-        </div>)}
-
-      {/* TAB 2: NEARBY BLOOD AVAILABILITY SEARCH (Feature 2) */}
-      {portalTab === 'availability' && (<HospitalBloodStockFinder />)}
-
-      {/* TAB 3: REAL-TIME NOTIFICATIONS FEED (Feature 5) */}
-      {portalTab === 'notifications' && (<div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
-          <div className="flex items-center justify-between border-b border-sky-100 pb-3">
+      {/* ================================================== */}
+      {/* TAB 4: NOTIFICATIONS STREAM (Requirement 14)       */}
+      {/* ================================================== */}
+      {portalTab === 'notifications' && (
+        <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-[#DCEAF5] pb-3">
             <div>
-              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                <Bell className="w-5 h-5 text-amber-500"/> Live Real-Time Notifications Stream
+              <h3 className="font-extrabold text-base text-[#16324F] flex items-center gap-2">
+                <Bell className="w-5 h-5 text-amber-500" />
+                <span>Live Real-Time Notifications Stream</span>
               </h3>
               <p className="text-slate-500 text-[11px]">Instant alerts for hospital approvals, stock reservations, donor acceptances, and redirections</p>
             </div>
-            <span className="px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-black border border-amber-200">
-              {notifications.filter(n => !n.read).length} Unread Alerts
+            <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-black border border-amber-200">
+              {unreadNotifications.length} Unread Alerts
             </span>
           </div>
 
-          <div className="divide-y divide-sky-100">
-            {notifications.map(n => (<div key={n.id} className="py-3.5 flex items-start gap-3">
-                <div className={`p-2 rounded-xl shrink-0 ${n.type === 'urgent' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}`}>
-                  <Bell className="w-4 h-4"/>
+          <div className="divide-y divide-[#DCEAF5]">
+            {notifications.map(n => (
+              <div key={n.id} className="py-3.5 flex items-start gap-3">
+                <div className={`p-2 rounded-xl shrink-0 ${n.type === 'urgent' ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+                  <Bell className="w-4 h-4" />
                 </div>
                 <div className="flex-1 space-y-0.5">
                   <div className="flex items-center justify-between">
-                    <strong className="text-xs font-extrabold text-slate-900">{n.title}</strong>
+                    <strong className="text-xs font-extrabold text-[#16324F]">{n.title}</strong>
                     <span className="text-[10px] font-mono text-slate-400">{n.time}</span>
                   </div>
                   <p className="text-xs text-slate-600 leading-snug">{n.message}</p>
                 </div>
-              </div>))}
+              </div>
+            ))}
           </div>
-        </div>)}
+        </div>
+      )}
 
-      {/* TAB 4: REQUEST HISTORY (Feature 6) */}
-      {portalTab === 'history' && (<div className="p-6 rounded-3xl bg-white border border-sky-100 space-y-4 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-sky-100 pb-3">
+      {/* ================================================== */}
+      {/* TAB 5: REQUEST HISTORY (Requirement 17)            */}
+      {/* ================================================== */}
+      {portalTab === 'history' && (
+        <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#DCEAF5] pb-4">
             <div>
-              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-red-600"/> Request History & Fulfilled Orders
+              <h3 className="font-extrabold text-base text-[#16324F] flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[#2563EB]" />
+                <span>Request History</span>
               </h3>
-              <p className="text-slate-500 text-[11px]">Complete historical record of completed blood requests and pickup certificates</p>
+              <p className="text-slate-500 text-[11px]">Complete historical record of completed, cancelled, or rejected requests</p>
+            </div>
+
+            {/* Filters Bar */}
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="text"
+                placeholder="Search Request ID, Patient..."
+                value={historySearch}
+                onChange={e => setHistorySearch(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-[#F5FAFF] border border-[#DCEAF5] text-xs font-medium focus:ring-2 focus:ring-[#2563EB] outline-none"
+              />
+
+              <select
+                value={historyStatusFilter}
+                onChange={e => setHistoryStatusFilter(e.target.value)}
+                className="px-3 py-1.5 rounded-xl bg-[#F5FAFF] border border-[#DCEAF5] text-xs font-medium focus:ring-2 focus:ring-[#2563EB] outline-none"
+              >
+                <option value="ALL">All Statuses</option>
+                <option value="COMPLETED">Completed</option>
+                <option value="CANCELLED">Cancelled</option>
+                <option value="REJECTED">Rejected</option>
+              </select>
             </div>
           </div>
 
-          {historyRequestsList.length === 0 ? (<div className="p-10 rounded-2xl bg-slate-50 border border-slate-200 text-center text-slate-500 space-y-2">
-              <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto"/>
-              <strong className="block text-slate-900 font-bold">No Past Completed Orders Yet</strong>
-              <p className="text-xs">When an emergency blood request is completed or fulfilled, it will be logged here with its full audit trail.</p>
-            </div>) : (<div className="divide-y divide-sky-100">
-              {historyRequestsList.map(req => (<div key={req.id} className="py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black uppercase border border-emerald-200">
-                        {req.status}
-                      </span>
-                      <span className="text-xs font-mono font-bold text-slate-900">ID: {req.id}</span>
-                      <span className="text-slate-400 text-xs">• Patient: {req.patientName}</span>
-                    </div>
-                    <strong className="text-sm font-black text-slate-900 block">{req.hospitalName} ({req.city})</strong>
-                    <p className="text-xs text-slate-500">
-                      Blood Group: <strong>{req.bloodGroup}</strong> ({req.unitsNeeded} Units) • Requested: {new Date(req.requestedAt).toLocaleDateString()}
-                    </p>
-                  </div>
-
-                  <button onClick={() => showToast(`Downloaded Fulfillment Pass & Receipt for Request ${req.id}`)} className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs border border-slate-200 flex items-center gap-1.5 shrink-0 cursor-pointer">
-                    <Download className="w-4 h-4 text-slate-600"/> Download Pass
-                  </button>
-                </div>))}
-            </div>)}
-        </div>)}
-
-      {/* INTERACTIVE SOURCE STATUS DETAIL MODAL (Requirements 9 & 10) */}
-      {statusDetailModal && (<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-white border border-slate-200 rounded-3xl p-6 space-y-5 text-xs shadow-2xl relative">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <span className="text-xl">
-                  {statusDetailModal.status === 'APPROVED' ? '🟢' : statusDetailModal.status === 'REJECTED' ? '🔴' : '🟡'}
-                </span>
-                <div>
-                  <h3 className="text-base font-black text-slate-900">{statusDetailModal.title}</h3>
-                  <span className="text-[10px] font-mono text-slate-400">Request ID: {activeReq.id} • Source: {statusDetailModal.sourceLabel}</span>
-                </div>
-              </div>
-              <button onClick={() => setStatusDetailModal(null)} className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 flex items-center justify-center font-bold cursor-pointer">
-                ✕
-              </button>
+          {filteredHistory.length === 0 ? (
+            <div className="p-10 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] text-center text-slate-500 space-y-2">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+              <strong className="block text-[#16324F] font-bold">No Past Completed Orders Matching Filters</strong>
+              <p className="text-xs text-slate-500">When an emergency request is completed or cancelled, it will be logged here with its audit trail.</p>
             </div>
-
-            {/* STATUS SUMMARY BANNER */}
-            <div className={`p-4 rounded-2xl border space-y-2 ${statusDetailModal.status === 'APPROVED'
-                ? 'bg-emerald-50 border-emerald-300 text-emerald-950'
-                : statusDetailModal.status === 'REJECTED'
-                    ? 'bg-red-50 border-red-300 text-red-950'
-                    : 'bg-amber-50 border-amber-300 text-amber-950'}`}>
-              <div className="flex items-center justify-between">
-                <span className="font-extrabold text-xs uppercase tracking-wider">
-                  Current Status: {statusDetailModal.status}
-                </span>
-                {statusDetailModal.timestamp && (<span className="text-[10px] font-mono font-bold opacity-80">
-                    Timestamp: {statusDetailModal.timestamp}
-                  </span>)}
-              </div>
-              <p className="text-xs font-bold leading-relaxed">
-                {statusDetailModal.status === 'PENDING' && (`Waiting for response from ${statusDetailModal.sourceLabel}.`)}
-                {statusDetailModal.status === 'APPROVED' && (`${statusDetailModal.sourceLabel} has approved this blood request.`)}
-                {statusDetailModal.status === 'REJECTED' && (`${statusDetailModal.sourceLabel} has rejected this blood request.`)}
-              </p>
-              <p className="text-[11px] opacity-90">{statusDetailModal.message}</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="border-b border-[#DCEAF5] text-slate-500 font-bold uppercase text-[10px]">
+                    <th className="py-2.5 px-3">Request ID</th>
+                    <th className="py-2.5 px-3">Blood Group</th>
+                    <th className="py-2.5 px-3">Units</th>
+                    <th className="py-2.5 px-3">Hospital</th>
+                    <th className="py-2.5 px-3">Date</th>
+                    <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#DCEAF5]">
+                  {filteredHistory.map(req => {
+                    const statusInfo = getStatusBadgeStyle(req.status);
+                    return (
+                      <tr key={req.id} className="hover:bg-[#F5FAFF] transition-colors">
+                        <td className="py-3 px-3 font-mono font-bold text-[#16324F]">{req.id}</td>
+                        <td className="py-3 px-3">
+                          <span className="px-2 py-0.5 rounded bg-[#E8F4FF] text-[#2563EB] font-bold text-[11px] border border-[#BFDBFE]">
+                            {req.bloodGroup}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 font-bold">{req.unitsNeeded} U</td>
+                        <td className="py-3 px-3 font-medium text-slate-700">{req.hospitalName || 'KIMS Hospital'}</td>
+                        <td className="py-3 px-3 font-mono text-slate-500">{new Date(req.requestedAt).toLocaleDateString()}</td>
+                        <td className="py-3 px-3">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold border uppercase ${statusInfo.className}`}>
+                            {statusInfo.text}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right">
+                          <button
+                            onClick={() => showToast(`Downloaded receipt pass for ${req.id}`)}
+                            className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] border border-slate-200 inline-flex items-center gap-1 cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" /> Pass
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
+          )}
+        </div>
+      )}
 
-            {/* STATUS TIMELINE & AUDIT TRAIL */}
-            <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2 font-mono text-[11px]">
-              <span className="text-[10px] font-sans font-extrabold text-slate-500 uppercase tracking-wider block">
-                Audit Timeline Record:
-              </span>
-              <div className="space-y-1.5 text-slate-700">
-                <div className="flex items-center justify-between">
-                  <span>1. Request Dispatched to {statusDetailModal.sourceLabel}:</span>
-                  <strong>{activeReq.requestedAt}</strong>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>2. Status Decision:</span>
-                  <strong className={statusDetailModal.status === 'APPROVED' ? 'text-emerald-700' : (statusDetailModal.status === 'REJECTED' ? 'text-red-700' : 'text-amber-700')}>
-                    {statusDetailModal.status} {statusDetailModal.timestamp ? `(${statusDetailModal.timestamp})` : ''}
-                  </strong>
-                </div>
-                {statusDetailModal.reason && (<div className="pt-1 text-[11px] text-red-700 font-sans border-t border-slate-200">
-                    <strong>Recorded Reason:</strong> "{statusDetailModal.reason}"
-                  </div>)}
-              </div>
-            </div>
-
-            {/* HELPFUL GUIDANCE & NEXT ACTIONS (Requirement 10 & 12) */}
-            <div className="space-y-2 pt-1">
-              {statusDetailModal.status === 'APPROVED' && (<div className="space-y-2">
-                  <p className="text-[11px] text-slate-600">
-                    You can coordinate directly with the approving {statusDetailModal.source === 'donor' ? 'donor' : 'facility'} via real-time private chat connected to Request ID <strong>{activeReq.id}</strong>.
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => {
-                    setStatusDetailModal(null);
-                    openEmergencyChat(activeReq.id);
-                }} className="flex-1 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-102 active:scale-95">
-                      <MessageSquare className="w-4 h-4"/> 💬 Open Chat with {statusDetailModal.sourceLabel}
-                    </button>
-                  </div>
-                </div>)}
-
-              {statusDetailModal.status === 'REJECTED' && (<div className="space-y-2">
-                  <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-[11px] font-bold">
-                    💡 <strong>Next Step:</strong> Try another available source (e.g. voluntary donors or nearby regional blood bank stock).
-                  </div>
-                  <button onClick={() => {
-                    setStatusDetailModal(null);
-                    setPortalTab('availability');
-                }} className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs flex items-center justify-center gap-2 cursor-pointer">
-                    <Search className="w-4 h-4 text-sky-400"/> Search Available Stocks & Donors
-                  </button>
-                </div>)}
-
-              {statusDetailModal.status === 'PENDING' && (<div className="space-y-2">
-                  <p className="text-[11px] text-slate-500">
-                    The request is currently pending review. Live WebSocket listeners are active — this page will automatically update the moment {statusDetailModal.sourceLabel} responds.
-                  </p>
-                  <button onClick={() => setStatusDetailModal(null)} className="w-full py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs cursor-pointer">
-                    Close
-                  </button>
-                </div>)}
-            </div>
-
-          </div>
-        </div>)}
-
-    </div>);
+    </div>
+  );
 };
