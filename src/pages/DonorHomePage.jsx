@@ -16,7 +16,7 @@ export const DonorHomePage = () => {
     return (<div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in">
       
       {/* 1. Hero Welcome Header */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-red-600 via-rose-600 to-rose-700 text-white shadow-xl relative overflow-hidden">
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#2563EB] via-blue-600 to-[#0284C7] text-white shadow-md relative overflow-hidden border border-blue-400/30">
         <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 opacity-10 pointer-events-none">
           <Heart className="w-96 h-96 fill-white"/>
         </div>
@@ -24,20 +24,20 @@ export const DonorHomePage = () => {
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white font-extrabold text-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"/>
+              <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping"/>
               <span>Voluntary Donor Portal</span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
               Welcome back, {currentUser?.name || 'Valued Donor'}! ❤️
             </h1>
-            <p className="text-sm text-red-100 font-medium leading-relaxed">
+            <p className="text-sm text-blue-100 font-medium leading-relaxed">
               Your voluntary blood donations save lives across our medical network. Check urgent emergency requests below or enter your full management dashboard.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button onClick={() => navigate('/donor/dashboard')} className="px-6 py-3.5 rounded-2xl bg-white text-red-600 hover:bg-red-50 font-black text-sm shadow-lg flex items-center gap-2 transition-all hover:scale-105">
-              <LayoutDashboard className="w-5 h-5 text-red-600"/>
+            <button onClick={() => navigate('/donor/dashboard')} className="px-6 py-3.5 rounded-2xl bg-white text-[#2563EB] hover:bg-sky-50 font-black text-sm shadow-md flex items-center gap-2 transition-all hover:scale-105">
+              <LayoutDashboard className="w-5 h-5 text-[#2563EB]"/>
               <span>Open Donor Dashboard</span>
               <ArrowRight className="w-4 h-4"/>
             </button>
@@ -53,8 +53,8 @@ export const DonorHomePage = () => {
       {/* 2. Primary Navigation Bar */}
       <div className="p-3 rounded-2xl bg-white border border-sky-100 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs font-extrabold">
         <div className="flex flex-wrap items-center gap-2">
-          <Link to="/donor/home" className="px-4 py-2 rounded-xl bg-red-600 text-white shadow-sm font-black flex items-center gap-1.5">
-            <Heart className="w-4 h-4"/> Home
+          <Link to="/donor/home" className="px-4 py-2 rounded-xl bg-[#2563EB] text-white shadow-sm font-black flex items-center gap-1.5">
+            <Heart className="w-4 h-4 text-red-300 fill-red-300"/> Home
           </Link>
 
           <Link to="/donor/dashboard" className="px-4 py-2 rounded-xl text-slate-700 hover:bg-sky-50 flex items-center gap-1.5 transition-colors">

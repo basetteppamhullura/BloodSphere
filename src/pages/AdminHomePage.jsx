@@ -16,7 +16,7 @@ export const AdminHomePage = () => {
     return (<div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in">
       
       {/* 1. Hero Welcome Header */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-amber-600 via-amber-700 to-slate-900 text-white shadow-xl relative overflow-hidden">
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#2563EB] via-amber-600 to-[#16324F] text-white shadow-md relative overflow-hidden border border-blue-400/30">
         <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 opacity-10 pointer-events-none">
           <ShieldCheck className="w-96 h-96 fill-white"/>
         </div>
@@ -30,14 +30,14 @@ export const AdminHomePage = () => {
             <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
               Welcome, {currentUser?.name || 'Administrator'} 🛡️
             </h1>
-            <p className="text-sm text-amber-100 font-medium leading-relaxed">
+            <p className="text-sm text-blue-100 font-medium leading-relaxed">
               Supervise all registered user accounts, approve hospital/blood-bank licenses, monitor real-time Socket.IO connections, and enforce platform security.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button onClick={() => navigate('/admin/dashboard')} className="px-6 py-3.5 rounded-2xl bg-white text-amber-800 hover:bg-amber-50 font-black text-sm shadow-lg flex items-center gap-2 transition-all hover:scale-105">
-              <LayoutDashboard className="w-5 h-5 text-amber-800"/>
+            <button onClick={() => navigate('/admin/dashboard')} className="px-6 py-3.5 rounded-2xl bg-white text-[#16324F] hover:bg-amber-50 font-black text-sm shadow-md flex items-center gap-2 transition-all hover:scale-105">
+              <LayoutDashboard className="w-5 h-5 text-amber-600"/>
               <span>Open Admin Dashboard</span>
               <ArrowRight className="w-4 h-4"/>
             </button>

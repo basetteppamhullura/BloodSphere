@@ -45,7 +45,7 @@ export const BloodBankHomePage = () => {
     return (<div className="max-w-6xl mx-auto space-y-6 pb-16 animate-in fade-in">
       
       {/* 1. Hero Welcome Header */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-emerald-800 via-teal-900 to-slate-900 text-white shadow-xl relative overflow-hidden border border-emerald-700/40">
+      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#2563EB] via-emerald-600 to-[#0284C7] text-white shadow-md relative overflow-hidden border border-emerald-400/30">
         <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 opacity-10 pointer-events-none">
           <Droplet className="w-96 h-96 fill-white"/>
         </div>
@@ -65,8 +65,8 @@ export const BloodBankHomePage = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button onClick={() => navigate('/bloodbank/requests')} className="px-5 py-3 rounded-2xl bg-white text-emerald-800 hover:bg-emerald-50 font-black text-xs shadow-lg flex items-center gap-2 transition-all hover:scale-105 cursor-pointer">
-              <Package className="w-4 h-4 text-emerald-700"/>
+            <button onClick={() => navigate('/bloodbank/requests')} className="px-5 py-3 rounded-2xl bg-white text-[#2563EB] hover:bg-emerald-50 font-black text-xs shadow-md flex items-center gap-2 transition-all hover:scale-105 cursor-pointer">
+              <Package className="w-4 h-4 text-emerald-600"/>
               <span>Process Request Queue</span>
               <ArrowRight className="w-3.5 h-3.5"/>
             </button>

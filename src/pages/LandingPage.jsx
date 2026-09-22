@@ -189,8 +189,8 @@ export const LandingPage = () => {
                             <span>LIVE PUBLIC NETWORK</span>
                         </div>
 
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#0F172A] tracking-tight leading-[1.08]">
-                            Together <span className="text-[#DC2626]">We Save Lives</span>
+                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#16324F] tracking-tight leading-[1.08]">
+                            Together <span className="text-[#2563EB]">We Save Lives</span>
                         </h1>
 
                         <p className="text-slate-600 font-medium text-xs sm:text-sm lg:text-base leading-relaxed max-w-lg">
@@ -201,7 +201,7 @@ export const LandingPage = () => {
                         <div className="flex flex-wrap items-center gap-3.5 pt-3">
                             <Link
                                 to={getDonateBloodPath()}
-                                className="px-6 py-3 rounded-full bg-[#DC2626] hover:bg-[#B91C1C] text-white font-extrabold text-xs shadow-md shadow-red-600/25 flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95"
+                                className="px-6 py-3 rounded-full bg-[#EF4444] hover:bg-[#DC2626] text-white font-extrabold text-xs shadow-md shadow-red-500/20 flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95"
                             >
                                 <Heart className="w-4 h-4 text-white fill-white" />
                                 <span>Be a Donor</span>
@@ -210,16 +210,16 @@ export const LandingPage = () => {
 
                             <Link
                                 to={getFindBloodPath()}
-                                className="px-6 py-3 rounded-full bg-white/95 hover:bg-white text-[#0369A1] hover:text-[#0284C7] font-extrabold text-xs border border-sky-200/90 shadow-2xs flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95"
+                                className="px-6 py-3 rounded-full bg-[#E8F4FF] hover:bg-[#DCEAF5] text-[#2563EB] font-extrabold text-xs border border-[#BFDBFE] shadow-2xs flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95"
                             >
-                                <Search className="w-4 h-4 text-[#0284C7]" />
+                                <Search className="w-4 h-4 text-[#2563EB]" />
                                 <span>Find Blood</span>
-                                <ArrowRight className="w-4 h-4 text-[#0284C7]" />
+                                <ArrowRight className="w-4 h-4 text-[#2563EB]" />
                             </Link>
 
                             <button
                                 onClick={() => setActiveEmergencyPostModal(true)}
-                                className="px-6 py-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs shadow-md flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95"
+                                className="px-6 py-3 rounded-full bg-[#16324F] hover:bg-slate-800 text-white font-extrabold text-xs shadow-md flex items-center gap-2 cursor-pointer transition-all hover:scale-105 active:scale-95"
                             >
                                 <AlertTriangle className="w-4 h-4 text-amber-400" />
                                 <span>Emergency Blood Request</span>
@@ -315,14 +315,21 @@ export const LandingPage = () => {
                     <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
                         {BLOOD_GROUPS.map(group => {
                             const inv = getGroupInventory(group);
+                            const isCritical = inv.status === 'Critical';
                             return (
                                 <div
                                     key={group}
                                     onClick={() => navigate('/hospital/blood-availability')}
-                                    className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/90 hover:bg-white hover:border-sky-300 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-3 group"
+                                    className={`p-4 rounded-2xl border transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-3 group ${
+                                        isCritical
+                                            ? 'bg-[#FFF1F2] border-red-200 hover:bg-white hover:border-red-300'
+                                            : 'bg-white border-[#DCEAF5] hover:bg-[#F5FAFF] hover:border-blue-300 hover:shadow-md'
+                                    }`}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <span className="w-9 h-9 rounded-xl bg-red-600 text-white font-black text-sm flex items-center justify-center shadow-xs">
+                                        <span className={`w-9 h-9 rounded-xl font-black text-sm flex items-center justify-center border ${
+                                            isCritical ? 'bg-red-500 text-white border-red-400' : 'bg-[#E8F4FF] text-[#2563EB] border-[#BFDBFE]'
+                                        }`}>
                                             {group}
                                         </span>
                                         <span className={`px-2 py-0.5 rounded-md text-[9px] font-extrabold border ${inv.statusColor}`}>
@@ -331,8 +338,8 @@ export const LandingPage = () => {
                                     </div>
 
                                     <div>
-                                        <div className="text-xl font-black text-slate-900 tracking-tight">
-                                            {inv.totalUnits > 0 ? `${inv.totalUnits} Units` : <span className="text-xs font-semibold text-slate-400 italic">No current availability</span>}
+                                        <div className="text-xl font-black text-[#16324F] tracking-tight">
+                                            {inv.totalUnits > 0 ? `${inv.totalUnits} Units` : <span className="text-xs font-semibold text-slate-400 italic">No availability</span>}
                                         </div>
                                         <span className="text-[10px] text-slate-500 block mt-0.5">
                                             {inv.groupDonorsCount} registered donors
@@ -426,22 +433,22 @@ export const LandingPage = () => {
             <section className="space-y-6">
 
                 {/* Prominent Search Bar */}
-                <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-sky-900 via-slate-900 to-sky-950 text-white shadow-md space-y-4 border border-sky-800">
+                <div className="p-6 sm:p-8 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-4 text-[#16324F]">
                     <div className="space-y-1">
-                        <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-                            <Search className="w-5 h-5 text-sky-400" />
+                        <h2 className="text-xl sm:text-2xl font-black text-[#16324F] flex items-center gap-2">
+                            <Search className="w-5 h-5 text-[#2563EB]" />
                             <span>Find Blood Availability</span>
                         </h2>
-                        <p className="text-xs text-slate-300">Search available blood units across Donors, Hospitals and Blood Banks in real time</p>
+                        <p className="text-xs text-slate-500 font-medium">Search available blood units across Donors, Hospitals and Blood Banks in real time</p>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
                         <div>
-                            <label className="text-[10px] font-bold text-slate-300 block mb-1">BLOOD GROUP</label>
+                            <label className="text-[10px] font-bold text-slate-500 block mb-1">BLOOD GROUP</label>
                             <select
                                 value={searchGroup}
                                 onChange={(e) => setSearchGroup(e.target.value)}
-                                className="w-full px-3 py-2.5 rounded-xl bg-slate-800 text-white border border-slate-700 font-medium text-xs focus:ring-2 focus:ring-sky-400 outline-none"
+                                className="w-full px-3 py-2.5 rounded-xl bg-[#F5FAFF] text-[#16324F] border border-[#DCEAF5] font-medium text-xs focus:ring-2 focus:ring-[#2563EB] outline-none"
                             >
                                 <option value="ALL">All Blood Groups</option>
                                 {BLOOD_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
@@ -449,11 +456,11 @@ export const LandingPage = () => {
                         </div>
 
                         <div>
-                            <label className="text-[10px] font-bold text-slate-300 block mb-1">COMPONENT</label>
+                            <label className="text-[10px] font-bold text-slate-500 block mb-1">COMPONENT</label>
                             <select
                                 value={searchComponent}
                                 onChange={(e) => setSearchComponent(e.target.value)}
-                                className="w-full px-3 py-2.5 rounded-xl bg-slate-800 text-white border border-slate-700 font-medium text-xs focus:ring-2 focus:ring-sky-400 outline-none"
+                                className="w-full px-3 py-2.5 rounded-xl bg-[#F5FAFF] text-[#16324F] border border-[#DCEAF5] font-medium text-xs focus:ring-2 focus:ring-[#2563EB] outline-none"
                             >
                                 <option value="ALL">All Components</option>
                                 {COMPONENTS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -461,20 +468,20 @@ export const LandingPage = () => {
                         </div>
 
                         <div>
-                            <label className="text-[10px] font-bold text-slate-300 block mb-1">CITY / LOCATION</label>
+                            <label className="text-[10px] font-bold text-slate-500 block mb-1">CITY / LOCATION</label>
                             <input
                                 type="text"
                                 placeholder="Enter city (e.g. Hubballi)"
                                 value={searchLocation}
                                 onChange={(e) => setSearchLocation(e.target.value)}
-                                className="w-full px-3 py-2.5 rounded-xl bg-slate-800 text-white border border-slate-700 font-medium text-xs focus:ring-2 focus:ring-sky-400 outline-none"
+                                className="w-full px-3 py-2.5 rounded-xl bg-[#F5FAFF] text-[#16324F] border border-[#DCEAF5] font-medium text-xs focus:ring-2 focus:ring-[#2563EB] outline-none"
                             />
                         </div>
 
                         <div className="flex items-end">
                             <button
                                 onClick={() => navigate(getFindBloodPath())}
-                                className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                                className="w-full py-2.5 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs shadow-md flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                             >
                                 <Search className="w-4 h-4" />
                                 <span>Search Network</span>
@@ -660,43 +667,43 @@ export const LandingPage = () => {
             {/* ================================================== */}
             {/* 8. HOW BLOODNET WORKS                              */}
             {/* ================================================== */}
-            <section className="p-6 sm:p-8 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-sky-950 text-white shadow-md space-y-6 border border-slate-700">
+            <section className="p-6 sm:p-8 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-6 text-[#16324F]">
                 <div className="text-center space-y-1 max-w-xl mx-auto">
-                    <span className="text-[10px] font-black tracking-widest text-sky-400 uppercase px-3 py-1 rounded-full bg-sky-500/20 border border-sky-500/30">
+                    <span className="text-[10px] font-black tracking-widest text-[#2563EB] uppercase px-3 py-1 rounded-full bg-[#E8F4FF] border border-[#BFDBFE]">
                         AUTOMATED WORKFLOW
                     </span>
-                    <h2 className="text-2xl sm:text-3xl font-black text-white">How BloodNet Works</h2>
+                    <h2 className="text-2xl sm:text-3xl font-black text-[#16324F]">How BloodNet Works</h2>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
-                    <div className="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-2">
-                        <span className="text-2xl font-black text-red-500">01</span>
-                        <h3 className="font-bold text-white text-sm">REQUEST</h3>
-                        <p className="text-xs text-slate-300 leading-relaxed">
+                    <div className="p-5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-2">
+                        <span className="text-2xl font-black text-[#EF4444]">01</span>
+                        <h3 className="font-bold text-[#16324F] text-sm">REQUEST</h3>
+                        <p className="text-xs text-slate-600 leading-relaxed">
                             A requester or hospital submits a blood requirement into the system.
                         </p>
                     </div>
 
-                    <div className="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-2">
-                        <span className="text-2xl font-black text-sky-400">02</span>
-                        <h3 className="font-bold text-white text-sm">MATCH</h3>
-                        <p className="text-xs text-slate-300 leading-relaxed">
+                    <div className="p-5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-2">
+                        <span className="text-2xl font-black text-[#2563EB]">02</span>
+                        <h3 className="font-bold text-[#16324F] text-sm">MATCH</h3>
+                        <p className="text-xs text-slate-600 leading-relaxed">
                             BloodNet instantly finds matching nearby donors, hospitals and blood banks.
                         </p>
                     </div>
 
-                    <div className="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-2">
-                        <span className="text-2xl font-black text-emerald-400">03</span>
-                        <h3 className="font-bold text-white text-sm">RESPOND</h3>
-                        <p className="text-xs text-slate-300 leading-relaxed">
+                    <div className="p-5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-2">
+                        <span className="text-2xl font-black text-[#06B6D4]">03</span>
+                        <h3 className="font-bold text-[#16324F] text-sm">RESPOND</h3>
+                        <p className="text-xs text-slate-600 leading-relaxed">
                             Available parties accept, reserve units, or respond to emergency alerts.
                         </p>
                     </div>
 
-                    <div className="p-5 rounded-2xl bg-slate-800/80 border border-slate-700 space-y-2">
-                        <span className="text-2xl font-black text-amber-400">04</span>
-                        <h3 className="font-bold text-white text-sm">FULFILL</h3>
-                        <p className="text-xs text-slate-300 leading-relaxed">
+                    <div className="p-5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-2">
+                        <span className="text-2xl font-black text-[#22C55E]">04</span>
+                        <h3 className="font-bold text-[#16324F] text-sm">FULFILL</h3>
+                        <p className="text-xs text-slate-600 leading-relaxed">
                             Blood is reserved, collected, issued, and the emergency request is completed.
                         </p>
                     </div>
@@ -859,10 +866,13 @@ export const LandingPage = () => {
             {/* ================================================== */}
             {/* 10. EMERGENCY CTA SECTION                          */}
             {/* ================================================== */}
-            <section className="p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-red-600 via-rose-600 to-red-700 text-white shadow-lg space-y-6 text-center">
+            <section className="p-8 sm:p-10 rounded-3xl bg-[#FFF1F2] border border-red-200/80 shadow-xs space-y-6 text-center">
                 <div className="max-w-2xl mx-auto space-y-2">
-                    <h2 className="text-3xl font-black text-white tracking-tight">Need Blood Urgently?</h2>
-                    <p className="text-sm font-medium text-rose-100">
+                    <h2 className="text-3xl font-black text-[#16324F] tracking-tight flex items-center justify-center gap-2">
+                        <span>🚨</span>
+                        <span>Need Blood Urgently?</span>
+                    </h2>
+                    <p className="text-sm font-medium text-slate-600">
                         Find available blood from donors, hospitals and blood banks connected to BloodNet.
                     </p>
                 </div>
@@ -870,14 +880,14 @@ export const LandingPage = () => {
                 <div className="flex flex-wrap items-center justify-center gap-4 pt-2">
                     <Link
                         to={getFindBloodPath()}
-                        className="px-8 py-3.5 rounded-full bg-white text-red-600 hover:bg-slate-100 font-black text-xs shadow-md transition-all hover:scale-105"
+                        className="px-8 py-3.5 rounded-full bg-[#2563EB] hover:bg-blue-700 text-white font-black text-xs shadow-md transition-all hover:scale-105"
                     >
                         Find Blood Now
                     </Link>
 
                     <Link
                         to={getDonateBloodPath()}
-                        className="px-8 py-3.5 rounded-full bg-slate-900 text-white hover:bg-slate-800 font-black text-xs shadow-md transition-all hover:scale-105"
+                        className="px-8 py-3.5 rounded-full bg-[#EF4444] hover:bg-[#DC2626] text-white font-black text-xs shadow-md transition-all hover:scale-105"
                     >
                         Become a Donor
                     </Link>

@@ -274,7 +274,7 @@ export const Header = () => {
                 >
                     {/* Sliding Active Blue Pill Indicator */}
                     <div
-                        className="absolute top-1 bottom-1 bg-gradient-to-r from-sky-600 to-sky-700 shadow-xs rounded-full transition-all duration-300 ease-in-out z-0 pointer-events-none"
+                        className="absolute top-1 bottom-1 bg-gradient-to-r from-blue-600 to-blue-700 shadow-xs rounded-full transition-all duration-300 ease-in-out z-0 pointer-events-none"
                         style={{
                             transform: `translateX(${pillStyle.left}px)`,
                             width: `${pillStyle.width}px`,
@@ -380,7 +380,7 @@ export const Header = () => {
                     <button
                         type="button"
                         onClick={() => setActiveEmergencyPostModal(true)}
-                        className="px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[#DC2626] hover:bg-[#B91C1C] text-white font-bold text-xs shadow-sm shadow-red-600/20 flex items-center gap-1 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shrink-0"
+                        className="px-2.5 sm:px-3.5 py-1.5 rounded-full bg-[#EF4444] hover:bg-[#DC2626] text-white font-bold text-xs shadow-sm shadow-red-500/20 flex items-center gap-1 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shrink-0"
                         title="Create an emergency blood request"
                     >
                         <PlusCircle className="w-3.5 h-3.5 text-white shrink-0" />
@@ -395,14 +395,14 @@ export const Header = () => {
                         <button
                             type="button"
                             onClick={() => setIsPortalDropdownOpen(!isPortalDropdownOpen)}
-                            className="px-2.5 sm:px-3 py-1.5 rounded-full bg-[#F0F9FF] hover:bg-[#E0F2FE] active:bg-[#BAE6FD]/60 text-[#0369A1] border border-[#BAE6FD] font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
+                            className="px-2.5 sm:px-3 py-1.5 rounded-full bg-[#E8F4FF] hover:bg-[#DCEAF5] active:bg-blue-100 text-[#2563EB] border border-[#BFDBFE] font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs"
                             aria-expanded={isPortalDropdownOpen}
                             aria-haspopup="true"
                             title="View accessible portals"
                         >
-                            <LayoutGrid className="w-3.5 h-3.5 text-[#0284C7] shrink-0" />
+                            <LayoutGrid className="w-3.5 h-3.5 text-[#2563EB] shrink-0" />
                             <span className="hidden sm:inline whitespace-nowrap font-bold">Portal Access</span>
-                            <ChevronDown className={`w-3.5 h-3.5 text-[#0284C7] shrink-0 transition-transform duration-200 ${isPortalDropdownOpen ? 'rotate-180' : ''}`} />
+                            <ChevronDown className={`w-3.5 h-3.5 text-[#2563EB] shrink-0 transition-transform duration-200 ${isPortalDropdownOpen ? 'rotate-180' : ''}`} />
                         </button>
 
                         {/* Portal Access Dropdown Menu */}

@@ -4,19 +4,22 @@
 
 @layer base {
   :root {
-    --bg-main: #f4f9fd;
+    --bg-main: #f5faff;
     --bg-card: #ffffff;
-    --bg-card-hover: #f0f7ff;
-    --border-card: #e0f2fe;
-    --text-primary: #0f172a;
-    --text-secondary: #475569;
-    --accent-red: #dc2626;
-    --accent-red-glow: rgba(220, 38, 38, 0.15);
-    --accent-rose: #e11d48;
-    --accent-blue: #0284c7;
-    --accent-blue-soft: #eaf7ff;
-    --accent-gold: #d97706;
-    --accent-green: #059669;
+    --bg-card-hover: #e8f4ff;
+    --border-card: #dceaf5;
+    --text-primary: #16324f;
+    --text-secondary: #64748b;
+    --accent-red: #ef4444;
+    --accent-red-glow: rgba(239, 68, 68, 0.15);
+    --accent-rose: #f43f5e;
+    --accent-blue: #2563eb;
+    --accent-blue-soft: #e8f4ff;
+    --accent-cyan: #06b6d4;
+    --accent-cyan-soft: #ecfeff;
+    --accent-gold: #f59e0b;
+    --accent-green: #22c55e;
+    --accent-green-soft: #ecfdf5;
   }
 
   body {
@@ -32,16 +35,16 @@
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
-  border: 1px solid #e0f2fe;
-  box-shadow: 0 10px 30px -5px rgba(2, 132, 199, 0.06), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-  border-radius: 1.5rem;
+  border: 1px solid #dceaf5;
+  box-shadow: 0 10px 30px -5px rgba(37, 99, 235, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  border-radius: 1.25rem;
 }
 
 .glass-nav {
-  background: rgba(255, 255, 255, 0.92);
+  background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(16px);
-  border-bottom: 1px solid #e0f2fe;
-  box-shadow: 0 4px 20px -2px rgba(2, 132, 199, 0.04);
+  border-bottom: 1px solid #dceaf5;
+  box-shadow: 0 4px 20px -2px rgba(37, 99, 235, 0.04);
 }
 
 /* Floating Water Bubble Animations & Orbs */

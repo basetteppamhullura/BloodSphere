@@ -39,22 +39,22 @@ export const EmergencyRequestsPage = () => {
     return (<div className="space-y-6 text-xs animate-in fade-in">
       
       {/* Page Header */}
-      <div className="p-6 rounded-3xl bg-gradient-to-r from-red-600 via-rose-600 to-rose-700 text-white shadow-md shadow-red-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-6 rounded-3xl bg-[#FFF1F2] border border-red-200 text-[#16324F] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-6 h-6 text-white animate-pulse"/>
-            <h2 className="text-xl font-black">Emergency Blood Request Board</h2>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-white/20 text-white border border-white/30">
+            <AlertTriangle className="w-6 h-6 text-[#EF4444] animate-pulse"/>
+            <h2 className="text-xl font-black text-[#16324F]">Emergency Blood Request Board</h2>
+            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold bg-red-100 text-[#EF4444] border border-red-200">
               REAL-TIME MATCHING ACTIVE
             </span>
           </div>
-          <p className="text-xs text-red-100 mt-1">
+          <p className="text-xs text-slate-600 mt-1">
             Real-time emergency blood requests matched to your blood group ({loggedInDonor.bloodGroup}) and availability.
           </p>
         </div>
 
-        <button onClick={() => setActiveEmergencyPostModal(true)} className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-white hover:bg-slate-50 text-red-600 font-extrabold text-xs shadow-md transition-all hover:scale-105">
-          <PlusCircle className="w-4 h-4"/> Post Emergency Need
+        <button onClick={() => setActiveEmergencyPostModal(true)} className="flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#EF4444] hover:bg-[#DC2626] text-white font-extrabold text-xs shadow-md transition-all hover:scale-105">
+          <PlusCircle className="w-4 h-4 text-white"/> Post Emergency Need
         </button>
       </div>
 
@@ -69,14 +69,14 @@ export const EmergencyRequestsPage = () => {
         </div>)}
 
       {/* Filter Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 font-extrabold">
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
         {[
-            { id: 'MATCHING_FOR_ME', label: `🎯 Matched for Me (${loggedInDonor.bloodGroup})` },
+            { id: 'MATCHED', label: `🎯 Matched for Me (${loggedInDonor.bloodGroup})` },
             { id: 'CRITICAL', label: '🚨 Critical Urgency' },
             { id: 'RARE', label: '🛡️ Rare Blood Groups' },
             { id: 'ALL', label: 'All Requests' }
         ].map(t => (<button key={t.id} onClick={() => setFilterTab(t.id)} className={`px-4 py-2 rounded-xl text-xs whitespace-nowrap transition-all ${filterTab === t.id
-                ? 'bg-red-600 text-white shadow-md shadow-red-500/20'
+                ? 'bg-[#2563EB] text-white shadow-md shadow-blue-500/20'
                 : 'bg-white text-slate-700 border border-sky-100 hover:bg-sky-50'}`}>
             {t.label}
           </button>))}
@@ -93,7 +93,7 @@ export const EmergencyRequestsPage = () => {
                 {/* CARD HEADER */}
                 <div className="flex items-start justify-between gap-3 border-b border-sky-100 pb-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-700 text-white font-black text-xl flex flex-col items-center justify-center shadow-md shadow-red-500/20">
+                    <div className="w-14 h-14 rounded-2xl bg-[#EF4444] text-white font-black text-xl flex flex-col items-center justify-center shadow-md shadow-red-500/10">
                       <span>{req.bloodGroup}</span>
                       <span className="text-[9px] opacity-90">{req.bloodComponent || 'PRBC'}</span>
                     </div>
