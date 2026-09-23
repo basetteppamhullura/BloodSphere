@@ -37,44 +37,44 @@ export const HospitalSidebar = () => {
     ];
     return (<>
       {/* 1. DESKTOP / TABLET VERTICAL LEFT SIDEBAR */}
-      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-white border border-sky-100/90 rounded-3xl p-5 shadow-xs sticky top-20 h-fit space-y-5 text-[#0D2B45]">
+      <aside className="hidden md:flex flex-col w-64 shrink-0 bg-white border border-[#DCEAF5] rounded-3xl p-5 shadow-xs sticky top-20 h-fit space-y-5 text-[#16324F]">
         
         {/* Hospital Portal Branding */}
-        <div className="flex items-center justify-between border-b border-sky-100 pb-3">
+        <div className="flex items-center justify-between border-b border-[#DCEAF5] pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-2xl bg-[#E0F2FE] border border-sky-200 flex items-center justify-center text-[#0EA5E9] font-bold shadow-2xs">
-              <Building2 className="w-5 h-5 text-[#0EA5E9]"/>
+            <div className="w-9 h-9 rounded-2xl bg-[#E8F4FF] border border-[#BFDBFE] flex items-center justify-center text-[#2563EB] font-bold shadow-2xs">
+              <Building2 className="w-5 h-5 text-[#2563EB]"/>
             </div>
             <div>
-              <span className="text-xs font-black text-[#0D2B45] tracking-tight uppercase block leading-tight">
+              <span className="text-xs font-black text-[#16324F] tracking-tight uppercase block leading-tight">
                 HOSPITAL PORTAL
               </span>
-              <span className="text-[10px] text-sky-700 font-medium">Operations & Trauma</span>
+              <span className="text-[10px] text-[#64748B] font-medium">Operations & Trauma</span>
             </div>
           </div>
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Connected to Blood Net"/>
+          <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-pulse" title="Connected to BloodNet"/>
         </div>
 
         {/* Navigation Sections */}
         <nav className="w-full flex flex-col space-y-4 text-xs font-extrabold">
           {navSections.map(section => (<div key={section.title} className="space-y-1">
-              <div className="px-3 text-[10px] font-black tracking-wider text-slate-400 uppercase">
+              <div className="px-3 text-[10px] font-black tracking-wider text-[#94A3B8] uppercase">
                 {section.title}
               </div>
               <div className="space-y-1">
                 {section.items.map(item => {
                 const IconComp = item.icon;
-                return (<NavLink key={item.to} to={item.to} onClick={() => setIsMobileSidebarOpen(false)} className={({ isActive }) => `w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl transition-all ${isActive
-                        ? 'bg-[#0284C7] text-white shadow-md shadow-[#0284C7]/20 font-black'
-                        : 'text-[#0D2B45] hover:text-[#0284C7] hover:bg-[#E0F2FE]'}`}>
+                return (<NavLink key={item.to} to={item.to} onClick={() => setIsMobileSidebarOpen(false)} className={({ isActive }) => `w-full flex items-center justify-between px-3.5 py-2.5 rounded-2xl transition-all duration-150 ${isActive
+                        ? 'bg-[#E8F4FF] text-[#2563EB] border border-[#BFDBFE] font-black shadow-xs'
+                        : 'text-[#16324F] hover:text-[#2563EB] hover:bg-[#F0F9FF] border border-transparent'}`}>
                       {({ isActive }) => (<>
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-[#0284C7]'}`}/>
+                            <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#2563EB]' : 'text-[#64748B]'}`}/>
                             <span className="truncate">{item.label}</span>
                           </div>
-                          {item.badge && item.badge > 0 ? (<span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-white text-[#0284C7]' : 'bg-red-500 text-white font-mono'}`}>
+                          {item.badge && item.badge > 0 ? (<span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${isActive ? 'bg-[#2563EB] text-white' : 'bg-[#EF4444] text-white font-mono'}`}>
                               {item.badge}
-                            </span>) : isActive ? (<ChevronRight className="w-4 h-4 text-white shrink-0"/>) : null}
+                            </span>) : isActive ? (<ChevronRight className="w-4 h-4 text-[#2563EB] shrink-0"/>) : null}
                         </>)}
                     </NavLink>);
             })}
@@ -83,10 +83,10 @@ export const HospitalSidebar = () => {
         </nav>
 
         {/* Footer with Mode Toggle */}
-        <div className="pt-3 border-t border-sky-100 flex items-center justify-between text-xs text-sky-700 font-medium">
-          <span className="text-[10px] font-mono text-sky-700">Blood Net • Clinical</span>
-          <button onClick={toggleTheme} className="p-1.5 rounded-xl bg-[#F0F9FF] hover:bg-[#E0F2FE] text-[#0D2B45] border border-sky-200 transition-all cursor-pointer" title="Toggle Light/Dark Mode">
-            {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-500"/> : <Moon className="w-3.5 h-3.5 text-[#0EA5E9]"/>}
+        <div className="pt-3 border-t border-[#DCEAF5] flex items-center justify-between text-xs text-[#64748B] font-medium">
+          <span className="text-[10px] font-mono text-[#64748B]">BloodNet • Clinical</span>
+          <button onClick={toggleTheme} className="p-1.5 rounded-xl bg-[#F5FAFF] hover:bg-[#E8F4FF] text-[#16324F] border border-[#DCEAF5] transition-all cursor-pointer" title="Toggle Light/Dark Mode">
+            {isDarkMode ? <Sun className="w-3.5 h-3.5 text-[#F59E0B]"/> : <Moon className="w-3.5 h-3.5 text-[#2563EB]"/>}
           </button>
         </div>
       </aside>
@@ -96,29 +96,29 @@ export const HospitalSidebar = () => {
           <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs transition-opacity" onClick={() => setIsMobileSidebarOpen(false)}/>
           <div className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl p-5 overflow-y-auto flex flex-col justify-between space-y-6">
             <div className="space-y-4">
-              <div className="flex items-center justify-between border-b border-sky-100 pb-3">
+              <div className="flex items-center justify-between border-b border-[#DCEAF5] pb-3">
                 <div className="flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-[#0284C7]"/>
-                  <span className="font-black text-sm text-[#0D2B45]">Hospital Menu</span>
+                  <Building2 className="w-5 h-5 text-[#2563EB]"/>
+                  <span className="font-black text-sm text-[#16324F]">Hospital Menu</span>
                 </div>
-                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-1 text-slate-400 hover:text-slate-700">
+                <button onClick={() => setIsMobileSidebarOpen(false)} className="p-1 text-[#64748B] hover:text-[#16324F]">
                   ✕
                 </button>
               </div>
 
               <nav className="space-y-4 text-xs font-extrabold">
                 {navSections.map(section => (<div key={section.title} className="space-y-1">
-                    <div className="text-[10px] font-black text-slate-400 uppercase px-2">
+                    <div className="text-[10px] font-black text-[#94A3B8] uppercase px-2">
                       {section.title}
                     </div>
                     {section.items.map(item => {
                     const IconComp = item.icon;
-                    return (<NavLink key={item.to} to={item.to} onClick={() => setIsMobileSidebarOpen(false)} className={({ isActive }) => `w-full flex items-center justify-between px-3 py-2.5 rounded-xl ${isActive ? 'bg-[#0284C7] text-white font-black' : 'text-[#0D2B45] hover:bg-[#E0F2FE]'}`}>
+                    return (<NavLink key={item.to} to={item.to} onClick={() => setIsMobileSidebarOpen(false)} className={({ isActive }) => `w-full flex items-center justify-between px-3 py-2.5 rounded-xl ${isActive ? 'bg-[#E8F4FF] text-[#2563EB] border border-[#BFDBFE] font-black' : 'text-[#16324F] hover:bg-[#F0F9FF]'}`}>
                           <div className="flex items-center gap-2">
                             <IconComp className="w-4 h-4"/>
                             <span>{item.label}</span>
                           </div>
-                          {item.badge && item.badge > 0 && (<span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-red-500 text-white">
+                          {item.badge && item.badge > 0 && (<span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#EF4444] text-white">
                               {item.badge}
                             </span>)}
                         </NavLink>);
