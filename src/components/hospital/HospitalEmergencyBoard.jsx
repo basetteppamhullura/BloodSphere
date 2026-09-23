@@ -79,37 +79,37 @@ export const HospitalEmergencyBoard = () => {
     const criticalCount = requests.filter(r => r.urgency === 'CRITICAL' && r.status !== 'COMPLETED').length;
     return (<div className="space-y-6 text-xs animate-in fade-in w-full max-w-7xl mx-auto pb-12">
       {/* 1. TOP HEADER BANNER */}
-      <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 flex-wrap">
-            <ShieldAlert className="w-6 h-6 text-red-600 animate-pulse"/>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Incoming Patient Blood Requests Queue</h2>
-            <span className="px-3 py-1 rounded-full text-[10px] font-black bg-red-100 text-red-800 border border-red-200 uppercase tracking-wider">
+            <ShieldAlert className="w-6 h-6 text-[#EF4444] animate-pulse"/>
+            <h2 className="text-2xl font-black text-[#16324F] tracking-tight">Incoming Patient Blood Requests Queue</h2>
+            <span className="px-3 py-1 rounded-full text-[10px] font-black bg-[#FFF1F2] text-[#DC2626] border border-[#FECDD3] uppercase tracking-wider">
               LIVE CLINICAL TRIAGE
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Review, approve, reject, or redirect incoming patient blood requests with instant real-time sync across Blood Net
+          <p className="text-xs text-[#64748B] mt-1">
+            Review, approve, reject, or redirect incoming patient blood requests with instant real-time sync across BloodNet
           </p>
         </div>
 
         <div className="flex items-center gap-3 font-mono">
-          <div className="px-4 py-2 rounded-2xl bg-red-50 border border-red-200 text-right">
-            <span className="text-[10px] text-slate-500 font-bold uppercase block">Active Critical Cases</span>
-            <span className="text-xl font-black text-red-600">{criticalCount} Critical</span>
+          <div className="px-4 py-2 rounded-2xl bg-[#FFF1F2] border border-[#FECDD3] text-right">
+            <span className="text-[10px] text-[#64748B] font-bold uppercase block">Active Critical Cases</span>
+            <span className="text-xl font-black text-[#DC2626]">{criticalCount} Critical</span>
           </div>
         </div>
       </div>
 
       {/* 2. SEARCH & FILTER CONTROLS */}
-      <div className="p-4 rounded-3xl bg-white border border-sky-100 shadow-sm flex flex-wrap items-center justify-between gap-3">
+      <div className="p-4 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2 flex-wrap flex-1 min-w-[280px]">
           <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3"/>
-            <input type="text" placeholder="Search Request ID, patient, blood group, ward..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-9 pr-3 py-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-900 font-bold text-xs focus:outline-none focus:border-sky-500"/>
+            <Search className="w-4 h-4 text-[#94A3B8] absolute left-3 top-3"/>
+            <input type="text" placeholder="Search Request ID, patient, blood group, ward..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full pl-9 pr-3 py-2.5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] text-[#16324F] font-bold text-xs focus:outline-none focus:border-[#2563EB]"/>
           </div>
 
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 font-extrabold text-xs cursor-pointer">
+          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="p-2.5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] text-[#16324F] font-extrabold text-xs cursor-pointer">
             <option value="ALL">All Statuses</option>
             <option value="PENDING">Pending Review</option>
             <option value="ACCEPTED">Accepted / Reserved</option>
@@ -118,14 +118,14 @@ export const HospitalEmergencyBoard = () => {
             <option value="COMPLETED">Completed</option>
           </select>
 
-          <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)} className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 font-extrabold text-xs cursor-pointer">
+          <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value)} className="p-2.5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] text-[#16324F] font-extrabold text-xs cursor-pointer">
             <option value="ALL">All Priorities</option>
             <option value="CRITICAL">Critical (2 Hours)</option>
             <option value="HIGH">High Priority</option>
             <option value="MODERATE">Moderate Priority</option>
           </select>
 
-          <select value={departmentFilter} onChange={e => setDepartmentFilter(e.target.value)} className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-slate-800 font-extrabold text-xs cursor-pointer">
+          <select value={departmentFilter} onChange={e => setDepartmentFilter(e.target.value)} className="p-2.5 rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] text-[#16324F] font-extrabold text-xs cursor-pointer">
             <option value="ALL">All Departments</option>
             <option value="Emergency">Emergency</option>
             <option value="ICU">ICU</option>
@@ -135,94 +135,94 @@ export const HospitalEmergencyBoard = () => {
           </select>
         </div>
 
-        <span className="text-[11px] font-mono text-slate-500 font-bold">
+        <span className="text-[11px] font-mono text-[#64748B] font-bold">
           Showing {filteredRequests.length} Requests
         </span>
       </div>
 
       {/* 3. REQUEST CARDS QUEUE */}
       <div className="space-y-4">
-        {filteredRequests.length === 0 ? (<div className="p-12 rounded-3xl bg-white border border-sky-100 shadow-sm text-center space-y-2">
-            <Check className="w-10 h-10 text-emerald-500 mx-auto"/>
-            <h3 className="font-extrabold text-base text-slate-900">No Matching Blood Requests Found</h3>
-            <p className="text-xs text-slate-500">All matching patient requests have been processed or cleared.</p>
+        {filteredRequests.length === 0 ? (<div className="p-12 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs text-center space-y-2">
+            <Check className="w-10 h-10 text-[#22C55E] mx-auto"/>
+            <h3 className="font-extrabold text-base text-[#16324F]">No Matching Blood Requests Found</h3>
+            <p className="text-xs text-[#64748B]">All matching patient requests have been processed or cleared.</p>
           </div>) : (filteredRequests.map(req => {
             const isApproved = req.status === 'APPROVED' || req.status === 'BLOOD_SECURED';
             const isRejected = req.status === 'REJECTED';
             const isRedirected = req.trendingReason?.includes('Redirected');
-            return (<div key={req.id} className={`p-6 rounded-3xl bg-white border space-y-4 shadow-sm transition-all ${req.urgency === 'CRITICAL'
-                    ? 'border-2 border-red-300 ring-1 ring-red-400/30'
-                    : 'border-sky-100'}`}>
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-sky-100 pb-3">
+            return (<div key={req.id} className={`p-6 rounded-3xl bg-white border border-[#DCEAF5] space-y-4 shadow-xs transition-all hover:shadow-md ${req.urgency === 'CRITICAL'
+                    ? 'border-l-4 border-l-[#EF4444]'
+                    : ''}`}>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[#DCEAF5] pb-3">
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-extrabold text-xs">
+                      <span className="px-3 py-1 rounded-xl bg-[#FFF1F2] text-[#DC2626] border border-[#FECDD3] font-extrabold text-xs">
                         🩸 {req.bloodGroup} ({req.bloodComponent || 'PRBC'})
                       </span>
-                      <h3 className="font-extrabold text-base text-slate-900">{req.patientName}</h3>
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-red-100 text-red-800 border border-red-200 uppercase">
+                      <h3 className="font-extrabold text-base text-[#16324F]">{req.patientName}</h3>
+                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-[#FFF1F2] text-[#DC2626] border border-[#FECDD3] uppercase">
                         Urgency: {req.urgency}
                       </span>
-                      <span className="text-xs font-mono text-slate-400 font-bold">Request ID: {req.id}</span>
+                      <span className="text-xs font-mono text-[#94A3B8] font-bold">Request ID: {req.id}</span>
                       {(() => {
                     const rawStatus = req.channelStatuses?.hospitalStatus || (isApproved ? 'APPROVED' : (isRejected ? 'REJECTED' : 'PENDING'));
                     const hospStatus = rawStatus === 'APPROVED' ? 'APPROVED' : (rawStatus === 'REJECTED' ? 'REJECTED' : 'PENDING');
                     return (<span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 border ${hospStatus === 'APPROVED'
-                            ? 'bg-emerald-100 text-emerald-800 border-emerald-300'
+                            ? 'bg-[#ECFDF5] text-[#15803D] border-[#BBF7D0]'
                             : hospStatus === 'REJECTED'
-                                ? 'bg-red-100 text-red-800 border-red-300'
-                                : 'bg-amber-100 text-amber-800 border-amber-300'}`}>
+                                ? 'bg-[#FFF1F2] text-[#DC2626] border-[#FECDD3]'
+                                : 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]'}`}>
                             <span>{hospStatus === 'APPROVED' ? '🟢' : hospStatus === 'REJECTED' ? '🔴' : '🟡'}</span>
                             <span>Hospital: {hospStatus}</span>
                           </span>);
                 })()}
                     </div>
 
-                    <p className="text-xs text-slate-500 mt-1">
+                    <p className="text-xs text-[#64748B] mt-1">
                       Department / Ward: <strong>{req.wardDept || 'Emergency ICU'}</strong> • Required: <strong>{req.unitsNeeded} units</strong> • Need by: {req.requiredDate || 'Immediate'} {req.requiredTime || ''}
                     </p>
-                    {isRedirected && (<p className="text-xs text-sky-700 font-bold mt-1 flex items-center gap-1">
+                    {isRedirected && (<p className="text-xs text-[#2563EB] font-bold mt-1 flex items-center gap-1">
                         <RadioTower className="w-3.5 h-3.5"/> {req.trendingReason}
                       </p>)}
-                    {isRejected && (<p className="text-xs text-red-700 font-bold mt-1">
+                    {isRejected && (<p className="text-xs text-[#DC2626] font-bold mt-1">
                         ❌ Rejection Reason: "{req.channelStatuses?.hospitalRejectionReason || req.additionalNotes || 'Stock unavailable'}"
                       </p>)}
                   </div>
 
-                  {/* WORKFLOW ACTIONS FOR HOSPITAL STAFF: VIEW, APPROVE, REJECT, REDIRECT, CHAT (Requirement 7) */}
+                  {/* WORKFLOW ACTIONS FOR HOSPITAL STAFF */}
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    <button onClick={() => setViewingReq(req)} className="px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors">
-                      <Eye className="w-4 h-4"/> View Details
+                    <button onClick={() => setViewingReq(req)} className="px-3.5 py-2.5 rounded-2xl bg-[#F5FAFF] hover:bg-[#E8F4FF] text-[#16324F] border border-[#DCEAF5] font-bold text-xs flex items-center gap-1 cursor-pointer transition-colors">
+                      <Eye className="w-4 h-4 text-[#2563EB]"/> View Details
                     </button>
 
                     {!isApproved && !isRejected && (<>
-                        <button onClick={() => acceptBloodRequest(req.id, req.hospitalName || 'KIMS Teaching Hospital')} className="px-4 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer">
+                        <button onClick={() => acceptBloodRequest(req.id, req.hospitalName || 'KIMS Teaching Hospital')} className="px-4 py-2.5 rounded-2xl bg-[#16A34A] hover:bg-[#15803D] text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer">
                           <Check className="w-4 h-4"/> Approve
                         </button>
 
-                        <button onClick={() => setRedirectingReq(req)} className="px-4 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer">
+                        <button onClick={() => setRedirectingReq(req)} className="px-4 py-2.5 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer">
                           <ArrowRightLeft className="w-4 h-4"/> Redirect
                         </button>
 
-                        <button onClick={() => setRejectingReq(req)} className="px-3.5 py-2.5 rounded-2xl bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-700 font-extrabold text-xs border border-slate-200 transition-all cursor-pointer">
+                        <button onClick={() => setRejectingReq(req)} className="px-3.5 py-2.5 rounded-2xl bg-[#FFF1F2] hover:bg-[#FFE4E6] text-[#DC2626] font-extrabold text-xs border border-[#FECDD3] transition-all cursor-pointer">
                           <X className="w-4 h-4 inline"/> Reject
                         </button>
                       </>)}
 
                     {isApproved && (<div className="flex items-center gap-2 flex-wrap">
-                        <div className="px-3 py-2 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 font-black text-xs flex items-center gap-1.5">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-600"/> Stock Reserved
+                        <div className="px-3 py-2 rounded-2xl bg-[#ECFDF5] border border-[#BBF7D0] text-[#15803D] font-black text-xs flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-[#22C55E]"/> Stock Reserved
                         </div>
-                        <button onClick={() => openEmergencyChat(req.id)} className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer">
+                        <button onClick={() => openEmergencyChat(req.id)} className="px-4 py-2.5 rounded-2xl bg-[#EF4444] hover:bg-[#DC2626] text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 active:scale-95 transition-all cursor-pointer">
                           <MessageSquare className="w-4 h-4"/> 💬 Chat with Requester
                         </button>
                       </div>)}
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-600 font-mono">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#64748B] font-mono">
                   <div>Requester: <strong>{req.contactPerson} ({req.maskedPhone || req.contactPhone})</strong></div>
-                  <a href={`tel:${req.contactPhone}`} className="text-emerald-700 font-bold hover:underline flex items-center gap-1">
+                  <a href={`tel:${req.contactPhone}`} className="text-[#2563EB] font-bold hover:underline flex items-center gap-1">
                     <Phone className="w-3.5 h-3.5"/> Call Requester ({req.contactPhone})
                   </a>
                 </div>
