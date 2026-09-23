@@ -91,141 +91,134 @@ export const HospitalHomePage = () => {
         logout();
         navigate('/login/hospital', { replace: true });
     };
-    return (<div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in">
+    return (<div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in" style={{ backgroundColor: '#F5FAFF' }}>
       
-      {/* 1. WELCOME & HOSPITAL OVERVIEW HERO BANNER (SKY BLUE GRADIENT WITH CLEAN STROKE LINE-ART BACKDROP) */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#0284C7] via-[#0369A1] to-[#0EA5E9] text-white shadow-xl relative overflow-hidden border border-sky-400/30">
+      {/* 1. WELCOME & HOSPITAL OVERVIEW HERO BANNER (LIGHT HEALTHCARE GRADIENT) */}
+      <div className="p-6 sm:p-8 rounded-3xl shadow-sm relative overflow-hidden border border-[#BFDBFE]" style={{ background: 'linear-gradient(135deg, #E8F4FF 0%, #DFF6FF 50%, #EFFBFF 100%)' }}>
         
         {/* Layer 1: ECG Heartbeat Pulse Line Wave Across Bottom */}
-        <div className="absolute right-0 bottom-0 w-full md:w-3/5 h-20 pointer-events-none opacity-20 z-0">
+        <div className="absolute right-0 bottom-0 w-full md:w-3/5 h-20 pointer-events-none opacity-25 z-0">
           <svg className="w-full h-full" viewBox="0 0 500 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 0 50 L 140 50 L 155 20 L 175 75 L 195 10 L 215 65 L 230 40 L 245 50 L 500 50" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M 0 50 L 140 50 L 155 20 L 175 75 L 195 10 L 215 65 L 230 40 L 245 50 L 500 50" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
 
-        {/* Layer 2: Clean Line-Art Medical Cross & Network Rings Motif (Pure Stroke, NO Solid Fills) */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-15 pointer-events-none z-0 hidden sm:block">
+        {/* Layer 2: Clean Line-Art Medical Cross & Network Rings Motif */}
+        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none z-0 hidden sm:block">
           <svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-            {/* Concentric Network Rings */}
-            <circle cx="220" cy="100" r="85" stroke="white" strokeWidth="1.5" strokeDasharray="4 4" fill="none"/>
-            <circle cx="220" cy="100" r="55" stroke="white" strokeWidth="1" fill="none"/>
-            
-            {/* Outline Medical Cross (Pure Stroke, No Solid Fill Box) */}
-            <path d="M 210 60 H 230 V 90 H 260 V 110 H 230 V 140 H 210 V 110 H 180 V 90 H 210 Z" stroke="white" strokeWidth="2" strokeLinejoin="round" fill="none"/>
-
-            {/* Stethoscope & Care Line Accents */}
-            <path d="M 60 100 C 100 50, 150 50, 180 90" stroke="white" strokeWidth="1.5" strokeDasharray="3 3" fill="none"/>
-            <circle cx="60" cy="100" r="4" stroke="white" strokeWidth="1.5" fill="none"/>
-            <circle cx="270" cy="40" r="3" stroke="white" strokeWidth="1.5" fill="none"/>
+            <circle cx="220" cy="100" r="85" stroke="#2563EB" strokeWidth="1.5" strokeDasharray="4 4" fill="none"/>
+            <circle cx="220" cy="100" r="55" stroke="#2563EB" strokeWidth="1" fill="none"/>
+            <path d="M 210 60 H 230 V 90 H 260 V 110 H 230 V 140 H 210 V 110 H 180 V 90 H 210 Z" stroke="#2563EB" strokeWidth="2" strokeLinejoin="round" fill="none"/>
+            <path d="M 60 100 C 100 50, 150 50, 180 90" stroke="#2563EB" strokeWidth="1.5" strokeDasharray="3 3" fill="none"/>
           </svg>
         </div>
 
-        {/* Layer 3: Translucent Hospital Building Outline (Stroke Only) */}
+        {/* Layer 3: Translucent Hospital Building Outline */}
         <div className="absolute right-8 bottom-3 opacity-15 pointer-events-none z-0">
-          <Building2 className="w-36 h-36 text-white stroke-[1.2]"/>
+          <Building2 className="w-36 h-36 text-[#2563EB] stroke-[1.2]"/>
         </div>
 
         {/* Banner Content Container */}
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-3 max-w-2xl">
             {/* Polished Verification Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30 text-xs font-black shadow-sm">
-              <ShieldCheck className="w-4 h-4 text-emerald-300"/>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FFFFFF]/80 backdrop-blur-md text-[#2563EB] border border-[#BFDBFE] text-xs font-black shadow-xs">
+              <ShieldCheck className="w-4 h-4 text-[#2563EB]"/>
               <span>Verified Hospital Medical Portal</span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight drop-shadow-xs">
+            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-[#16324F] leading-tight">
               Welcome, {currentUser?.name || 'KIMS Teaching Hospital'} 🏥
             </h1>
 
-            <p className="text-xs sm:text-sm text-sky-100 font-medium leading-relaxed drop-shadow-2xs">
+            <p className="text-xs sm:text-sm text-[#64748B] font-medium leading-relaxed">
               Manage trauma center blood inventory, broadcast emergency patient requests, and coordinate with connected regional blood banks.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 relative z-20">
-            <button onClick={handleLogout} className="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all shadow-sm active:scale-95 cursor-pointer backdrop-blur-xs" title="Logout">
-              <LogOut className="w-4 h-4"/>
+            <button onClick={handleLogout} className="px-4 py-2.5 rounded-2xl bg-white hover:bg-[#F0F9FF] text-[#16324F] font-bold text-xs border border-[#DCEAF5] flex items-center gap-1.5 transition-all shadow-xs cursor-pointer" title="Logout">
+              <LogOut className="w-4 h-4 text-[#2563EB]"/>
               <span>Logout</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* 2. 🚨 TRAUMA EMERGENCY REQUESTS QUEUE (PRIORITY ZONE) */}
-      <div className="p-6 rounded-3xl bg-gradient-to-br from-red-50/40 via-white to-amber-50/20 border border-red-100/90 shadow-sm space-y-4">
+      {/* 2. 🚨 TRAUMA EMERGENCY REQUESTS QUEUE (WHITE CONTAINER WITH SUBTLE RED ACCENT) */}
+      <div className="p-6 rounded-3xl bg-white border border-[#FECDD3] shadow-xs space-y-4">
         
         {/* Header Row */}
-        <div className="flex items-center justify-between border-b border-red-100/80 pb-3">
+        <div className="flex items-center justify-between border-b border-[#FECDD3]/60 pb-3">
           <div>
-            <h2 className="text-base sm:text-lg font-extrabold text-[#0D2B45] flex items-center gap-2 tracking-tight">
-              <AlertTriangle className="w-5 h-5 text-red-600 animate-pulse"/> Trauma Emergency Requests
+            <h2 className="text-base sm:text-lg font-extrabold text-[#16324F] flex items-center gap-2 tracking-tight">
+              <AlertTriangle className="w-5 h-5 text-[#EF4444] animate-pulse"/> Trauma Emergency Requests
             </h2>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Active emergency requests requiring immediate attention</p>
+            <p className="text-xs text-[#64748B] font-medium mt-0.5">Active emergency requests requiring immediate attention</p>
           </div>
 
-          <button onClick={() => navigate('/hospital/dashboard')} className="px-3.5 py-1.5 rounded-xl bg-[#E0F2FE] hover:bg-sky-200 text-[#0284C7] border border-sky-200 font-extrabold text-xs transition-all flex items-center gap-1 shrink-0">
+          <button onClick={() => navigate('/hospital/dashboard')} className="px-3.5 py-1.5 rounded-xl bg-[#E8F4FF] hover:bg-[#DDF0FF] text-[#2563EB] border border-[#BFDBFE] font-extrabold text-xs transition-all flex items-center gap-1 shrink-0 cursor-pointer">
             Manage Desk →
           </button>
         </div>
 
         {/* Counter Pill Row */}
         <div className="flex flex-wrap items-center gap-3 text-xs font-bold pt-1 pb-1">
-          <span className="px-3 py-1 rounded-xl bg-red-100/80 text-red-800 border border-red-200 flex items-center gap-1.5 shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-red-600"/> 🔴 Critical <strong className="font-black text-slate-900">{criticalCount}</strong>
+          <span className="px-3 py-1 rounded-xl bg-[#FFF1F2] text-[#DC2626] border border-[#FECDD3] flex items-center gap-1.5 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#EF4444]"/> 🔴 Critical <strong className="font-black text-[#16324F]">{criticalCount}</strong>
           </span>
-          <span className="px-3 py-1 rounded-xl bg-amber-100/80 text-amber-900 border border-amber-200 flex items-center gap-1.5 shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-amber-500"/> 🟠 Urgent <strong className="font-black text-slate-900">{urgentCount}</strong>
+          <span className="px-3 py-1 rounded-xl bg-[#FFFBEB] text-[#D97706] border border-[#FDE68A] flex items-center gap-1.5 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#F59E0B]"/> 🟠 Urgent <strong className="font-black text-[#16324F]">{urgentCount}</strong>
           </span>
-          <span className="px-3 py-1 rounded-xl bg-[#E0F2FE] text-[#0284C7] border border-sky-200 flex items-center gap-1.5 shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-[#0EA5E9]"/> 🟡 Pending <strong className="font-black text-[#0D2B45]">{pendingCount}</strong>
+          <span className="px-3 py-1 rounded-xl bg-[#EFF6FF] text-[#2563EB] border border-[#BFDBFE] flex items-center gap-1.5 shadow-2xs">
+            <span className="w-2 h-2 rounded-full bg-[#2563EB]"/> 🟡 Pending <strong className="font-black text-[#16324F]">{pendingCount}</strong>
           </span>
         </div>
 
         {/* Active Emergency Request Cards */}
-        {sortedActiveRequests.length === 0 ? (<div className="p-8 rounded-2xl bg-white border border-[#DDE8E2] text-center space-y-2">
-            <CheckCircle2 className="w-8 h-8 text-[#087443] mx-auto"/>
-            <strong className="text-sm font-black text-[#0D2B45] block">🟢 No Active Emergency Requests</strong>
-            <p className="text-xs text-slate-500">All emergency blood requests are currently under control.</p>
+        {sortedActiveRequests.length === 0 ? (<div className="p-8 rounded-2xl bg-white border border-[#DCEAF5] text-center space-y-2">
+            <CheckCircle2 className="w-8 h-8 text-[#22C55E] mx-auto"/>
+            <strong className="text-sm font-black text-[#16324F] block">🟢 No Active Emergency Requests</strong>
+            <p className="text-xs text-[#64748B]">All emergency blood requests are currently under control.</p>
           </div>) : (<div className="space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
               {sortedActiveRequests.slice(0, 3).map(req => {
                 const rank = getPriorityRank(req);
                 const isCritical = rank === 1;
                 const isUrgent = rank === 2;
-                return (<div key={req.id} className={`p-4 rounded-2xl border space-y-3 flex flex-col justify-between transition-all hover:shadow-md ${isCritical
-                        ? 'border-l-4 border-l-red-500 border-red-200/90 bg-gradient-to-br from-red-50/60 via-white to-rose-50/20'
+                return (<div key={req.id} className={`p-4 rounded-2xl bg-white border border-[#DCEAF5] space-y-3 flex flex-col justify-between transition-all hover:shadow-md ${isCritical
+                        ? 'border-l-4 border-l-[#EF4444]'
                         : isUrgent
-                            ? 'border-l-4 border-l-amber-500 border-amber-200/90 bg-gradient-to-br from-amber-50/50 via-white to-orange-50/20'
-                            : 'border-l-4 border-l-[#0EA5E9] border-sky-200/90 bg-gradient-to-br from-[#E0F2FE]/50 via-white to-sky-50/20'}`}>
+                            ? 'border-l-4 border-l-[#F59E0B]'
+                            : 'border-l-4 border-l-[#2563EB]'}`}>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="font-black text-sm text-red-600 flex items-center gap-1">
-                          🩸 {req.bloodGroup} <span className="text-xs font-semibold text-slate-500">({req.bloodComponent || 'PRBC'})</span>
+                        <span className="font-black text-sm text-[#EF4444] flex items-center gap-1">
+                          🩸 {req.bloodGroup} <span className="text-xs font-semibold text-[#64748B]">({req.bloodComponent || 'PRBC'})</span>
                         </span>
                         <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${isCritical
-                        ? 'bg-red-100 text-red-800 border-red-200'
+                        ? 'bg-[#FFF1F2] text-[#DC2626] border-[#FECDD3]'
                         : isUrgent
-                            ? 'bg-amber-100 text-amber-900 border-amber-300'
-                            : 'bg-[#E0F2FE] text-[#0284C7] border border-sky-200'}`}>
+                            ? 'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]'
+                            : 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]'}`}>
                           {isCritical ? '🔴 CRITICAL' : isUrgent ? '🟠 URGENT' : '🟡 PENDING'}
                         </span>
                       </div>
 
                       <div className="space-y-1">
-                        <strong className="text-sm font-black text-[#0D2B45] block">
+                        <strong className="text-sm font-black text-[#16324F] block">
                           {req.unitsNeeded} Units Required
                         </strong>
-                        <p className="text-[11px] text-slate-500 flex items-center gap-1 font-medium">
-                          <Building2 className="w-3 h-3 text-slate-400"/>
+                        <p className="text-[11px] text-[#64748B] flex items-center gap-1 font-medium">
+                          <Building2 className="w-3 h-3 text-[#94A3B8]"/>
                           ICU • Required: {req.requiredDate || 'Within 2 hours'}
                         </p>
                       </div>
                     </div>
 
-                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px]">
-                      <span className="font-mono text-slate-400">BR-{req.id}</span>
-                      <button onClick={() => navigate('/hospital/dashboard')} className="px-3 py-1 rounded-lg bg-white hover:bg-[#E0F2FE] text-[#0284C7] font-extrabold text-[11px] border border-sky-200 shadow-2xs transition-all flex items-center gap-1">
+                    <div className="pt-2 border-t border-[#DCEAF5] flex items-center justify-between text-[11px]">
+                      <span className="font-mono text-[#94A3B8]">BR-{req.id}</span>
+                      <button onClick={() => navigate('/hospital/dashboard')} className="px-3 py-1 rounded-lg bg-[#E8F4FF] hover:bg-[#DDF0FF] text-[#2563EB] font-extrabold text-[11px] border border-[#BFDBFE] shadow-2xs transition-all flex items-center gap-1 cursor-pointer">
                         View Request →
                       </button>
                     </div>
@@ -233,60 +226,60 @@ export const HospitalHomePage = () => {
             })}
             </div>
 
-            <span className="text-[11px] text-slate-400 font-medium block text-center pt-1">
+            <span className="text-[11px] text-[#64748B] font-medium block text-center pt-1">
               Showing top active emergency requests
             </span>
           </div>)}
       </div>
 
-      {/* 3. 📥 INCOMING PATIENT BLOOD REQUESTS QUEUE (LIGHT SKY BLUE ZONE) */}
-      <div className="p-6 rounded-3xl bg-gradient-to-br from-[#E0F2FE]/70 via-[#F0F9FF]/50 to-white border border-sky-200/90 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-sky-200/80 pb-3">
+      {/* 3. 📥 INCOMING PATIENT BLOOD REQUESTS QUEUE (LIGHT MEDICAL WHITE CONTAINER) */}
+      <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-[#DCEAF5] pb-3">
           <div>
-            <h3 className="font-extrabold text-base sm:text-lg text-[#0D2B45] flex items-center gap-2 tracking-tight">
-              <Droplet className="w-5 h-5 text-red-600"/> 📥 Incoming Patient Blood Requests Queue
+            <h3 className="font-extrabold text-base sm:text-lg text-[#16324F] flex items-center gap-2 tracking-tight">
+              <Droplet className="w-5 h-5 text-[#2563EB]"/> 📥 Incoming Patient Blood Requests Queue
             </h3>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Real-time incoming active patient blood requests from Blood Net system</p>
+            <p className="text-xs text-[#64748B] font-medium mt-0.5">Real-time incoming active patient blood requests from BloodNet system</p>
           </div>
 
-          <button onClick={() => navigate('/hospital/dashboard')} className="px-3.5 py-1.5 rounded-xl bg-[#E0F2FE] hover:bg-sky-200 text-[#0284C7] font-extrabold text-xs transition-all border border-sky-200">
+          <button onClick={() => navigate('/hospital/dashboard')} className="px-3.5 py-1.5 rounded-xl bg-[#E8F4FF] hover:bg-[#DDF0FF] text-[#2563EB] font-extrabold text-xs transition-all border border-[#BFDBFE] cursor-pointer">
             View All Requests →
           </button>
         </div>
 
-        {sortedActiveRequests.length === 0 ? (<div className="p-6 rounded-2xl bg-white text-center border border-[#DDE8E2] space-y-1">
-            <CheckCircle2 className="w-6 h-6 text-[#087443] mx-auto"/>
-            <span className="text-xs font-bold text-[#0D2B45] block">No Incoming Patient Requests</span>
-            <p className="text-[11px] text-slate-500">All patient blood requirements are up to date.</p>
+        {sortedActiveRequests.length === 0 ? (<div className="p-6 rounded-2xl bg-white text-center border border-[#DCEAF5] space-y-1">
+            <CheckCircle2 className="w-6 h-6 text-[#22C55E] mx-auto"/>
+            <span className="text-xs font-bold text-[#16324F] block">No Incoming Patient Requests</span>
+            <p className="text-[11px] text-[#64748B]">All patient blood requirements are up to date.</p>
           </div>) : (<div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
             {sortedActiveRequests.slice(0, 3).map(req => {
                 const isCrit = req.urgency === 'HIGH' || req.urgency === 'CRITICAL' || req.urgency === 'EMERGENCY';
                 const isUrg = req.urgency === 'MODERATE' || req.urgency === 'URGENT';
-                return (<div key={`inc-${req.id}`} className={`p-4 rounded-2xl border space-y-3 flex flex-col justify-between hover:shadow-md transition-all ${isCrit
-                        ? 'border-l-4 border-l-red-500 border-red-200/80 bg-gradient-to-br from-red-50/50 via-white to-rose-50/20'
+                return (<div key={`inc-${req.id}`} className={`p-4 rounded-2xl bg-white border border-[#DCEAF5] space-y-3 flex flex-col justify-between hover:shadow-md transition-all ${isCrit
+                        ? 'border-l-4 border-l-[#EF4444]'
                         : isUrg
-                            ? 'border-l-4 border-l-amber-500 border-amber-200/80 bg-gradient-to-br from-amber-50/40 via-white to-orange-50/20'
-                            : 'border-l-4 border-l-[#0EA5E9] border-sky-200/80 bg-gradient-to-br from-[#E0F2FE]/50 via-white to-sky-50/20'}`}>
+                            ? 'border-l-4 border-l-[#F59E0B]'
+                            : 'border-l-4 border-l-[#2563EB]'}`}>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${isCrit ? 'bg-red-100 text-red-800 border-red-200' : isUrg ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-[#E0F2FE] text-[#0284C7] border border-sky-200'}`}>
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${isCrit ? 'bg-[#FFF1F2] text-[#DC2626] border-[#FECDD3]' : isUrg ? 'bg-[#FFFBEB] text-[#D97706] border-[#FDE68A]' : 'bg-[#EFF6FF] text-[#2563EB] border-[#BFDBFE]'}`}>
                         {isCrit ? '🔴 CRITICAL' : isUrg ? '🟠 URGENT' : '🟡 PENDING'}
                       </span>
-                      <span className="text-[10px] font-mono text-slate-400">BR-{req.id}</span>
+                      <span className="text-[10px] font-mono text-[#94A3B8]">BR-{req.id}</span>
                     </div>
 
-                    <strong className="text-sm font-black text-[#0D2B45] block">
+                    <strong className="text-sm font-black text-[#16324F] block">
                       {req.bloodGroup} {req.bloodComponent || 'PRBC'} • {req.unitsNeeded} Units Required
                     </strong>
 
-                    <div className="text-[11px] text-slate-500 space-y-0.5">
+                    <div className="text-[11px] text-[#64748B] space-y-0.5">
                       <span className="block font-medium">Patient ID: {req.patientName || `PID-${req.id}`}</span>
                       <span className="block">Department: ICU</span>
-                      <span className="block font-mono text-slate-600">Required: {req.requiredDate || 'Within 2 Hours'}</span>
+                      <span className="block font-mono text-[#64748B]">Required: {req.requiredDate || 'Within 2 Hours'}</span>
                     </div>
                   </div>
 
-                  <button onClick={() => navigate('/hospital/dashboard')} className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-[11px] shadow-sm transition-all flex items-center justify-center gap-1 active:scale-[0.98]">
+                  <button onClick={() => navigate('/hospital/dashboard')} className="w-full py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-[11px] shadow-xs transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer">
                     View Request →
                   </button>
                 </div>);
@@ -294,80 +287,78 @@ export const HospitalHomePage = () => {
           </div>)}
       </div>
 
-      {/* 4. 🩸 BLOOD AVAILABILITY SUMMARY MATRIX (SKY BLUE KPI ACCENTS) */}
+      {/* 4. 🩸 BLOOD AVAILABILITY SUMMARY MATRIX (SOFT SPECIFIED FILLS) */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         
-        {/* TOTAL HOSPITAL STOCK CARD */}
-        <div onClick={() => navigate('/hospital/blood-availability')} className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/40 via-white to-white border border-emerald-100 shadow-sm space-y-3 cursor-pointer hover:border-[#087443] hover:shadow-md transition-all group" title="Click to view detailed hospital inventory matrix">
+        {/* TOTAL HOSPITAL STOCK CARD (SOFT GREEN) */}
+        <div onClick={() => navigate('/hospital/blood-availability')} className="p-5 rounded-2xl bg-[#ECFDF5] border border-[#BBF7D0] shadow-xs space-y-3 cursor-pointer hover:shadow-md transition-all group" title="Click to view detailed hospital inventory matrix">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="p-2.5 rounded-xl bg-emerald-100/80 text-[#087443] border border-emerald-200/80 shrink-0 shadow-2xs">
-                <Droplet className="w-5 h-5 text-[#087443]"/>
+              <div className="p-2.5 rounded-xl bg-white text-[#22C55E] border border-[#BBF7D0] shrink-0 shadow-2xs">
+                <Droplet className="w-5 h-5 text-[#22C55E]"/>
               </div>
-              <span className="text-xs text-[#0D2B45] font-bold block">Total Hospital Stock</span>
+              <span className="text-xs text-[#16324F] font-bold block">Total Hospital Stock</span>
             </div>
-            <span className="text-xs font-extrabold text-[#087443] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
+            <span className="text-xs font-extrabold text-[#15803D] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
               View <ArrowUpRight className="w-3.5 h-3.5"/>
             </span>
           </div>
 
           <div>
-            <strong className="text-3xl sm:text-4xl font-black text-[#0D2B45] block tracking-tight">
-              {totalAvailableUnits} <span className="text-sm font-bold text-slate-500">Units</span>
+            <strong className="text-3xl sm:text-4xl font-black text-[#16324F] block tracking-tight">
+              {totalAvailableUnits} <span className="text-sm font-bold text-[#64748B]">Units</span>
             </strong>
-            <span className="text-[11px] text-slate-500 font-medium block mt-1">
+            <span className="text-[11px] text-[#64748B] font-medium block mt-1">
               Available across {activeComponentsCount} blood component{activeComponentsCount !== 1 ? 's' : ''}
             </span>
           </div>
         </div>
 
-        {/* CRITICAL LOW-STOCK ALERTS CARD */}
-        <div onClick={() => navigate('/hospital/blood-availability')} className={`p-5 rounded-2xl bg-gradient-to-br via-white to-white border shadow-sm space-y-3 cursor-pointer transition-all group ${criticalLowGroupCount > 0
-            ? 'from-red-50/40 border-red-200 hover:border-red-400 hover:shadow-md'
-            : 'from-emerald-50/40 border-emerald-100 hover:border-emerald-500 hover:shadow-md'}`} title="Click to view critical low-stock alerts & nearby blood bank transfers">
+        {/* CRITICAL LOW-STOCK ALERTS CARD (SOFT RED) */}
+        <div onClick={() => navigate('/hospital/blood-availability')} className="p-5 rounded-2xl bg-[#FFF1F2] border border-[#FECDD3] shadow-xs space-y-3 cursor-pointer hover:shadow-md transition-all group" title="Click to view critical low-stock alerts & nearby blood bank transfers">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className={`p-2.5 rounded-xl border shrink-0 shadow-2xs ${criticalLowGroupCount > 0 ? 'bg-red-100/80 text-red-700 border-red-200/80' : 'bg-emerald-100/80 text-emerald-700 border-emerald-200/80'}`}>
-                <AlertTriangle className="w-5 h-5"/>
+              <div className="p-2.5 rounded-xl bg-white text-[#EF4444] border border-[#FECDD3] shrink-0 shadow-2xs">
+                <AlertTriangle className="w-5 h-5 text-[#EF4444]"/>
               </div>
-              <span className="text-xs text-[#0D2B45] font-bold block">Critical Stock Alerts</span>
+              <span className="text-xs text-[#16324F] font-bold block">Critical Stock Alerts</span>
             </div>
 
-            <span className={`text-xs font-extrabold group-hover:translate-x-1 transition-transform flex items-center gap-0.5 ${criticalLowGroupCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+            <span className="text-xs font-extrabold text-[#DC2626] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
               Alerts <ArrowUpRight className="w-3.5 h-3.5"/>
             </span>
           </div>
 
           <div>
-            <strong className={`text-3xl sm:text-4xl font-black block tracking-tight ${criticalLowGroupCount > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
-              {criticalLowGroupCount > 0 ? `${criticalLowGroupCount}` : '0'} <span className="text-sm font-bold text-slate-500">Groups Low</span>
+            <strong className="text-3xl sm:text-4xl font-black text-[#DC2626] block tracking-tight">
+              {criticalLowGroupCount > 0 ? `${criticalLowGroupCount}` : '0'} <span className="text-sm font-bold text-[#64748B]">Groups Low</span>
             </strong>
-            <span className={`text-[11px] font-bold block mt-1 ${criticalLowGroupCount > 0 ? 'text-red-600' : 'text-emerald-700'}`}>
+            <span className={`text-[11px] font-bold block mt-1 ${criticalLowGroupCount > 0 ? 'text-[#DC2626]' : 'text-[#15803D]'}`}>
               {criticalLowGroupCount > 0 ? 'Replenishment recommended' : '🟢 All safety thresholds met'}
             </span>
           </div>
         </div>
 
-        {/* CONNECTED REGIONAL BANKS CARD (SKY BLUE ACCENT) */}
-        <div onClick={() => navigate('/hospital/blood-banks')} className="p-5 rounded-2xl bg-gradient-to-br from-[#E0F2FE]/60 via-white to-white border border-sky-200 shadow-sm space-y-3 cursor-pointer hover:border-[#0EA5E9] hover:shadow-md transition-all group" title="Click to view connected regional blood banks & real-time inventory">
+        {/* CONNECTED REGIONAL BANKS CARD (SOFT BLUE) */}
+        <div onClick={() => navigate('/hospital/blood-banks')} className="p-5 rounded-2xl bg-[#E8F4FF] border border-[#BFDBFE] shadow-xs space-y-3 cursor-pointer hover:shadow-md transition-all group" title="Click to view connected regional blood banks & real-time inventory">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="p-2.5 rounded-xl bg-[#E0F2FE] text-[#0EA5E9] border border-sky-200 shrink-0 shadow-2xs">
-                <Building2 className="w-5 h-5"/>
+              <div className="p-2.5 rounded-xl bg-white text-[#2563EB] border border-[#BFDBFE] shrink-0 shadow-2xs">
+                <Building2 className="w-5 h-5 text-[#2563EB]"/>
               </div>
-              <span className="text-xs text-[#0D2B45] font-bold block">Connected Banks</span>
+              <span className="text-xs text-[#16324F] font-bold block">Connected Banks</span>
             </div>
-            <span className="text-xs font-extrabold text-[#0284C7] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
+            <span className="text-xs font-extrabold text-[#2563EB] group-hover:translate-x-1 transition-transform flex items-center gap-0.5">
               Banks <ArrowUpRight className="w-3.5 h-3.5"/>
             </span>
           </div>
 
           <div>
-            <strong className="text-3xl sm:text-4xl font-black text-[#0D2B45] block tracking-tight">
-              {activeConnectedBanksCount} <span className="text-sm font-bold text-slate-500">Active</span>
+            <strong className="text-3xl sm:text-4xl font-black text-[#16324F] block tracking-tight">
+              {activeConnectedBanksCount} <span className="text-sm font-bold text-[#64748B]">Active</span>
             </strong>
-            <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1 mt-1">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"/>
+            <span className="text-[11px] text-[#15803D] font-bold flex items-center gap-1 mt-1">
+              <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-ping"/>
               <span>Real-time sync enabled</span>
             </span>
           </div>
@@ -375,21 +366,21 @@ export const HospitalHomePage = () => {
 
       </div>
 
-      {/* 5. 📦 HOSPITAL BLOOD STOCK MONITOR */}
-      <div className="p-6 rounded-3xl bg-white border border-sky-100/90 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-sky-100 pb-3">
+      {/* 5. 📦 HOSPITAL BLOOD STOCK MONITOR (CLEAN WHITE CARDS WITH STATUS BADGES) */}
+      <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-[#DCEAF5] pb-3">
           <div>
-            <h3 className="font-extrabold text-base sm:text-lg text-[#0D2B45] flex items-center gap-2 tracking-tight">
-              <PackageCheck className="w-5 h-5 text-[#087443]"/> 🩸 Hospital Blood Stock Monitor
+            <h3 className="font-extrabold text-base sm:text-lg text-[#16324F] flex items-center gap-2 tracking-tight">
+              <PackageCheck className="w-5 h-5 text-[#22C55E]"/> 🩸 Hospital Blood Stock Monitor
             </h3>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Real-time authorized blood inventory storage & availability status</p>
+            <p className="text-xs text-[#64748B] font-medium mt-0.5">Real-time authorized blood inventory storage & availability status</p>
           </div>
 
           <div className="flex items-center gap-2">
-            <button onClick={() => navigate('/hospital/unit-details')} className="px-3.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs transition-all flex items-center gap-1 shadow-xs">
+            <button onClick={() => navigate('/hospital/unit-details')} className="px-3.5 py-1.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs transition-all flex items-center gap-1 shadow-xs cursor-pointer">
               Unit Details →
             </button>
-            <button onClick={() => navigate('/hospital/blood-availability')} className="px-3.5 py-1.5 rounded-xl bg-[#E0F2FE] hover:bg-sky-200 text-[#0284C7] font-extrabold text-xs transition-all border border-sky-200 flex items-center gap-1">
+            <button onClick={() => navigate('/hospital/blood-availability')} className="px-3.5 py-1.5 rounded-xl bg-[#E8F4FF] hover:bg-[#DDF0FF] text-[#2563EB] font-extrabold text-xs transition-all border border-[#BFDBFE] flex items-center gap-1 cursor-pointer">
               View Matrix →
             </button>
           </div>
@@ -402,32 +393,28 @@ export const HospitalHomePage = () => {
             const reservedUnits = availableUnits > 0 ? 1 : 0;
             const isCrit = availableUnits <= 2;
             const isLimited = availableUnits > 2 && availableUnits < 8;
-            return (<div key={group} className={`p-3.5 rounded-2xl border space-y-2 transition-all ${isCrit
-                    ? 'border-t-2 border-t-red-500 border-red-200/60 bg-gradient-to-br from-red-50/50 to-white shadow-2xs'
-                    : isLimited
-                        ? 'border-t-2 border-t-amber-500 border-amber-200/60 bg-gradient-to-br from-amber-50/50 to-white shadow-2xs'
-                        : 'border-t-2 border-t-emerald-500 border-emerald-200/60 bg-gradient-to-br from-emerald-50/50 to-white shadow-2xs'}`}>
+            return (<div key={group} className="p-3.5 rounded-2xl bg-white border border-[#DCEAF5] space-y-2 transition-all hover:shadow-xs">
                 <div className="flex items-center justify-between">
-                  <span className="font-black text-[#0D2B45] text-base">{group}</span>
+                  <span className="font-black text-[#16324F] text-base">{group}</span>
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${isCrit
-                    ? 'bg-red-100 text-red-800 border-red-200'
+                    ? 'bg-[#FFF1F2] text-[#DC2626] border-[#FECDD3]'
                     : isLimited
-                        ? 'bg-amber-100 text-amber-900 border-amber-300'
-                        : 'bg-emerald-100/90 text-emerald-800 border border-emerald-200/90'}`}>
+                        ? 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]'
+                        : 'bg-[#ECFDF5] text-[#15803D] border-[#BBF7D0]'}`}>
                     {isCrit ? '🔴 Critical' : isLimited ? '🟡 Limited' : '🟢 Available'}
                   </span>
                 </div>
 
-                <div className="text-[11px] text-slate-600 space-y-0.5 font-medium">
+                <div className="text-[11px] text-[#64748B] space-y-0.5 font-medium">
                   <div className="flex items-center justify-between">
                     <span>Available:</span>
-                    <strong className="font-black text-[#0D2B45]">{availableUnits} units</strong>
+                    <strong className="font-black text-[#16324F]">{availableUnits} units</strong>
                   </div>
-                  <div className="flex items-center justify-between text-slate-500">
+                  <div className="flex items-center justify-between text-[#64748B]">
                     <span>Reserved:</span>
                     <span>{reservedUnits}</span>
                   </div>
-                  <div className="flex items-center justify-between text-slate-400 text-[10px]">
+                  <div className="flex items-center justify-between text-[#94A3B8] text-[10px]">
                     <span>Near Expiry:</span>
                     <span>0</span>
                   </div>
@@ -438,16 +425,16 @@ export const HospitalHomePage = () => {
       </div>
 
       {/* 6. TODAY'S HOSPITAL OPERATIONS */}
-      <div className="p-6 rounded-3xl bg-white border border-sky-100/90 shadow-sm space-y-4">
-        <div className="flex items-center justify-between border-b border-sky-100 pb-3">
+      <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-[#DCEAF5] pb-3">
           <div>
-            <h3 className="font-extrabold text-base sm:text-lg text-[#0D2B45] flex items-center gap-2 tracking-tight">
-              <Activity className="w-5 h-5 text-[#087443]"/> TODAY'S HOSPITAL OPERATIONS
+            <h3 className="font-extrabold text-base sm:text-lg text-[#16324F] flex items-center gap-2 tracking-tight">
+              <Activity className="w-5 h-5 text-[#22C55E]"/> TODAY'S HOSPITAL OPERATIONS
             </h3>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Monitor today's important blood operations and actions.</p>
+            <p className="text-xs text-[#64748B] font-medium mt-0.5">Monitor today's important blood operations and actions.</p>
           </div>
 
-          <button onClick={() => navigate('/hospital/reports')} className="px-4 py-2 rounded-xl bg-[#E0F2FE] hover:bg-sky-200 text-[#0284C7] font-extrabold text-xs border border-sky-200 transition-colors flex items-center gap-1.5 shrink-0">
+          <button onClick={() => navigate('/hospital/reports')} className="px-4 py-2 rounded-xl bg-[#E8F4FF] hover:bg-[#DDF0FF] text-[#2563EB] font-extrabold text-xs border border-[#BFDBFE] transition-colors flex items-center gap-1.5 shrink-0 cursor-pointer">
             <History className="w-4 h-4"/> View Activity History →
           </button>
         </div>
@@ -456,22 +443,22 @@ export const HospitalHomePage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
           
           {/* CARD 1: EMERGENCY REQUESTS */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-red-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between hover:border-red-400 transition-all">
+          <div className="p-4 rounded-2xl bg-white border border-[#DCEAF5] space-y-3 flex flex-col justify-between hover:border-[#FECDD3] transition-all">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-black text-[#0D2B45] flex items-center gap-1.5">
+                <span className="font-black text-[#16324F] flex items-center gap-1.5">
                   🚨 Emergency
                 </span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${criticalCount > 0 ? 'bg-red-100 text-red-800 border-red-200' : 'bg-emerald-100 text-emerald-800 border-emerald-200'}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${criticalCount > 0 ? 'bg-[#FFF1F2] text-[#DC2626] border-[#FECDD3]' : 'bg-[#ECFDF5] text-[#15803D] border-[#BBF7D0]'}`}>
                   {criticalCount > 0 ? '🔴 ACTION REQUIRED' : '🟢 NORMAL'}
                 </span>
               </div>
 
               <div>
-                <strong className="text-lg font-black text-[#0D2B45] block">
+                <strong className="text-lg font-black text-[#16324F] block">
                   {sortedActiveRequests.length} Request{sortedActiveRequests.length !== 1 ? 's' : ''}
                 </strong>
-                <span className="text-[11px] text-slate-500 block mt-0.5">
+                <span className="text-[11px] text-[#64748B] block mt-0.5">
                   {sortedActiveRequests.length > 0
             ? `${sortedActiveRequests[0].bloodGroup} (${sortedActiveRequests[0].unitsNeeded}u) for ${sortedActiveRequests[0].patientName}`
             : 'No emergency trauma requests pending'}
@@ -479,28 +466,28 @@ export const HospitalHomePage = () => {
               </div>
             </div>
 
-            <button onClick={() => navigate('/hospital/dashboard')} className="w-full py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-extrabold text-[11px] shadow-sm transition-all flex items-center justify-center gap-1 active:scale-[0.98]">
+            <button onClick={() => navigate('/hospital/dashboard')} className="w-full py-2.5 rounded-xl bg-[#EF4444] hover:bg-[#DC2626] text-white font-extrabold text-[11px] shadow-xs transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer">
               View Requests <ArrowRight className="w-3.5 h-3.5"/>
             </button>
           </div>
 
           {/* CARD 2: INVENTORY & STOCK ALERTS */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between hover:border-amber-400 transition-all">
+          <div className="p-4 rounded-2xl bg-white border border-[#DCEAF5] space-y-3 flex flex-col justify-between hover:border-[#FDE68A] transition-all">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-black text-[#0D2B45] flex items-center gap-1.5">
+                <span className="font-black text-[#16324F] flex items-center gap-1.5">
                   📦 Stock Updates
                 </span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${criticalLowGroupCount > 0 ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-emerald-100 text-emerald-800 border-emerald-200'}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${criticalLowGroupCount > 0 ? 'bg-[#FFFBEB] text-[#B45309] border-[#FDE68A]' : 'bg-[#ECFDF5] text-[#15803D] border-[#BBF7D0]'}`}>
                   {criticalLowGroupCount > 0 ? '🟡 LOW STOCK' : '🟢 OPTIMAL'}
                 </span>
               </div>
 
               <div>
-                <strong className="text-lg font-black text-[#0D2B45] block">
+                <strong className="text-lg font-black text-[#16324F] block">
                   {criticalLowGroupCount > 0 ? `${criticalLowGroupCount} Group(s) Low` : `${totalAvailableUnits} Units Vault`}
                 </strong>
-                <span className="text-[11px] text-slate-500 block mt-0.5">
+                <span className="text-[11px] text-[#64748B] block mt-0.5">
                   {criticalLowGroupCount > 0
             ? 'Requires safety threshold replenishment'
             : 'All safety thresholds met across inventory'}
@@ -508,28 +495,28 @@ export const HospitalHomePage = () => {
               </div>
             </div>
 
-            <button onClick={() => navigate('/hospital/blood-availability')} className="w-full py-2.5 rounded-xl bg-[#087443] hover:bg-[#065b34] text-white font-extrabold text-[11px] shadow-sm transition-all flex items-center justify-center gap-1 active:scale-[0.98]">
+            <button onClick={() => navigate('/hospital/blood-availability')} className="w-full py-2.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-extrabold text-[11px] shadow-xs transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer">
               Check Inventory <ArrowRight className="w-3.5 h-3.5"/>
             </button>
           </div>
 
-          {/* CARD 3: INTER-CITY TRANSFERS (PRIMARY SKY BLUE BUTTON) */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-sky-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between hover:border-[#0EA5E9] transition-all">
+          {/* CARD 3: INTER-CITY TRANSFERS (PRIMARY BLUE BUTTON) */}
+          <div className="p-4 rounded-2xl bg-white border border-[#DCEAF5] space-y-3 flex flex-col justify-between hover:border-[#BFDBFE] transition-all">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-black text-[#0D2B45] flex items-center gap-1.5">
+                <span className="font-black text-[#16324F] flex items-center gap-1.5">
                   🚚 Blood Transfers
                 </span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${activeTransfers.length > 0 ? 'bg-[#E0F2FE] text-[#0284C7] border-sky-300' : 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase shadow-2xs ${activeTransfers.length > 0 ? 'bg-[#E8F4FF] text-[#2563EB] border-[#BFDBFE]' : 'bg-[#F5FAFF] text-[#64748B] border-[#DCEAF5]'}`}>
                   {activeTransfers.length > 0 ? '🔵 IN TRANSIT' : 'ACTIVE'}
                 </span>
               </div>
 
               <div>
-                <strong className="text-lg font-black text-[#0D2B45] block">
+                <strong className="text-lg font-black text-[#16324F] block">
                   {activeTransfers.length} Transfer{activeTransfers.length !== 1 ? 's' : ''}
                 </strong>
-                <span className="text-[11px] text-slate-500 block mt-0.5">
+                <span className="text-[11px] text-[#64748B] block mt-0.5">
                   {activeTransfers.length > 0
             ? `${activeTransfers[0].units}u ${activeTransfers[0].bloodGroup} ETA: ${activeTransfers[0].courierEtaMins || 30} mins`
             : 'No active inter-city transfers in transit'}
@@ -537,28 +524,28 @@ export const HospitalHomePage = () => {
               </div>
             </div>
 
-            <button onClick={() => navigate('/hospital/blood-banks')} className="w-full py-2.5 rounded-xl bg-[#0EA5E9] hover:bg-[#0284C7] text-white font-extrabold text-[11px] shadow-sm transition-all flex items-center justify-center gap-1 active:scale-[0.98]">
+            <button onClick={() => navigate('/hospital/blood-banks')} className="w-full py-2.5 rounded-xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-[11px] shadow-xs transition-all flex items-center justify-center gap-1 active:scale-[0.98] cursor-pointer">
               Track Transfers <ArrowRight className="w-3.5 h-3.5"/>
             </button>
           </div>
 
           {/* CARD 4: TODAY'S COMPLETED INTAKES & ISSUES */}
-          <div className="p-4 rounded-2xl bg-gradient-to-br from-emerald-50/30 to-white border border-slate-200 space-y-3 flex flex-col justify-between">
+          <div className="p-4 rounded-2xl bg-white border border-[#DCEAF5] space-y-3 flex flex-col justify-between">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-black text-[#0D2B45] flex items-center gap-1.5">
+                <span className="font-black text-[#16324F] flex items-center gap-1.5">
                   🩸 Today's Activity
                 </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 border border-emerald-200 uppercase shadow-2xs">
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-[#ECFDF5] text-[#15803D] border border-[#BBF7D0] uppercase shadow-2xs">
                   🟢 COMPLETED
                 </span>
               </div>
 
               <div>
-                <strong className="text-lg font-black text-[#0D2B45] block">
+                <strong className="text-lg font-black text-[#16324F] block">
                   {todayCompletedLogs.length} Operation{todayCompletedLogs.length !== 1 ? 's' : ''}
                 </strong>
-                <span className="text-[11px] text-slate-500 block mt-0.5">
+                <span className="text-[11px] text-[#64748B] block mt-0.5">
                   {todayCompletedLogs.length > 0
             ? `${todayCompletedLogs[0].action} (${todayCompletedLogs[0].bloodGroup || 'Stock'})`
             : 'Blood intake & issue operations logged'}
@@ -566,7 +553,7 @@ export const HospitalHomePage = () => {
               </div>
             </div>
 
-            <div className="p-2 rounded-xl bg-emerald-50 text-[#087443] font-bold text-[11px] text-center border border-emerald-200/80">
+            <div className="p-2 rounded-xl bg-[#ECFDF5] text-[#15803D] font-bold text-[11px] text-center border border-[#BBF7D0]">
               ✓ Operations Logged Today
             </div>
           </div>
