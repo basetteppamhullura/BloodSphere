@@ -149,27 +149,27 @@ export const HospitalBloodUnitDetails = () => {
     return (<div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in">
       
       {/* 1. HEADER BANNER */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-sky-900 via-slate-900 to-sky-950 text-white shadow-xl relative overflow-hidden border border-sky-800/50">
+      <div className="p-6 sm:p-8 rounded-3xl text-[#16324F] shadow-xs relative overflow-hidden border border-[#BFDBFE]" style={{ background: 'linear-gradient(135deg, #E8F4FF 0%, #DFF6FF 50%, #EFFBFF 100%)' }}>
         <div className="absolute right-0 top-0 translate-x-10 -translate-y-10 opacity-15 pointer-events-none">
-          <Droplet className="w-80 h-80 fill-white"/>
+          <Droplet className="w-80 h-80 fill-[#2563EB]"/>
         </div>
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-white font-extrabold text-xs border border-white/20">
-              <ShieldCheck className="w-4 h-4 text-emerald-300"/>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 backdrop-blur-md text-[#2563EB] font-extrabold text-xs border border-[#BFDBFE]">
+              <ShieldCheck className="w-4 h-4 text-[#2563EB]"/>
               <span>Authorized Hospital Blood Inventory Traceability</span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-[#16324F]">
               Hospital Blood Unit Details 🩸
             </h1>
-            <p className="text-xs sm:text-sm text-sky-100 font-medium leading-relaxed max-w-2xl">
+            <p className="text-xs sm:text-sm text-[#64748B] font-medium leading-relaxed max-w-2xl">
               Inspect barcode unit IDs, storage vaults, collection/expiry dates, sources, and real-time inventory statuses across hospital stock.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button onClick={() => showToast('Real-time hospital blood stock synchronized.')} className="px-4 py-2.5 rounded-2xl bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-xs shadow-md flex items-center gap-1.5 transition-all cursor-pointer">
+            <button onClick={() => showToast('Real-time hospital blood stock synchronized.')} className="px-4 py-2.5 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs shadow-xs flex items-center gap-1.5 transition-all cursor-pointer">
               <RefreshCw className="w-4 h-4"/> Refresh Sync
             </button>
           </div>

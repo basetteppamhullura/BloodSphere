@@ -15,22 +15,22 @@ export const HospitalHomeLanding = ({ onNavigateToTab }) => {
     return (<div className="space-y-6 text-xs animate-in fade-in w-full max-w-7xl mx-auto">
       
       {/* Hospital Welcome Header */}
-      <div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              Welcome, <span className="text-sky-600">{hospitalName}</span>
+            <h2 className="text-2xl font-black text-[#16324F] tracking-tight">
+              Welcome, <span className="text-[#2563EB]">{hospitalName}</span>
             </h2>
-            <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-sky-100 text-sky-800 border border-sky-200 uppercase tracking-wider">
+            <span className="px-3 py-1 rounded-full text-xs font-extrabold bg-[#E8F4FF] text-[#2563EB] border border-[#BFDBFE] uppercase tracking-wider">
               HOSPITAL MODE ACTIVE
             </span>
           </div>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-[#64748B] mt-1">
             Hospital Operations Control Center • Real-Time Medical Inventory & Request Queue
           </p>
         </div>
 
-        <button onClick={() => setActiveEmergencyPostModal(true)} className="px-5 py-2.5 rounded-2xl bg-sky-600 hover:bg-sky-500 text-white font-extrabold text-xs shadow-md shadow-sky-600/20 flex items-center justify-center gap-2 transition-all shrink-0">
+        <button onClick={() => setActiveEmergencyPostModal(true)} className="px-5 py-2.5 rounded-2xl bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-extrabold text-xs shadow-xs flex items-center justify-center gap-2 transition-all shrink-0 cursor-pointer">
           <UserPlus className="w-4 h-4"/> Create Walk-In Patient Request
         </button>
       </div>

@@ -99,23 +99,23 @@ export const HospitalInterCitySupply = () => {
     return (<div className="space-y-6 text-xs animate-in fade-in w-full max-w-7xl mx-auto pb-12">
       
       {/* 1. TOP HEADER BANNER */}
-      <div className="p-6 rounded-3xl bg-white border border-[#DDE8E2] shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="p-6 rounded-3xl bg-white border border-[#DCEAF5] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-[#087443]"/>
-            <h2 className="text-2xl font-black text-[#18352A] tracking-tight">Connected Regional Blood Banks</h2>
-            <span className="px-3 py-1 rounded-full text-[10px] font-black bg-[#E8F6EF] text-[#087443] border border-[#DDE8E2] flex items-center gap-1.5 uppercase">
-              <span className="w-2 h-2 rounded-full bg-[#16A86B] animate-ping"/>
+            <Building2 className="w-6 h-6 text-[#2563EB]"/>
+            <h2 className="text-2xl font-black text-[#16324F] tracking-tight">Connected Regional Blood Banks</h2>
+            <span className="px-3 py-1 rounded-full text-[10px] font-black bg-[#ECFDF5] text-[#15803D] border border-[#BBF7D0] flex items-center gap-1.5 uppercase">
+              <span className="w-2 h-2 rounded-full bg-[#22C55E] animate-ping"/>
               <span>REAL-TIME SYNC ENABLED</span>
             </span>
           </div>
-          <p className="text-xs text-[#587067] mt-1">
+          <p className="text-xs text-[#64748B] mt-1">
             Live database stock availability, direct hospital supply requests, secure chat, and cold-chain inter-city logistics.
           </p>
         </div>
 
-        <button onClick={handleSetCurrentGPS} className="px-4 py-2.5 rounded-xl bg-white hover:bg-[#E8F6EF] text-[#087443] font-extrabold border border-[#DDE8E2] shadow-xs flex items-center gap-1.5 shrink-0 transition-all">
-          <Navigation className="w-4 h-4 text-[#087443]"/> Calibrate Hospital GPS
+        <button onClick={handleSetCurrentGPS} className="px-4 py-2.5 rounded-xl bg-white hover:bg-[#E8F4FF] text-[#2563EB] font-extrabold border border-[#DCEAF5] shadow-xs flex items-center gap-1.5 shrink-0 transition-all cursor-pointer">
+          <Navigation className="w-4 h-4 text-[#2563EB]"/> Calibrate Hospital GPS
         </button>
       </div>
 
