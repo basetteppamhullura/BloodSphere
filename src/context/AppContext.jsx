@@ -479,6 +479,33 @@ export const AppProvider = ({ children }) => {
             socketManager.off('adminNotification', handleAdminNotification);
         };
     }, []);
+
+    const markNotificationAsRead = (id) => {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true, readAt: new Date().toISOString() } : n));
+        fetch('http://localhost:5000/api/bloodbank/notifications/mark-read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ids: [id] })
+        }).catch(err => console.warn('[AppContext] mark-read persist fallback:', err.message));
+    };
+
+    const markNotificationAsUnread = (id) => {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: false } : n));
+    };
+
+    const markAllNotificationsAsRead = () => {
+        setNotifications(prev => prev.map(n => ({ ...n, read: true, readAt: new Date().toISOString() })));
+        fetch('http://localhost:5000/api/bloodbank/notifications/mark-read', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ markAll: true })
+        }).catch(err => console.warn('[AppContext] mark-all-read persist fallback:', err.message));
+    };
+
+    const archiveNotification = (id) => {
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, archived: true } : n));
+    };
+
     const navigateTo = (tab) => {
         setIsLoading(true);
         setActivePage(tab);
@@ -1600,6 +1627,10 @@ export const AppProvider = ({ children }) => {
             updateInterCityTransferStatus,
             leaderboard,
             notifications,
+            markNotificationAsRead,
+            markNotificationAsUnread,
+            markAllNotificationsAsRead,
+            archiveNotification,
             toastMessage,
             showToast,
             isRealtimeConnected,
