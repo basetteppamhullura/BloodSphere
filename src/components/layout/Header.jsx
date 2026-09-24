@@ -241,8 +241,8 @@ export const Header = () => {
                 </svg>
             </div>
 
-            {/* Main Header Container - Flex layout with 100% viewport fit */}
-            <div className="w-full px-3 sm:px-4 lg:px-6 h-16 sm:h-18 flex items-center justify-between gap-2 sm:gap-4 relative z-10">
+            {/* Main Header Container - Flex layout with 100% viewport fit & proper flex separation */}
+            <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-4 lg:px-6 h-16 sm:h-18 flex items-center justify-between gap-2 md:gap-3 lg:gap-4 relative z-10 box-border">
 
                 {/* ================================================== */}
                 {/* 1. LEFT SIDE — BRAND LOGO & NAME                   */}
@@ -266,11 +266,11 @@ export const Header = () => {
                 </div>
 
                 {/* ================================================== */}
-                {/* 2. CENTER — CONNECTED SEGMENTED SLIDING NAVIGATION  */}
+                {/* 2. CENTER — NAVIGATION CONTAINER                  */}
                 {/* ================================================== */}
                 <nav
                     ref={navContainerRef}
-                    className="hidden lg:flex items-center bg-slate-100/90 border border-slate-200/80 p-1 rounded-full relative min-w-0 shrink shadow-2xs"
+                    className="navigation-container hidden lg:flex items-center bg-slate-100/90 border border-slate-200/80 p-1 rounded-full relative shrink-0 shadow-2xs space-x-0.5 xl:space-x-1 min-w-0"
                 >
                     {/* Sliding Active Blue Pill Indicator */}
                     <div
@@ -286,13 +286,13 @@ export const Header = () => {
                     <Link
                         ref={el => tabRefs.current[0] = el}
                         to="/"
-                        className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap z-10 relative ${
+                        className={`px-2.5 xl:px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 relative ${
                             activeNavIndex === 0
                                 ? 'text-white font-extrabold'
                                 : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
                         }`}
                     >
-                        <Home className={`w-3.5 h-3.5 transition-colors ${activeNavIndex === 0 ? 'text-white' : 'text-sky-600'}`} />
+                        <Home className={`w-3.5 h-3.5 shrink-0 transition-colors ${activeNavIndex === 0 ? 'text-white' : 'text-sky-600'}`} />
                         <span>Home</span>
                     </Link>
 
@@ -300,13 +300,13 @@ export const Header = () => {
                     <Link
                         ref={el => tabRefs.current[1] = el}
                         to={getPortalUrl('donor')}
-                        className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap z-10 relative ${
+                        className={`px-2.5 xl:px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 relative ${
                             activeNavIndex === 1
                                 ? 'text-white font-extrabold'
                                 : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
                         }`}
                     >
-                        <Heart className={`w-3.5 h-3.5 transition-colors ${activeNavIndex === 1 ? 'text-white fill-white' : 'text-red-500'}`} />
+                        <Heart className={`w-3.5 h-3.5 shrink-0 transition-colors ${activeNavIndex === 1 ? 'text-white fill-white' : 'text-red-500'}`} />
                         <span>Donor<span className="hidden xl:inline"> Portal</span></span>
                     </Link>
 
@@ -314,13 +314,13 @@ export const Header = () => {
                     <Link
                         ref={el => tabRefs.current[2] = el}
                         to={getPortalUrl('requester')}
-                        className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap z-10 relative ${
+                        className={`px-2.5 xl:px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 relative ${
                             activeNavIndex === 2
                                 ? 'text-white font-extrabold'
                                 : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
                         }`}
                     >
-                        <Users className={`w-3.5 h-3.5 transition-colors ${activeNavIndex === 2 ? 'text-white' : 'text-rose-500'}`} />
+                        <Users className={`w-3.5 h-3.5 shrink-0 transition-colors ${activeNavIndex === 2 ? 'text-white' : 'text-rose-500'}`} />
                         <span>Requester<span className="hidden xl:inline"> Portal</span></span>
                     </Link>
 
@@ -328,13 +328,13 @@ export const Header = () => {
                     <Link
                         ref={el => tabRefs.current[3] = el}
                         to={getPortalUrl('hospital')}
-                        className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap z-10 relative ${
+                        className={`px-2.5 xl:px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 relative ${
                             activeNavIndex === 3
                                 ? 'text-white font-extrabold'
                                 : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
                         }`}
                     >
-                        <Building2 className={`w-3.5 h-3.5 transition-colors ${activeNavIndex === 3 ? 'text-white' : 'text-sky-500'}`} />
+                        <Building2 className={`w-3.5 h-3.5 shrink-0 transition-colors ${activeNavIndex === 3 ? 'text-white' : 'text-sky-500'}`} />
                         <span>Hospital<span className="hidden xl:inline"> Portal</span></span>
                     </Link>
 
@@ -342,35 +342,35 @@ export const Header = () => {
                     <Link
                         ref={el => tabRefs.current[4] = el}
                         to={getPortalUrl('bloodbank')}
-                        className={`px-3 py-1.5 rounded-full flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap z-10 relative ${
+                        className={`px-2.5 xl:px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 relative ${
                             activeNavIndex === 4
                                 ? 'text-white font-extrabold'
                                 : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
                         }`}
                     >
-                        <Droplet className={`w-3.5 h-3.5 transition-colors ${activeNavIndex === 4 ? 'text-white' : 'text-emerald-500'}`} />
+                        <Droplet className={`w-3.5 h-3.5 shrink-0 transition-colors ${activeNavIndex === 4 ? 'text-white' : 'text-emerald-500'}`} />
                         <span>Blood Bank<span className="hidden xl:inline"> Portal</span></span>
                     </Link>
                 </nav>
 
                 {/* ================================================== */}
-                {/* 3. RIGHT SIDE — ACTIONS & USER PROFILE            */}
+                {/* 3. RIGHT SIDE — ACTION CONTAINER                   */}
                 {/* ================================================== */}
-                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                <div className="action-container flex items-center gap-1.5 sm:gap-2 shrink-0">
 
                     {/* 3.1 EMERGENCY CHAT BUTTON */}
                     <button
                         type="button"
                         onClick={handleEmergencyChatClick}
-                        className="px-2.5 sm:px-3 py-1.5 rounded-full bg-white hover:bg-red-50/80 text-red-600 border border-red-200 hover:border-red-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs shrink-0"
+                        className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-white hover:bg-red-50/80 text-red-600 border border-red-200 hover:border-red-300 font-bold text-xs transition-all cursor-pointer shadow-2xs shrink-0 whitespace-nowrap"
                         title="Open Private Emergency Chat"
                     >
                         <MessageSquare className="w-3.5 h-3.5 text-red-600 shrink-0" />
-                        <span className="hidden md:inline xl:inline whitespace-nowrap">
+                        <span className="hidden md:inline whitespace-nowrap">
                             <span className="hidden 2xl:inline">Emergency </span>Chat
                         </span>
                         {chatBadgeCount > 0 && (
-                            <span className="min-w-4 h-4 px-1 rounded-full bg-red-600 text-white text-[10px] font-black flex items-center justify-center shadow-2xs animate-pulse">
+                            <span className="min-w-[20px] h-[20px] px-1 rounded-full bg-red-600 text-white text-[10px] font-black inline-flex items-center justify-center shadow-2xs animate-pulse shrink-0">
                                 {chatBadgeCount}
                             </span>
                         )}
