@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { calculateDistanceKm } from '../../utils/distanceCalculator';
+import { BloodBankNotificationsCenter } from './BloodBankNotificationsCenter';
 import { Droplet, FileText, Package, FlaskConical, AlertTriangle, History, BarChart3, PlusCircle, Search, Check, XCircle, Send, Thermometer, Boxes, MapPin, Building2, RefreshCw, Eye, CheckCircle2, Clock, ShieldCheck, MessageSquare, Lock } from 'lucide-react';
 const REGIONAL_INSTITUTIONS = [
     { id: 'inst_1', name: 'KIMS Teaching Hospital & Blood Center', type: 'hospital', city: 'Hubballi', lat: 15.3647, lng: 75.124, lowStockGroup: 'O-' },
@@ -936,33 +937,12 @@ export const BloodBankPortalDesk = () => {
         </div>)}
 
       {/* TAB 10: NOTIFICATIONS */}
-      {activeTab === 'notifications' && (<div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-xs space-y-5">
-          <div className="flex items-center justify-between border-b border-sky-100 pb-4">
-            <div>
-              <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-                <History className="w-5 h-5 text-emerald-600"/> Real-Time Notifications Center
-              </h3>
-              <p className="text-xs text-slate-500 font-medium">Live operational notifications received from Requesters, Hospitals, and System Alerts.</p>
-            </div>
-
-            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">
-              {notifications.length} Total Alerts
-            </span>
-          </div>
-
-          <div className="space-y-3">
-            {notifications.map(n => (<div key={n.id} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <strong className="text-sm font-black text-slate-900 block">{n.title}</strong>
-                  <p className="text-xs text-slate-600">{n.message}</p>
-                  <span className="text-[10px] text-slate-400 font-mono">{n.time}</span>
-                </div>
-                {n.requestId && (<span className="px-2.5 py-1 rounded-full bg-slate-200 text-slate-800 text-[10px] font-mono font-bold shrink-0">
-                    BR-{n.requestId}
-                  </span>)}
-              </div>))}
-          </div>
-        </div>)}
+      {activeTab === 'notifications' && (
+        <BloodBankNotificationsCenter
+          onNavigateTab={(tab) => navigate(`/bloodbank/${tab}`)}
+          onSelectRequest={setSelectedRequestForDetails}
+        />
+      )}
 
       {/* TAB 11: ACTIVITY LOG AUDIT TRAIL */}
       {activeTab === 'activity' && (<div className="p-6 rounded-3xl bg-white border border-sky-100 shadow-xs space-y-5">

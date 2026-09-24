@@ -241,5 +241,34 @@ export function createBloodBankRouter(socketHandler) {
     }
   });
 
+  // 6. GET Blood Bank Notifications (API Endpoint)
+  router.get('/notifications', async (req, res) => {
+    try {
+      // In-memory/MongoDB notification query fallback
+      const requests = await EmergencyRequest.find({}).lean();
+      const stocks = await BloodStock.find({}).lean();
+      
+      res.json({
+        success: true,
+        timestamp: new Date().toISOString(),
+        onlineStatus: 'ONLINE'
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 7. Mark Notifications as Read Endpoint
+  router.post('/notifications/mark-read', async (req, res) => {
+    try {
+      const { ids = [], markAll = false } = req.body;
+      socketHandler.broadcastAll('NOTIFICATIONS_UPDATED', { ids, markAll, readAt: new Date().toISOString() });
+      res.json({ success: true, message: markAll ? 'All notifications marked as read' : 'Notifications marked as read', ids });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   return router;
 }
+
