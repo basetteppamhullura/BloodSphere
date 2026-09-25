@@ -567,6 +567,14 @@ export const Header = () => {
                             )}
                         </div>
                     ) : (
+                        <Link
+                            to="/login"
+                            className="px-3 py-1.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all shadow-xs shrink-0"
+                        >
+                            Sign In
+                        </Link>
+                    )}
+
                 </div>
             </div>
 
