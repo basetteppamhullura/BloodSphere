@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { LifeBuoy, LayoutDashboard, PlusCircle, Search, AlertTriangle, User, LogOut, ArrowRight } from 'lucide-react';
+import { PortalHero } from '../components/common/PortalHero';
 export const RequesterHomePage = () => {
     const { currentUser, logout } = useAuth();
     const { requests, notifications, setActiveEmergencyPostModal } = useApp();
@@ -15,39 +16,30 @@ export const RequesterHomePage = () => {
     return (<div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in">
       
       {/* 1. Hero Welcome Header */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#2563EB] via-cyan-600 to-[#0284C7] text-white shadow-md relative overflow-hidden border border-cyan-400/30">
-        <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 opacity-10 pointer-events-none">
-          <LifeBuoy className="w-96 h-96 fill-white"/>
-        </div>
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white font-extrabold text-xs">
-              <span className="w-2 h-2 rounded-full bg-cyan-300 animate-ping"/>
-              <span>Patient & Caregiver Portal</span>
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
-              Hello, {currentUser?.name || 'Caregiver'} 🆘
-            </h1>
-            <p className="text-sm text-cyan-100 font-medium leading-relaxed">
-              Find emergency blood supplies, search nearby hospitals & blood banks, or create instant real-time broadcasts to voluntary donors.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button onClick={() => navigate('/requester/dashboard')} className="px-6 py-3.5 rounded-2xl bg-white text-[#2563EB] hover:bg-cyan-50 font-black text-sm shadow-md flex items-center gap-2 transition-all hover:scale-105">
+      <PortalHero
+        portalLabel="Patient & Caregiver Portal"
+        badgePulseColor="bg-cyan-300"
+        title={`Hello, ${currentUser?.name || 'Caregiver'} 🆘`}
+        description="Track blood requests, availability, responses and emergency needs."
+        bgImage="/bloodnet-hero-bg.jpg"
+        bgPosition="center"
+        gradientOverlay="linear-gradient(95deg, rgba(16, 37, 66, 0.90) 0%, rgba(37, 99, 235, 0.75) 50%, rgba(6, 182, 212, 0.55) 100%)"
+        decorativeIcon={LifeBuoy}
+        actions={
+          <>
+            <button onClick={() => navigate('/requester/dashboard')} className="px-6 py-3.5 rounded-2xl bg-white text-[#2563EB] hover:bg-cyan-50 font-black text-sm shadow-md flex items-center gap-2 transition-all hover:scale-105 cursor-pointer">
               <LayoutDashboard className="w-5 h-5 text-[#2563EB]"/>
               <span>Open Requester Dashboard</span>
               <ArrowRight className="w-4 h-4"/>
             </button>
 
-            <button onClick={handleLogout} className="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all" title="Logout">
+            <button onClick={handleLogout} className="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all cursor-pointer" title="Logout">
               <LogOut className="w-4 h-4"/>
               <span>Logout</span>
             </button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* 2. Primary Navigation Bar */}
       <div className="p-3 rounded-2xl bg-white border border-sky-100 shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs font-extrabold">

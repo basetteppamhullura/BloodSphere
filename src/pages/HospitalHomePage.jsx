@@ -2,7 +2,8 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
-import { Building2, AlertTriangle, LogOut, ArrowRight, ShieldCheck, CheckCircle2, Activity, ArrowUpRight, PackageCheck, Droplet, History } from 'lucide-react';
+import { Building2, AlertTriangle, LogOut, ArrowRight, ShieldCheck, CheckCircle2, Activity, ArrowUpRight, PackageCheck, Droplet, History, LayoutDashboard } from 'lucide-react';
+import { PortalHero } from '../components/common/PortalHero';
 // Helper function to get minimum required safety threshold per component & blood group
 function getMinimumThreshold(bloodGroup, component) {
     if (bloodGroup === 'O+' || bloodGroup === 'A+') {
@@ -93,57 +94,32 @@ export const HospitalHomePage = () => {
     };
     return (<div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in" style={{ backgroundColor: '#F5FAFF' }}>
       
-      {/* 1. WELCOME & HOSPITAL OVERVIEW HERO BANNER (LIGHT HEALTHCARE GRADIENT) */}
-      <div className="p-6 sm:p-8 rounded-3xl shadow-sm relative overflow-hidden border border-[#BFDBFE]" style={{ background: 'linear-gradient(135deg, #E8F4FF 0%, #DFF6FF 50%, #EFFBFF 100%)' }}>
-        
-        {/* Layer 1: ECG Heartbeat Pulse Line Wave Across Bottom */}
-        <div className="absolute right-0 bottom-0 w-full md:w-3/5 h-20 pointer-events-none opacity-25 z-0">
-          <svg className="w-full h-full" viewBox="0 0 500 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M 0 50 L 140 50 L 155 20 L 175 75 L 195 10 L 215 65 L 230 40 L 245 50 L 500 50" stroke="#2563EB" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </div>
+      {/* 1. WELCOME & HOSPITAL OVERVIEW HERO BANNER */}
+      <PortalHero
+        portalLabel="Verified Hospital Medical Portal"
+        badgeIcon={ShieldCheck}
+        badgePulseColor="bg-blue-400"
+        title={`Welcome, ${currentUser?.name || 'KIMS Teaching Hospital'} 🏥`}
+        description="Manage patient blood requests, hospital inventory, blood transfers and emergency operations."
+        bgImage="/bloodnet-hero-full.png"
+        bgPosition="center right"
+        gradientOverlay="linear-gradient(95deg, rgba(16, 37, 66, 0.90) 0%, rgba(37, 99, 235, 0.78) 55%, rgba(6, 182, 212, 0.55) 100%)"
+        decorativeIcon={Building2}
+        actions={
+          <>
+            <button onClick={() => navigate('/hospital/dashboard')} className="px-5 py-3 rounded-2xl bg-white text-[#2563EB] hover:bg-sky-50 font-black text-xs shadow-md flex items-center gap-2 transition-all hover:scale-105 cursor-pointer">
+              <LayoutDashboard className="w-4 h-4 text-[#2563EB]"/>
+              <span>Manage Desk</span>
+              <ArrowRight className="w-3.5 h-3.5"/>
+            </button>
 
-        {/* Layer 2: Clean Line-Art Medical Cross & Network Rings Motif */}
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-20 pointer-events-none z-0 hidden sm:block">
-          <svg width="300" height="200" viewBox="0 0 300 200" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="220" cy="100" r="85" stroke="#2563EB" strokeWidth="1.5" strokeDasharray="4 4" fill="none"/>
-            <circle cx="220" cy="100" r="55" stroke="#2563EB" strokeWidth="1" fill="none"/>
-            <path d="M 210 60 H 230 V 90 H 260 V 110 H 230 V 140 H 210 V 110 H 180 V 90 H 210 Z" stroke="#2563EB" strokeWidth="2" strokeLinejoin="round" fill="none"/>
-            <path d="M 60 100 C 100 50, 150 50, 180 90" stroke="#2563EB" strokeWidth="1.5" strokeDasharray="3 3" fill="none"/>
-          </svg>
-        </div>
-
-        {/* Layer 3: Translucent Hospital Building Outline */}
-        <div className="absolute right-8 bottom-3 opacity-15 pointer-events-none z-0">
-          <Building2 className="w-36 h-36 text-[#2563EB] stroke-[1.2]"/>
-        </div>
-
-        {/* Banner Content Container */}
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3 max-w-2xl">
-            {/* Polished Verification Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#FFFFFF]/80 backdrop-blur-md text-[#2563EB] border border-[#BFDBFE] text-xs font-black shadow-xs">
-              <ShieldCheck className="w-4 h-4 text-[#2563EB]"/>
-              <span>Verified Hospital Medical Portal</span>
-            </div>
-
-            <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-[#16324F] leading-tight">
-              Welcome, {currentUser?.name || 'KIMS Teaching Hospital'} 🏥
-            </h1>
-
-            <p className="text-xs sm:text-sm text-[#64748B] font-medium leading-relaxed">
-              Manage trauma center blood inventory, broadcast emergency patient requests, and coordinate with connected regional blood banks.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3 relative z-20">
-            <button onClick={handleLogout} className="px-4 py-2.5 rounded-2xl bg-white hover:bg-[#F0F9FF] text-[#16324F] font-bold text-xs border border-[#DCEAF5] flex items-center gap-1.5 transition-all shadow-xs cursor-pointer" title="Logout">
-              <LogOut className="w-4 h-4 text-[#2563EB]"/>
+            <button onClick={handleLogout} className="px-4 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all cursor-pointer" title="Logout">
+              <LogOut className="w-4 h-4 text-white"/>
               <span>Logout</span>
             </button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* 2. 🚨 TRAUMA EMERGENCY REQUESTS QUEUE (WHITE CONTAINER WITH SUBTLE RED ACCENT) */}
       <div className="p-6 rounded-3xl bg-white border border-[#FECDD3] shadow-xs space-y-4">
