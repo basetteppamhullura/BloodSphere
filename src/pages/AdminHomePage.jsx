@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { ShieldCheck, LayoutDashboard, ShieldAlert, LogOut, ArrowRight } from 'lucide-react';
+import { PortalHero } from '../components/common/PortalHero';
 export const AdminHomePage = () => {
     const { currentUser, logout, portalAccounts } = useAuth();
     const { requests, connectionStatus } = useApp();
@@ -16,39 +17,31 @@ export const AdminHomePage = () => {
     return (<div className="max-w-6xl mx-auto space-y-6 pb-12 animate-in fade-in">
       
       {/* 1. Hero Welcome Header */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#2563EB] via-amber-600 to-[#16324F] text-white shadow-md relative overflow-hidden border border-blue-400/30">
-        <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 opacity-10 pointer-events-none">
-          <ShieldCheck className="w-96 h-96 fill-white"/>
-        </div>
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white font-extrabold text-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"/>
-              <span>National Super Admin Command Center</span>
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
-              Welcome, {currentUser?.name || 'Administrator'} 🛡️
-            </h1>
-            <p className="text-sm text-blue-100 font-medium leading-relaxed">
-              Supervise all registered user accounts, approve hospital/blood-bank licenses, monitor real-time Socket.IO connections, and enforce platform security.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <button onClick={() => navigate('/admin/dashboard')} className="px-6 py-3.5 rounded-2xl bg-white text-[#16324F] hover:bg-amber-50 font-black text-sm shadow-md flex items-center gap-2 transition-all hover:scale-105">
+      <PortalHero
+        portalLabel="National Super Admin Command Center"
+        badgeIcon={ShieldCheck}
+        badgePulseColor="bg-amber-400"
+        title={`Welcome, ${currentUser?.name || 'Administrator'} 🛡️`}
+        description="Supervise registered accounts, hospital/blood-bank verification, system activity and platform security."
+        bgImage="/bloodnet-hero-full.png"
+        bgPosition="center right"
+        gradientOverlay="linear-gradient(95deg, rgba(16, 37, 66, 0.92) 0%, rgba(217, 119, 6, 0.78) 55%, rgba(37, 99, 235, 0.55) 100%)"
+        decorativeIcon={ShieldCheck}
+        actions={
+          <>
+            <button onClick={() => navigate('/admin/dashboard')} className="px-6 py-3.5 rounded-2xl bg-white text-[#16324F] hover:bg-amber-50 font-black text-sm shadow-md flex items-center gap-2 transition-all hover:scale-105 cursor-pointer">
               <LayoutDashboard className="w-5 h-5 text-amber-600"/>
               <span>Open Admin Dashboard</span>
               <ArrowRight className="w-4 h-4"/>
             </button>
 
-            <button onClick={handleLogout} className="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all" title="Logout">
+            <button onClick={handleLogout} className="px-4 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all cursor-pointer" title="Logout">
               <LogOut className="w-4 h-4"/>
               <span>Logout</span>
             </button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* 2. Executive Metrics */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
