@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useApp } from '../context/AppContext';
 import { Droplet, Boxes, Package, LogOut, ArrowRight, ShieldCheck, CheckCircle2, Clock, Send, FlaskConical, Activity } from 'lucide-react';
+import { PortalHero } from '../components/common/PortalHero';
 export const BloodBankHomePage = () => {
     const { currentUser, logout } = useAuth();
     const { requests, bloodUnitsList, inventoryStockMap, activityLogs } = useApp();
@@ -45,26 +46,18 @@ export const BloodBankHomePage = () => {
     return (<div className="max-w-6xl mx-auto space-y-6 pb-16 animate-in fade-in">
       
       {/* 1. Hero Welcome Header */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-[#2563EB] via-emerald-600 to-[#0284C7] text-white shadow-md relative overflow-hidden border border-emerald-400/30">
-        <div className="absolute right-0 top-0 translate-x-8 -translate-y-8 opacity-10 pointer-events-none">
-          <Droplet className="w-96 h-96 fill-white"/>
-        </div>
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-2 max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white font-extrabold text-xs border border-white/20">
-              <ShieldCheck className="w-4 h-4 text-emerald-300"/>
-              <span>Verified Regional Blood Center & Supply Vault</span>
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-black tracking-tight">
-              Welcome, {currentUser?.name || 'Rotary Blood Center'} 🩸
-            </h1>
-            <p className="text-sm text-emerald-100 font-medium leading-relaxed">
-              Real-time operational overview: processing direct requester queues, hospital emergency orders, inventory component management, and cold chain preservation.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
+      <PortalHero
+        portalLabel="Verified Regional Blood Center & Supply Vault"
+        badgeIcon={ShieldCheck}
+        badgePulseColor="bg-emerald-400"
+        title={`Welcome, ${currentUser?.name || 'Rotary Blood Center'} 🩸`}
+        description="Manage blood inventory, requests, blood units, hospital coordination and emergency supply."
+        bgImage="/bloodnet-hero-bg.png"
+        bgPosition="center"
+        gradientOverlay="linear-gradient(95deg, rgba(16, 37, 66, 0.90) 0%, rgba(16, 185, 129, 0.75) 50%, rgba(37, 99, 235, 0.55) 100%)"
+        decorativeIcon={Droplet}
+        actions={
+          <>
             <button onClick={() => navigate('/bloodbank/requests')} className="px-5 py-3 rounded-2xl bg-white text-[#2563EB] hover:bg-emerald-50 font-black text-xs shadow-md flex items-center gap-2 transition-all hover:scale-105 cursor-pointer">
               <Package className="w-4 h-4 text-emerald-600"/>
               <span>Process Request Queue</span>
@@ -79,9 +72,9 @@ export const BloodBankHomePage = () => {
             <button onClick={handleLogout} className="px-3.5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all cursor-pointer" title="Logout">
               <LogOut className="w-4 h-4"/>
             </button>
-          </div>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* 2. Real-Time Operational Cards (11 Cards) */}
       <div className="space-y-3">
