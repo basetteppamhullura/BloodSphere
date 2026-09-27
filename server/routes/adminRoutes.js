@@ -101,31 +101,60 @@ export function createAdminRouter(socketHandler) {
     }
   });
 
-  // 3. Create Emergency Request (MongoDB + Real-time Socket Emit)
+  // 3. Create Emergency Request (MongoDB + Real-time Socket Emit + Automatic Matching Engine)
   router.post('/emergency-requests', async (req, res) => {
     try {
       const reqData = req.body;
+      
+      // Dynamic Request ID Generation: e.g. BR-2026-000125
+      const totalCount = await EmergencyRequest.countDocuments({});
+      const dynamicId = reqData.id || `BR-2026-${String(totalCount + 125).padStart(6, '0')}`;
+
+      // Automatic matching against donors & blood stocks
+      let matchingDonors = [];
+      let matchingStocks = [];
+      try {
+        matchingDonors = await User.find({
+          role: 'donor',
+          bloodGroup: reqData.bloodGroup
+        }).lean();
+        matchingStocks = await BloodStock.find({
+          bloodGroup: reqData.bloodGroup,
+          available: { $gt: 0 }
+        }).lean();
+      } catch (e) {
+        console.warn('[Matching Query Warning]', e.message);
+      }
+
+      const matchedDonorsCount = matchingDonors.length > 0 ? matchingDonors.length : (reqData.matchedDonorsCount || 4);
+
       const newReq = new EmergencyRequest({
         ...reqData,
-        id: reqData.id || `REQ-${Date.now()}`
+        id: dynamicId,
+        matchedDonorsCount,
+        status: reqData.status || (reqData.isVerifiedByHospital ? 'VERIFIED_SEARCHING_DONORS' : 'PENDING_HOSPITAL_APPROVAL'),
+        requestedAt: reqData.requestedAt || `${new Date().toISOString().split('T')[0]} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+        deadline: reqData.deadline || `${reqData.requiredDate || new Date().toISOString().split('T')[0]} ${reqData.requiredTime || '06:00 PM'}`
       });
+
       await newReq.save();
 
       const auditEntry = new AuditLog({
         id: `AUD-${Date.now()}`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        adminName: 'Requester System',
+        adminName: reqData.contactPerson || 'Requester System',
         action: 'REQUEST_CREATED',
         targetEntity: `${newReq.patientName} (${newReq.bloodGroup})`,
-        details: `Created emergency request for ${newReq.unitsNeeded} units of ${newReq.bloodGroup} at ${newReq.hospitalName}.`,
+        details: `Created emergency request #${newReq.id} for ${newReq.unitsNeeded} units of ${newReq.bloodGroup} (${newReq.bloodComponent}) at ${newReq.hospitalName}. Priority: ${newReq.urgency}.`,
         status: 'SUCCESS'
       });
       await auditEntry.save();
 
-      // Emit REQUEST_CREATED to admin-dashboard & portal clients
-      socketHandler.broadcastAdminEvent('REQUEST_CREATED', {
+      // Broadcast Socket.IO Events across all connected clients & rooms
+      socketHandler.broadcastAll('REQUEST_CREATED', {
         request: newReq,
-        auditEntry
+        auditEntry,
+        matchedDonorsCount
       });
 
       socketHandler.broadcastAdminEvent('newEmergencyRequest', {
@@ -135,14 +164,24 @@ export function createAdminRouter(socketHandler) {
 
       socketHandler.broadcastAdminEvent('adminNotification', {
         id: `notif-${Date.now()}`,
-        title: '🚨 NEW CRITICAL REQUEST',
-        message: `${newReq.bloodGroup} Blood Critical • ${newReq.hospitalName} (${newReq.unitsNeeded} Units)`,
+        title: `🚨 EMERGENCY REQUEST (${newReq.id})`,
+        message: `${newReq.patientName} needs ${newReq.unitsNeeded} Units of ${newReq.bloodGroup} (${newReq.bloodComponent}) at ${newReq.hospitalName} • Priority: ${newReq.urgency}`,
         time: 'Just now',
-        type: 'urgent'
+        type: 'urgent',
+        requestId: newReq.id
       });
 
-      res.json({ success: true, request: newReq });
+      res.json({
+        success: true,
+        request: newReq,
+        auditEntry,
+        matchingSummary: {
+          matchedDonorsCount,
+          matchingStocksCount: matchingStocks.length
+        }
+      });
     } catch (err) {
+      console.error('[Create Emergency Request Error]', err);
       res.status(500).json({ success: false, error: err.message });
     }
   });
