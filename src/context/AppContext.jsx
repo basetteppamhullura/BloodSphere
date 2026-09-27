@@ -665,18 +665,35 @@ export const AppProvider = ({ children }) => {
         });
         return { isDuplicate: !!matched, matchedReq: matched };
     };
-    const createEmergencyRequest = (newReqData) => {
-        const newId = newReqData.id || `BR-2026-00${Math.floor(100 + Math.random() * 900)}`;
+    useEffect(() => {
+        // Fetch initial DB snapshot on mount
+        fetch('http://localhost:5000/api/snapshot')
+            .then(res => res.json())
+            .then(data => {
+                if (data?.success && data?.data?.requests && data.data.requests.length > 0) {
+                    setRequests(prev => {
+                        const mergedMap = new Map();
+                        data.data.requests.forEach(r => mergedMap.set(r.id, r));
+                        prev.forEach(r => { if (!mergedMap.has(r.id)) mergedMap.set(r.id, r); });
+                        return Array.from(mergedMap.values());
+                    });
+                }
+            })
+            .catch(err => console.warn('[AppContext] Initial DB snapshot fetch fallback:', err.message));
+    }, []);
+
+    const createEmergencyRequest = async (newReqData) => {
         const dateStr = new Date().toISOString().split('T')[0];
         const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         const isVerified = !!newReqData.isVerifiedByHospital;
         const channels = newReqData.selectedChannels || ['hospital', 'donors', 'bloodbank'];
-        const newRequest = {
-            id: newId,
+        
+        const reqPayload = {
             patientName: newReqData.patientName || 'Emergency Patient',
-            patientAge: newReqData.patientAge || 30,
+            patientAge: Number(newReqData.patientAge) || 30,
             patientGender: newReqData.patientGender || 'Male',
             patientId: newReqData.patientId || `BN-HUB-2026-00${Math.floor(100 + Math.random() * 900)}`,
+            doctorPatientId: newReqData.doctorPatientId || newReqData.patientId || '',
             verificationCode: newReqData.verificationCode || '739241',
             isVerifiedByHospital: isVerified,
             selectedChannels: channels,
@@ -688,18 +705,20 @@ export const AppProvider = ({ children }) => {
             },
             bloodGroup: newReqData.bloodGroup || 'O+',
             bloodComponent: newReqData.bloodComponent || 'Whole Blood',
-            unitsNeeded: newReqData.unitsNeeded || 1,
+            unitsNeeded: Number(newReqData.unitsNeeded) || 1,
             unitsFulfilled: 0,
             confirmedUnits: 0,
-            urgency: newReqData.urgency || 'HIGH',
-            hospitalName: newReqData.hospitalName || 'KIMS Hospital',
+            urgency: newReqData.urgency || 'CRITICAL',
+            hospitalName: newReqData.hospitalName || 'KIMS Teaching Hospital',
+            doctorName: newReqData.doctorName || 'Dr. Mahesh Kulkarni',
+            contactPhone: newReqData.hospitalPhone || newReqData.contactPhone || '9876543210',
             hospitalAddress: newReqData.hospitalAddress || 'PB Road, Vidyanagar, Hubballi',
             wardDept: newReqData.wardDept || 'ICU Bed 12',
-            city: newReqData.city || 'Hubballi',
             state: newReqData.state || 'Karnataka',
+            district: newReqData.district || 'Dharwad',
+            city: newReqData.city || 'Hubballi',
             pincode: newReqData.pincode || '580031',
-            contactPerson: newReqData.contactPerson || 'Requester',
-            contactPhone: newReqData.contactPhone || '9876543210',
+            contactPerson: newReqData.contactPerson || newReqData.requesterName || 'Caregiver',
             maskedPhone: '98765*****',
             contactEmail: newReqData.contactEmail || 'contact@example.com',
             relationship: newReqData.relationship || 'Family',
@@ -707,9 +726,12 @@ export const AppProvider = ({ children }) => {
             deadline: newReqData.requiredDate ? `${newReqData.requiredDate} ${newReqData.requiredTime || ''}` : `${dateStr} 06:00 PM`,
             requiredDate: newReqData.requiredDate || dateStr,
             requiredTime: newReqData.requiredTime || '10:00 AM',
-            reason: newReqData.reason || 'Emergency Trauma Requirement',
+            reason: newReqData.reason || 'Emergency Medical Requirement',
+            medicalReasonCategory: newReqData.medicalReasonCategory || 'Surgery',
+            customReason: newReqData.customReason || '',
             additionalNotes: newReqData.additionalNotes || 'Urgent transfusion needed.',
-            doctorName: newReqData.doctorName || 'Dr. Mahesh Kulkarni',
+            prescriptionUrl: newReqData.prescriptionUrl || '',
+            prescriptionFileName: newReqData.prescriptionFileName || '',
             status: isVerified ? 'VERIFIED_SEARCHING_DONORS' : 'PENDING_HOSPITAL_APPROVAL',
             aiUrgencyScore: newReqData.urgency === 'CRITICAL' ? 98 : 85,
             decayScore: 0.95,
@@ -721,21 +743,46 @@ export const AppProvider = ({ children }) => {
             donorResponses: [],
             requestTimeline: DEFAULT_TIMELINE
         };
-        setRequests(prev => [newRequest, ...prev]);
+
+        let createdRequest = null;
+        try {
+            const res = await fetch('http://localhost:5000/api/emergency-requests', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(reqPayload)
+            });
+            const data = await res.json();
+            if (data.success && data.request) {
+                createdRequest = data.request;
+            }
+        } catch (err) {
+            console.warn('[AppContext] Emergency request API fallback:', err.message);
+        }
+
+        if (!createdRequest) {
+            const newId = `BR-2026-00${Math.floor(100 + Math.random() * 900)}`;
+            createdRequest = { ...reqPayload, id: newId };
+        }
+
+        setRequests(prev => [createdRequest, ...prev.filter(r => r.id !== createdRequest.id)]);
+
         const newNotif = {
             id: `notif_${Date.now()}`,
-            title: "🚨 New Blood Request Broadcast!",
-            message: `Emergency request ${newId} created for ${newRequest.patientName} (${newRequest.bloodGroup}, ${newRequest.unitsNeeded} Units) across selected sources.`,
+            title: "🚨 Emergency Request Created!",
+            message: `Emergency request #${createdRequest.id} created for ${createdRequest.patientName} (${createdRequest.bloodGroup}, ${createdRequest.unitsNeeded} Units) at ${createdRequest.hospitalName}.`,
             time: "Just now",
             type: "urgent",
             read: false,
-            requestId: newId
+            requestId: createdRequest.id
         };
         setNotifications(prev => [newNotif, ...prev]);
+
         if (channelRef.current) {
-            channelRef.current.postMessage({ type: 'NEW_REQUEST_CREATED', request: newRequest });
+            channelRef.current.postMessage({ type: 'NEW_REQUEST_CREATED', request: createdRequest });
         }
-        showToast(`Emergency Blood Request #${newId} created successfully!`);
+
+        showToast(`🚨 Emergency Blood Request #${createdRequest.id} created successfully!`);
+        return createdRequest;
     };
     const cancelEmergencyRequest = (requestId, reason) => {
         setRequests(prev => prev.map(r => (r.id === requestId ? { ...r, status: 'CANCELLED' } : r)));
