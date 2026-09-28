@@ -411,5 +411,126 @@ export function createAdminRouter(socketHandler) {
     }
   });
 
+  // 9. Camp Participant Registration Endpoint (with duplicate protection & real-time broadcast)
+  router.post('/camps/register', async (req, res) => {
+    try {
+      const regData = req.body;
+      const { campId, phoneNumber, email, participantUserId } = regData;
+
+      if (!campId || !phoneNumber || !regData.fullName || !regData.bloodGroup || !regData.age || !regData.city) {
+        return res.status(400).json({
+          success: false,
+          message: 'Missing required registration fields.'
+        });
+      }
+
+      // Duplicate Check: Check if user or phone number is already registered for this camp
+      const duplicateQuery = {
+        campId,
+        registrationStatus: { $in: ['REGISTERED', 'CONFIRMED'] },
+        $or: []
+      };
+
+      if (phoneNumber) duplicateQuery.$or.push({ phoneNumber: phoneNumber.trim() });
+      if (email && email.trim()) duplicateQuery.$or.push({ email: email.trim().toLowerCase() });
+      if (participantUserId && participantUserId.trim()) duplicateQuery.$or.push({ participantUserId: participantUserId.trim() });
+
+      let existingReg = null;
+      if (duplicateQuery.$or.length > 0) {
+        existingReg = await CampRegistration.findOne(duplicateQuery).lean();
+      }
+
+      if (existingReg) {
+        return res.status(409).json({
+          success: false,
+          isDuplicate: true,
+          registration: existingReg,
+          message: 'You are already registered for this camp.'
+        });
+      }
+
+      // Dynamic Registration ID Generation: e.g. BDC-2026-000125
+      const totalRegs = await CampRegistration.countDocuments({});
+      const dynamicRegId = regData.registrationId || `BDC-2026-${String(totalRegs + 125).padStart(6, '0')}`;
+
+      const newRegistration = new CampRegistration({
+        ...regData,
+        registrationId: dynamicRegId,
+        email: regData.email ? regData.email.trim().toLowerCase() : '',
+        registrationStatus: 'REGISTERED',
+        createdAt: new Date()
+      });
+
+      await newRegistration.save();
+
+      const auditEntry = new AuditLog({
+        id: `AUD-${Date.now()}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        adminName: regData.fullName,
+        action: 'CAMP_REGISTRATION_CREATED',
+        targetEntity: `${regData.fullName} (${regData.bloodGroup})`,
+        details: `Registered for camp "${regData.campTitle}" (Registration ID: ${dynamicRegId}).`,
+        status: 'SUCCESS'
+      });
+      await auditEntry.save();
+
+      // Emit Socket.IO event to update participant counts and alert organizers in real time
+      socketHandler.broadcastAll('CAMP_REGISTRATION_CREATED', {
+        campId,
+        registration: newRegistration,
+        auditEntry
+      });
+
+      res.json({
+        success: true,
+        registration: newRegistration,
+        auditEntry,
+        message: 'Registration Successful! 🎉'
+      });
+    } catch (err) {
+      console.error('[Camp Registration Error]', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 10. GET All Camp Registrations (For Admin / Organizer View)
+  router.get('/camps/registrations', async (req, res) => {
+    try {
+      const { campId } = req.query;
+      const query = campId ? { campId } : {};
+      const registrations = await CampRegistration.find(query).sort({ createdAt: -1 }).lean();
+      res.json({ success: true, registrations });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 11. Cancel Camp Registration Endpoint
+  router.post('/camps/registrations/:id/cancel', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updated = await CampRegistration.findOneAndUpdate(
+        { $or: [{ registrationId: id }, { _id: id }] },
+        { registrationStatus: 'CANCELLED', updatedAt: new Date() },
+        { new: true }
+      );
+
+      if (!updated) {
+        return res.status(404).json({ success: false, message: 'Registration record not found.' });
+      }
+
+      socketHandler.broadcastAll('CAMP_REGISTRATION_CANCELLED', {
+        registrationId: id,
+        campId: updated.campId,
+        registration: updated
+      });
+
+      res.json({ success: true, registration: updated, message: 'Camp registration cancelled.' });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
   return router;
 }
+
