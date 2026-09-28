@@ -4,6 +4,7 @@ import { EmergencyRequest } from '../models/EmergencyRequest.js';
 import { BloodStock } from '../models/BloodStock.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { SystemSettings } from '../models/SystemSettings.js';
+import { CampRegistration } from '../models/CampRegistration.js';
 
 export function createAdminRouter(socketHandler) {
   const router = express.Router();
@@ -16,6 +17,7 @@ export function createAdminRouter(socketHandler) {
       let stocks = await BloodStock.find({}).lean();
       let auditLogs = await AuditLog.find({}).sort({ createdAt: -1 }).limit(100).lean();
       let settings = await SystemSettings.findOne({ key: 'global_settings' }).lean();
+      let campRegistrations = await CampRegistration.find({}).sort({ createdAt: -1 }).lean();
 
       if (!settings) {
         settings = await SystemSettings.create({ key: 'global_settings' });
@@ -29,6 +31,7 @@ export function createAdminRouter(socketHandler) {
           stocks,
           auditLogs,
           settings,
+          campRegistrations,
           onlineUsersCount: socketHandler.getOnlineCount()
         }
       });
