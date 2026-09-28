@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../context/AuthContext';
 import { BloodNetLogo } from '../components/common/BloodNetLogo';
+import { CampRegistrationModal } from '../components/modals/CampRegistrationModal';
 import {
   Heart,
   Search,
@@ -67,6 +68,7 @@ export const LandingPage = () => {
   const [eventCategoryFilter, setEventCategoryFilter] = useState('ALL'); // ALL, AWARENESS, DRIVES, CAMPS, UPDATES
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedCampModal, setSelectedCampModal] = useState(null);
+  const [participatingCampModal, setParticipatingCampModal] = useState(null);
   const [selectedEventModal, setSelectedEventModal] = useState(null);
 
   // Fetch real database counts from backend API
@@ -717,17 +719,26 @@ export const LandingPage = () => {
 
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                   <button
-                    onClick={() => setSelectedCampModal(camp)}
+                    onClick={() => setParticipatingCampModal(camp)}
                     className="flex-1 py-2 rounded-xl bg-[#F5FAFF] hover:bg-[#E8F4FF] text-[#2563EB] font-extrabold text-xs border border-[#BFDBFE] transition-colors cursor-pointer"
                   >
                     View Details
                   </button>
-                  <Link
-                    to={getDonateBloodPath()}
-                    className="flex-1 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs text-center shadow-xs transition-colors cursor-pointer"
-                  >
-                    Participate →
-                  </Link>
+                  {(camp.rsvpsCount || 0) >= (camp.expectedDonors || 100) ? (
+                    <button
+                      disabled
+                      className="flex-1 py-2 rounded-xl bg-slate-100 text-slate-400 font-extrabold text-xs text-center border border-slate-200 cursor-not-allowed"
+                    >
+                      Camp Full
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setParticipatingCampModal(camp)}
+                      className="flex-1 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold text-xs text-center shadow-xs transition-colors cursor-pointer flex items-center justify-center gap-1"
+                    >
+                      Participate →
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -1152,6 +1163,11 @@ export const LandingPage = () => {
             </div>
           </div>
         </div>
+      {participatingCampModal && (
+        <CampRegistrationModal
+          camp={participatingCampModal}
+          onClose={() => setParticipatingCampModal(null)}
+        />
       )}
 
     </div>

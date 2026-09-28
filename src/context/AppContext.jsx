@@ -10,6 +10,7 @@ const UNITS_STORAGE_KEY = 'bloodsphere_units_data';
 const LOGS_STORAGE_KEY = 'bloodsphere_logs_data';
 const MATRIX_STORAGE_KEY = 'bloodsphere_matrix_data';
 const CHATS_STORAGE_KEY = 'bloodsphere_chats_data';
+const CAMPS_REG_STORAGE_KEY = 'bloodsphere_camp_registrations_data';
 const DEFAULT_TIMELINE = [
     { id: 'step_created', label: 'Request Created', status: 'completed', description: 'Request registered in system' },
     { id: 'step_searching', label: 'Searching', status: 'current', description: 'Searching eligible donors, hospitals & blood banks' },
@@ -269,6 +270,13 @@ export const AppProvider = ({ children }) => {
     const [activeChatSessionId, setActiveChatSessionId] = useState(null);
     const [bankNotifications, setBankNotifications] = useState([]);
     const [camps, setCamps] = useState(MOCK_CAMPS);
+    const [campRegistrations, setCampRegistrations] = useState(() => {
+        const saved = localStorage.getItem(CAMPS_REG_STORAGE_KEY);
+        if (saved) {
+            try { return JSON.parse(saved); } catch (e) {}
+        }
+        return [];
+    });
     const [groupCircles, setGroupCircles] = useState(MOCK_GROUP_CIRCLES);
     const [interCityTransfers, setInterCityTransfers] = useState(MOCK_INTERCITY_TRANSFERS);
     const [leaderboard] = useState(MOCK_LEADERBOARD);
@@ -392,6 +400,21 @@ export const AppProvider = ({ children }) => {
         localStorage.setItem(CHATS_STORAGE_KEY, JSON.stringify(chatSessions));
         broadcastSync('SYNC_CHATS', chatSessions);
     }, [chatSessions]);
+    useEffect(() => {
+        localStorage.setItem(CAMPS_REG_STORAGE_KEY, JSON.stringify(campRegistrations));
+        broadcastSync('SYNC_CAMP_REGISTRATIONS', campRegistrations);
+    }, [campRegistrations]);
+    // Fetch initial backend registrations & camps snapshot on load
+    useEffect(() => {
+        fetch('http://localhost:5000/api/camps/registrations')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && Array.isArray(data.registrations)) {
+                    setCampRegistrations(data.registrations);
+                }
+            })
+            .catch(err => console.warn('[AppContext] Failed fetching initial camp registrations:', err.message));
+    }, []);
     // Socket.IO Room & Message Event Listeners
     useEffect(() => {
         const handleSocketMessage = (data) => {
@@ -464,12 +487,33 @@ export const AppProvider = ({ children }) => {
                     }, ...prev]);
             }
         };
+        const handleCampRegistrationCreated = (data) => {
+            if (data?.registration) {
+                setCampRegistrations(prev => {
+                    if (prev.some(r => r.registrationId === data.registration.registrationId)) return prev;
+                    return [data.registration, ...prev];
+                });
+            }
+            if (data?.camp) {
+                setCamps(prev => prev.map(c => c.id === data.camp.id ? { ...c, rsvpsCount: data.camp.rsvpsCount } : c));
+            }
+        };
+        const handleCampRegistrationCancelled = (data) => {
+            if (data?.registrationId) {
+                setCampRegistrations(prev => prev.map(r => r.registrationId === data.registrationId ? { ...r, registrationStatus: 'CANCELLED' } : r));
+            }
+            if (data?.campId && data?.rsvpsCount !== undefined) {
+                setCamps(prev => prev.map(c => c.id === data.campId ? { ...c, rsvpsCount: data.rsvpsCount } : c));
+            }
+        };
         socketManager.on('receiveMessage', handleSocketMessage);
         socketManager.on('typing', handleSocketTyping);
         socketManager.on('userOnline', handleSocketOnline);
         socketManager.on('userOffline', handleSocketOnline);
         socketManager.on('newEmergencyRequest', handleNewEmergencyRequest);
         socketManager.on('adminNotification', handleAdminNotification);
+        socketManager.on('CAMP_REGISTRATION_CREATED', handleCampRegistrationCreated);
+        socketManager.on('CAMP_REGISTRATION_CANCELLED', handleCampRegistrationCancelled);
         return () => {
             socketManager.off('receiveMessage', handleSocketMessage);
             socketManager.off('typing', handleSocketTyping);
@@ -477,6 +521,8 @@ export const AppProvider = ({ children }) => {
             socketManager.off('userOffline', handleSocketOnline);
             socketManager.off('newEmergencyRequest', handleNewEmergencyRequest);
             socketManager.off('adminNotification', handleAdminNotification);
+            socketManager.off('CAMP_REGISTRATION_CREATED', handleCampRegistrationCreated);
+            socketManager.off('CAMP_REGISTRATION_CANCELLED', handleCampRegistrationCancelled);
         };
     }, []);
 
@@ -1605,6 +1651,82 @@ export const AppProvider = ({ children }) => {
         }));
         showToast('Updated blood drive RSVP.');
     };
+    const registerForCamp = async (formData) => {
+        try {
+            const res = await fetch('http://localhost:5000/api/camps/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+            const data = await res.json();
+            if (data.success) {
+                setCampRegistrations(prev => [data.registration, ...prev.filter(r => r.registrationId !== data.registration.registrationId)]);
+                if (data.camp) {
+                    setCamps(prev => prev.map(c => c.id === data.camp.id ? { ...c, rsvpsCount: data.camp.rsvpsCount } : c));
+                }
+                showToast(`Registered for camp! ID: ${data.registration.registrationId}`);
+                return { success: true, registration: data.registration, camp: data.camp };
+            } else {
+                if (data.isDuplicate) {
+                    return { success: false, isDuplicate: true, message: data.message, registration: data.existingRegistration };
+                }
+                return { success: false, message: data.message || 'Registration failed' };
+            }
+        } catch (err) {
+            // Local fallback if server not reachable
+            const regId = `BDC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+            const newReg = {
+                registrationId: regId,
+                campId: formData.campId,
+                fullName: formData.fullName,
+                phoneNumber: formData.phoneNumber,
+                email: formData.email || '',
+                age: Number(formData.age),
+                gender: formData.gender,
+                city: formData.city,
+                district: formData.district || '',
+                state: formData.state || 'Karnataka',
+                pincode: formData.pincode || '',
+                bloodGroup: formData.bloodGroup,
+                previousDonation: formData.previousDonation || 'No',
+                lastDonationDate: formData.lastDonationDate || '',
+                preferredTime: formData.preferredTime || '',
+                emergencyContact: formData.emergencyContact || {},
+                eligibilityConfirmed: true,
+                consent: true,
+                registrationStatus: 'REGISTERED',
+                createdAt: new Date().toISOString()
+            };
+            setCampRegistrations(prev => [newReg, ...prev]);
+            setCamps(prev => prev.map(c => c.id === formData.campId ? { ...c, rsvpsCount: (c.rsvpsCount || 0) + 1 } : c));
+            showToast(`Registered for camp! ID: ${regId}`);
+            return { success: true, registration: newReg };
+        }
+    };
+    const cancelCampRegistration = async (registrationId, campId) => {
+        try {
+            const res = await fetch(`http://localhost:5000/api/camps/registrations/${registrationId}/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (data.success) {
+                setCampRegistrations(prev => prev.map(r => r.registrationId === registrationId ? { ...r, registrationStatus: 'CANCELLED' } : r));
+                if (data.campId && data.rsvpsCount !== undefined) {
+                    setCamps(prev => prev.map(c => c.id === data.campId ? { ...c, rsvpsCount: data.rsvpsCount } : c));
+                }
+                showToast(`Registration ${registrationId} cancelled.`);
+                return { success: true };
+            }
+        } catch (err) {
+            setCampRegistrations(prev => prev.map(r => r.registrationId === registrationId ? { ...r, registrationStatus: 'CANCELLED' } : r));
+            if (campId) {
+                setCamps(prev => prev.map(c => c.id === campId ? { ...c, rsvpsCount: Math.max(0, (c.rsvpsCount || 1) - 1) } : c));
+            }
+            showToast(`Registration ${registrationId} cancelled.`);
+            return { success: true };
+        }
+    };
     const toggleCircleJoin = (circleId) => {
         setGroupCircles(prev => prev.map(c => {
             if (c.id === circleId) {
@@ -1666,6 +1788,9 @@ export const AppProvider = ({ children }) => {
             bloodBanks,
             updateInventoryStock,
             camps,
+            campRegistrations,
+            registerForCamp,
+            cancelCampRegistration,
             toggleCampRSVP,
             groupCircles,
             toggleCircleJoin,
