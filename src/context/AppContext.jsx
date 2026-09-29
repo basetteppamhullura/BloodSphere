@@ -1665,7 +1665,13 @@ export const AppProvider = ({ children }) => {
                     setCamps(prev => prev.map(c => c.id === data.camp.id ? { ...c, rsvpsCount: data.camp.rsvpsCount } : c));
                 }
                 showToast(`Registered for camp! ID: ${data.registration.registrationId}`);
-                return { success: true, registration: data.registration, camp: data.camp };
+                return { 
+                    success: true, 
+                    registration: data.registration, 
+                    camp: data.camp,
+                    smsStatus: data.smsStatus || 'SENT',
+                    smsMessage: data.smsMessage
+                };
             } else {
                 if (data.isDuplicate) {
                     return { success: false, isDuplicate: true, message: data.message, registration: data.existingRegistration };
@@ -1700,7 +1706,12 @@ export const AppProvider = ({ children }) => {
             setCampRegistrations(prev => [newReg, ...prev]);
             setCamps(prev => prev.map(c => c.id === formData.campId ? { ...c, rsvpsCount: (c.rsvpsCount || 0) + 1 } : c));
             showToast(`Registered for camp! ID: ${regId}`);
-            return { success: true, registration: newReg };
+            return { 
+                success: true, 
+                registration: newReg,
+                smsStatus: 'SIMULATED',
+                smsMessage: 'Offline local simulation.'
+            };
         }
     };
     const cancelCampRegistration = async (registrationId, campId) => {

@@ -5,6 +5,7 @@ import { BloodStock } from '../models/BloodStock.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { SystemSettings } from '../models/SystemSettings.js';
 import { CampRegistration } from '../models/CampRegistration.js';
+import { sendCampRegistrationConfirmation } from '../services/smsService.js';
 
 export function createAdminRouter(socketHandler) {
   const router = express.Router();
@@ -411,35 +412,56 @@ export function createAdminRouter(socketHandler) {
     }
   });
 
-  // 9. Camp Participant Registration Endpoint (with duplicate protection & real-time broadcast)
+  // 9. Camp Participant Registration Endpoint (with DB save, capacity check, duplicate protection, SMS dispatch & real-time broadcast)
   router.post('/camps/register', async (req, res) => {
     try {
       const regData = req.body;
-      const { campId, phoneNumber, email, participantUserId } = regData;
+      const { campId, phoneNumber, email, participantUserId, fullName, bloodGroup, age, city } = regData;
 
-      if (!campId || !phoneNumber || !regData.fullName || !regData.bloodGroup || !regData.age || !regData.city) {
+      if (!campId || !phoneNumber || !fullName || !bloodGroup || !age || !city) {
         return res.status(400).json({
           success: false,
-          message: 'Missing required registration fields.'
+          message: 'Missing required registration fields. Please complete all required fields.'
         });
       }
 
-      // Duplicate Check: Check if user or phone number is already registered for this camp
+      // Phone Normalization & Validation
+      const cleanPhoneDigits = String(phoneNumber).replace(/\D/g, '');
+      if (cleanPhoneDigits.length !== 10) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please enter a valid 10-digit mobile number.'
+        });
+      }
+      const normalizedPhoneNumber = cleanPhoneDigits;
+
+      // Camp Capacity Check
+      const maxCapacity = regData.expectedDonors || 100;
+      const activeCount = await CampRegistration.countDocuments({
+        campId,
+        registrationStatus: { $in: ['REGISTERED', 'CONFIRMED', 'ATTENDED', 'COMPLETED'] }
+      });
+
+      if (activeCount >= maxCapacity) {
+        return res.status(400).json({
+          success: false,
+          message: 'This camp is currently full.'
+        });
+      }
+
+      // Duplicate Check: Check if participant is already registered for this camp
       const duplicateQuery = {
         campId,
-        registrationStatus: { $in: ['REGISTERED', 'CONFIRMED'] },
-        $or: []
+        registrationStatus: { $in: ['REGISTERED', 'CONFIRMED', 'ATTENDED', 'COMPLETED'] },
+        $or: [
+          { phoneNumber: normalizedPhoneNumber }
+        ]
       };
 
-      if (phoneNumber) duplicateQuery.$or.push({ phoneNumber: phoneNumber.trim() });
       if (email && email.trim()) duplicateQuery.$or.push({ email: email.trim().toLowerCase() });
       if (participantUserId && participantUserId.trim()) duplicateQuery.$or.push({ participantUserId: participantUserId.trim() });
 
-      let existingReg = null;
-      if (duplicateQuery.$or.length > 0) {
-        existingReg = await CampRegistration.findOne(duplicateQuery).lean();
-      }
-
+      let existingReg = await CampRegistration.findOne(duplicateQuery).lean();
       if (existingReg) {
         return res.status(409).json({
           success: false,
@@ -453,9 +475,11 @@ export function createAdminRouter(socketHandler) {
       const totalRegs = await CampRegistration.countDocuments({});
       const dynamicRegId = regData.registrationId || `BDC-2026-${String(totalRegs + 125).padStart(6, '0')}`;
 
+      // 1. SAVE TO DATABASE FIRST
       const newRegistration = new CampRegistration({
         ...regData,
         registrationId: dynamicRegId,
+        phoneNumber: normalizedPhoneNumber,
         email: regData.email ? regData.email.trim().toLowerCase() : '',
         registrationStatus: 'REGISTERED',
         createdAt: new Date()
@@ -463,33 +487,58 @@ export function createAdminRouter(socketHandler) {
 
       await newRegistration.save();
 
+      // 2. CONFIRM DATABASE SAVE SUCCESS BEFORE ATTEMPTING SMS DISPATCH
+      let smsResult = { success: false, status: 'FAILED', message: 'SMS delivery not attempted.' };
+      try {
+        smsResult = await sendCampRegistrationConfirmation({
+          phoneNumber: normalizedPhoneNumber,
+          fullName: regData.fullName,
+          campTitle: regData.campTitle || regData.campName || 'Blood Donation Camp',
+          campDate: regData.campDate || '15 Oct 2026',
+          campTime: regData.campTime || '9:00 AM - 4:00 PM',
+          campVenue: regData.campVenue || regData.venue || 'Hospital / Venue',
+          city: regData.city || 'Bengaluru',
+          registrationId: dynamicRegId
+        });
+      } catch (smsErr) {
+        console.error('[SMS Delivery Warning]', smsErr.message);
+        smsResult = {
+          success: false,
+          status: 'FAILED',
+          error: smsErr.message || 'Confirmation SMS could not be delivered.'
+        };
+      }
+
       const auditEntry = new AuditLog({
         id: `AUD-${Date.now()}`,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         adminName: regData.fullName,
         action: 'CAMP_REGISTRATION_CREATED',
         targetEntity: `${regData.fullName} (${regData.bloodGroup})`,
-        details: `Registered for camp "${regData.campTitle}" (Registration ID: ${dynamicRegId}).`,
+        details: `Registered for camp (ID: ${dynamicRegId}). SMS Status: ${smsResult.status}.`,
         status: 'SUCCESS'
       });
       await auditEntry.save();
 
-      // Emit Socket.IO event to update participant counts and alert organizers in real time
+      // Emit Socket.IO event to update participant counts in real time across all connected clients
       socketHandler.broadcastAll('CAMP_REGISTRATION_CREATED', {
         campId,
         registration: newRegistration,
+        rsvpsCount: activeCount + 1,
         auditEntry
       });
 
       res.json({
         success: true,
         registration: newRegistration,
+        smsStatus: smsResult.status,
+        smsMessage: smsResult.message || smsResult.error,
         auditEntry,
         message: 'Registration Successful! 🎉'
       });
     } catch (err) {
       console.error('[Camp Registration Error]', err);
-      res.status(500).json({ success: false, error: err.message });
+      res.status(500).json({ success: false, error: err.message || 'We couldn\'t complete your registration. Please try again.' });
     }
   });
 
