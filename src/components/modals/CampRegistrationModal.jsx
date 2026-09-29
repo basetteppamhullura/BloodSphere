@@ -151,6 +151,11 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
 
     const payload = {
       campId: camp?.id,
+      campTitle: camp?.title || camp?.name || 'Blood Donation Camp',
+      campDate: camp?.date || '15 Oct 2026',
+      campTime: camp?.time || '9:00 AM - 4:00 PM',
+      campVenue: camp?.venue || camp?.location || 'Hospital / Venue',
+      expectedDonors: camp?.expectedDonors || 100,
       participantUserId: currentUser?.id || null,
       fullName: fullName.trim(),
       phoneNumber: phoneNumber.replace(/\D/g, ''),
@@ -902,12 +907,12 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
               {isSubmitting ? (
                 <>
                   <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Registering...</span>
+                  <span>Submitting...</span>
                 </>
               ) : (
                 <>
                   <Award className="w-4 h-4" />
-                  <span>Participate</span>
+                  <span>Submit Registration</span>
                 </>
               )}
             </button>

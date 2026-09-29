@@ -1679,38 +1679,10 @@ export const AppProvider = ({ children }) => {
                 return { success: false, message: data.message || 'Registration failed' };
             }
         } catch (err) {
-            // Local fallback if server not reachable
-            const regId = `BDC-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
-            const newReg = {
-                registrationId: regId,
-                campId: formData.campId,
-                fullName: formData.fullName,
-                phoneNumber: formData.phoneNumber,
-                email: formData.email || '',
-                age: Number(formData.age),
-                gender: formData.gender,
-                city: formData.city,
-                district: formData.district || '',
-                state: formData.state || 'Karnataka',
-                pincode: formData.pincode || '',
-                bloodGroup: formData.bloodGroup,
-                previousDonation: formData.previousDonation || 'No',
-                lastDonationDate: formData.lastDonationDate || '',
-                preferredTime: formData.preferredTime || '',
-                emergencyContact: formData.emergencyContact || {},
-                eligibilityConfirmed: true,
-                consent: true,
-                registrationStatus: 'REGISTERED',
-                createdAt: new Date().toISOString()
-            };
-            setCampRegistrations(prev => [newReg, ...prev]);
-            setCamps(prev => prev.map(c => c.id === formData.campId ? { ...c, rsvpsCount: (c.rsvpsCount || 0) + 1 } : c));
-            showToast(`Registered for camp! ID: ${regId}`);
+            console.error('[AppContext] Camp registration network error:', err);
             return { 
-                success: true, 
-                registration: newReg,
-                smsStatus: 'SIMULATED',
-                smsMessage: 'Offline local simulation.'
+                success: false, 
+                message: 'Unable to submit your registration. Please check your connection and try again.' 
             };
         }
     };
