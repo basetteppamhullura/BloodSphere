@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Calendar, 
@@ -22,9 +23,27 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
   const { registerForCamp, cancelCampRegistration, campRegistrations } = useApp();
   const { currentUser } = useAuth();
 
+  // Prevent background scrolling while modal is open & add ESC key support
+  useEffect(() => {
+    const originalStyle = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalStyle;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   // Check if current user or saved session is already registered
   const existingUserReg = initialViewRegistration || campRegistrations?.find(r => 
-    r.campId === camp.id && (
+    r.campId === camp?.id && (
       (currentUser?.id && r.participantUserId === currentUser.id) ||
       (currentUser?.phone && r.phoneNumber === currentUser.phone)
     ) && r.registrationStatus !== 'CANCELLED'
@@ -78,7 +97,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
     }
     if (field === 'phoneNumber') {
       const cleanPhone = val.replace(/\D/g, '');
-      if (!cleanPhone || cleanPhone.length !== 10) errs.phoneNumber = 'Please enter a valid 10-digit mobile number.';
+      if (!cleanPhone || cleanPhone.length !== 10) errs.phoneNumber = 'Please enter a valid 10-digit phone number.';
       else delete errs.phoneNumber;
     }
     if (field === 'age') {
@@ -91,7 +110,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
       else delete errs.gender;
     }
     if (field === 'city') {
-      if (!val || val.trim().length < 2) errs.city = 'Please enter your city/place.';
+      if (!val || val.trim().length < 2) errs.city = 'Please enter your place / city.';
       else delete errs.city;
     }
     if (field === 'bloodGroup') {
@@ -123,14 +142,14 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
     setServerError('');
 
     if (!isFormValid()) {
-      setServerError('Please fix all highlighted errors and accept medical eligibility & consent requirements.');
+      setServerError('Please fill all required fields correctly and accept medical eligibility & consent requirements.');
       return;
     }
 
     setIsSubmitting(true);
 
     const payload = {
-      campId: camp.id,
+      campId: camp?.id,
       participantUserId: currentUser?.id || null,
       fullName: fullName.trim(),
       phoneNumber: phoneNumber.replace(/\D/g, ''),
@@ -171,7 +190,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
   const handleCancelRegistration = async () => {
     if (!activeRegistration) return;
     if (window.confirm(`Are you sure you want to cancel registration ${activeRegistration.registrationId}?`)) {
-      await cancelCampRegistration(activeRegistration.registrationId, camp.id);
+      await cancelCampRegistration(activeRegistration.registrationId, camp?.id);
       onClose();
     }
   };
@@ -180,80 +199,89 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
     window.print();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-3xl border border-sky-100 shadow-2xl w-full max-w-2xl overflow-hidden my-8 transition-all animate-in fade-in zoom-in-95 duration-200">
+  return createPortal(
+    <div 
+      className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-5"
+      style={{ backgroundColor: 'rgba(15, 23, 42, 0.45)' }}
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
+      <div 
+        className="w-full max-w-[600px] max-h-[calc(100vh-24px)] sm:max-h-[calc(100vh-40px)] rounded-[20px] bg-white shadow-[0_20px_60px_rgba(15,23,42,0.20)] flex flex-col overflow-hidden my-auto border border-slate-200 z-[1001]"
+        onClick={(e) => e.stopPropagation()}
+      >
         
-        {/* MODAL HEADER */}
-        <div className="bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 p-6 text-white relative">
-          <button 
-            onClick={onClose}
-            className="absolute top-5 right-5 w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer"
-            title="Close"
-          >
-            <X className="w-5 h-5" />
-          </button>
+        {/* FIXED MODAL HEADER */}
+        <div className="p-5 bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white flex items-start justify-between shrink-0 relative">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center text-white text-xl">
+            <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white text-lg font-bold">
               🩸
             </div>
             <div>
-              <h2 className="text-xl font-black tracking-tight">
-                {viewState === 'SUCCESS' ? 'Registration Successful! 🎉' : 
-                 viewState === 'DUPLICATE' ? 'Already Registered' :
-                 viewState === 'PASS' ? 'Blood Donation Camp Registration Pass' :
-                 'Register for Blood Donation Camp'}
+              <h2 id="modal-title" className="text-base sm:text-lg font-black tracking-tight text-white leading-tight">
+                Participate in Blood Donation Camp
               </h2>
               <p className="text-xs text-blue-100 font-medium mt-0.5">
-                {viewState === 'SUCCESS' || viewState === 'PASS' 
+                {viewState === 'SUCCESS' || viewState === 'PASS'
                   ? 'Official participation pass for voluntary blood drive'
-                  : 'Enter your details to participate in this blood donation camp.'}
+                  : 'Enter your details to participate in this camp.'}
               </p>
             </div>
           </div>
+          <button 
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            title="Close"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
-        {/* SELECTED CAMP INFORMATION HEADER CARD (Prompt Requirement 1 & 3) */}
-        <div className="p-4 bg-slate-50 border-b border-sky-100">
-          <div className="p-4 rounded-2xl bg-white border border-sky-200/80 shadow-xs space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] font-black border border-blue-200 flex items-center gap-1">
-                <Building2 className="w-3 h-3" />
-                {camp.organizer || 'Authorized Medical Drive'}
-              </span>
-              <span className="text-[11px] font-mono font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
-                Registered: {camp.rsvpsCount || 0} / {camp.expectedDonors || 100}
-              </span>
+        {/* SCROLLABLE FORM CONTENT */}
+        <div className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6 space-y-5">
+
+          {/* SELECTED CAMP INFORMATION BANNER */}
+          {camp && (
+            <div className="p-4 rounded-2xl bg-slate-50 border border-sky-100 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="px-2.5 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] font-black border border-blue-200 flex items-center gap-1">
+                  <Building2 className="w-3 h-3" />
+                  {camp.organizer || 'Authorized Blood Drive'}
+                </span>
+                <span className="text-[10px] font-mono font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                  Registered: {camp.rsvpsCount || 0} / {camp.expectedDonors || 100}
+                </span>
+              </div>
+
+              <h3 className="font-black text-slate-900 text-sm sm:text-base leading-snug">
+                {camp.title || camp.name}
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 pt-1.5 border-t border-slate-200/60">
+                <div className="flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span><strong>Date:</strong> {camp.date}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                  <span><strong>Time:</strong> {camp.time}</span>
+                </div>
+                <div className="flex items-center gap-1.5 sm:col-span-2">
+                  <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
+                  <span className="truncate"><strong>Venue:</strong> {camp.venue || camp.location}, {camp.city}</span>
+                </div>
+              </div>
             </div>
-
-            <h3 className="font-black text-slate-900 text-base leading-snug">
-              {camp.title || camp.name}
-            </h3>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-600 pt-1 border-t border-slate-100">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span><strong>Date:</strong> {camp.date}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Clock className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                <span><strong>Time:</strong> {camp.time}</span>
-              </div>
-              <div className="flex items-center gap-1.5 sm:col-span-2">
-                <MapPin className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                <span className="truncate"><strong>Venue:</strong> {camp.venue}, {camp.city}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* BODY AREA */}
-        <div className="p-6 max-h-[70vh] overflow-y-auto space-y-6">
+          )}
 
           {/* SERVER ERROR ALERT */}
           {serverError && (
-            <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-2.5">
-              <AlertCircle className="w-5 h-5 shrink-0 text-red-600 mt-0.5" />
+            <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 text-red-600 mt-0.5" />
               <div>{serverError}</div>
             </div>
           )}
@@ -262,19 +290,19 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
           {/* VIEW: DUPLICATE REGISTRATION ALERT                 */}
           {/* ================================================== */}
           {viewState === 'DUPLICATE' && (
-            <div className="p-6 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-4 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto text-xl font-bold">
+            <div className="p-5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 space-y-4 text-center">
+              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto text-lg font-bold">
                 ⚠️
               </div>
               <div>
-                <h4 className="text-lg font-black text-amber-900">You are already registered for this camp.</h4>
+                <h4 className="text-base font-black text-amber-900">You are already registered for this camp.</h4>
                 <p className="text-xs text-amber-800 mt-1">
-                  Our system found an existing registration pass under your contact details for this specific blood donation drive.
+                  Our system found an existing registration pass under your contact details for this specific camp.
                 </p>
               </div>
 
               {activeRegistration && (
-                <div className="p-4 rounded-xl bg-white border border-amber-200 text-left text-xs space-y-1 font-mono">
+                <div className="p-3.5 rounded-xl bg-white border border-amber-200 text-left text-xs space-y-1 font-mono">
                   <p><strong>Registration ID:</strong> <span className="text-blue-700 font-bold">{activeRegistration.registrationId}</span></p>
                   <p><strong>Name:</strong> {activeRegistration.fullName}</p>
                   <p><strong>Blood Group:</strong> {activeRegistration.bloodGroup}</p>
@@ -282,18 +310,18 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row gap-2.5 pt-1">
                 <button
                   type="button"
                   onClick={() => setViewState('PASS')}
-                  className="flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black transition-colors shadow-xs"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black transition-colors shadow-xs"
                 >
                   View Registration Pass
                 </button>
                 <button
                   type="button"
                   onClick={onClose}
-                  className="py-3 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
+                  className="py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors"
                 >
                   Back to Home
                 </button>
@@ -305,42 +333,38 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
           {/* VIEW: SUCCESS / REGISTRATION PASS                  */}
           {/* ================================================== */}
           {(viewState === 'SUCCESS' || viewState === 'PASS') && activeRegistration && (
-            <div className="space-y-6 printable-pass">
+            <div className="space-y-5">
               {viewState === 'SUCCESS' && (
                 <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-center space-y-1">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto" />
-                  <h4 className="text-base font-black text-emerald-950">Registration Complete!</h4>
+                  <CheckCircle2 className="w-7 h-7 text-emerald-600 mx-auto" />
+                  <h4 className="text-base font-black text-emerald-950">Registration Successful! 🎉</h4>
                   <p className="text-xs text-emerald-700 font-medium">
-                    A confirmation pass has been issued for your participation.
+                    A confirmation pass has been generated for your blood donation camp participation.
                   </p>
                 </div>
               )}
 
               {/* PASS CARD */}
-              <div className="p-6 rounded-3xl bg-gradient-to-b from-blue-50/50 via-white to-slate-50 border-2 border-blue-200 shadow-md space-y-5 relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-100/50 rounded-full blur-2xl pointer-events-none" />
-
-                {/* PASS HEADER */}
-                <div className="flex items-start justify-between border-b border-blue-100 pb-4">
+              <div className="p-5 rounded-2xl bg-gradient-to-b from-blue-50/50 via-white to-slate-50 border-2 border-blue-200 shadow-md space-y-4 relative overflow-hidden">
+                <div className="flex items-start justify-between border-b border-blue-100 pb-3">
                   <div>
                     <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 block">
                       BloodNet Official Pass
                     </span>
-                    <h4 className="text-lg font-black text-slate-900 mt-0.5">
-                      {camp.title || camp.name}
+                    <h4 className="text-base font-black text-slate-900 mt-0.5">
+                      {camp?.title || camp?.name}
                     </h4>
                   </div>
                   <div className="text-right">
-                    <span className="text-[10px] text-slate-400 font-mono block">Registration ID</span>
-                    <span className="px-3 py-1 rounded-xl bg-blue-600 text-white font-mono font-black text-sm tracking-wider shadow-xs inline-block mt-0.5">
+                    <span className="text-[9px] text-slate-400 font-mono block">Registration ID</span>
+                    <span className="px-2.5 py-0.5 rounded-lg bg-blue-600 text-white font-mono font-black text-xs tracking-wider shadow-xs inline-block mt-0.5">
                       {activeRegistration.registrationId}
                     </span>
                   </div>
                 </div>
 
-                {/* STATUS BADGE */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-blue-50/80 border border-blue-200 text-xs font-semibold text-blue-900">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-blue-50/80 border border-blue-200 text-xs font-semibold text-blue-900">
+                  <div className="flex items-center gap-1.5">
                     <ShieldCheck className="w-4 h-4 text-blue-600" />
                     <span>Status: <strong className="text-blue-700">{activeRegistration.registrationStatus || 'REGISTERED'}</strong></span>
                   </div>
@@ -349,54 +373,52 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                   </span>
                 </div>
 
-                {/* DETAILS GRID */}
-                <div className="grid grid-cols-2 gap-4 text-xs font-medium text-slate-700 pt-1">
+                <div className="grid grid-cols-2 gap-3 text-xs font-medium text-slate-700 pt-1">
                   <div>
-                    <span className="text-[11px] text-slate-400 block font-normal">Participant Name</span>
-                    <strong className="text-slate-900 text-sm font-black">{activeRegistration.fullName}</strong>
+                    <span className="text-[10px] text-slate-400 block font-normal">Participant Name</span>
+                    <strong className="text-slate-900 font-black">{activeRegistration.fullName}</strong>
                   </div>
                   <div>
-                    <span className="text-[11px] text-slate-400 block font-normal">Blood Group</span>
-                    <span className="px-2.5 py-0.5 rounded-lg bg-red-100 text-red-700 font-black text-sm inline-block">
+                    <span className="text-[10px] text-slate-400 block font-normal">Blood Group</span>
+                    <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 font-black text-xs inline-block">
                       {activeRegistration.bloodGroup}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[11px] text-slate-400 block font-normal">Mobile Number</span>
+                    <span className="text-[10px] text-slate-400 block font-normal">Mobile Number</span>
                     <span className="font-mono text-slate-800">{activeRegistration.phoneNumber}</span>
                   </div>
                   <div>
-                    <span className="text-[11px] text-slate-400 block font-normal">City / Location</span>
+                    <span className="text-[10px] text-slate-400 block font-normal">City / Location</span>
                     <span className="text-slate-800">{activeRegistration.city}, {activeRegistration.state}</span>
                   </div>
                   <div>
-                    <span className="text-[11px] text-slate-400 block font-normal">Camp Date</span>
-                    <span className="font-semibold text-slate-800">{camp.date}</span>
+                    <span className="text-[10px] text-slate-400 block font-normal">Camp Date</span>
+                    <span className="font-semibold text-slate-800">{camp?.date}</span>
                   </div>
                   <div>
-                    <span className="text-[11px] text-slate-400 block font-normal">Reporting Time</span>
-                    <span className="font-semibold text-slate-800">{activeRegistration.preferredTime || camp.time}</span>
+                    <span className="text-[10px] text-slate-400 block font-normal">Reporting Time</span>
+                    <span className="font-semibold text-slate-800">{activeRegistration.preferredTime || camp?.time}</span>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-[11px] text-slate-400 block font-normal">Camp Venue</span>
-                    <span className="text-slate-800 font-semibold">{camp.venue}, {camp.city}</span>
+                    <span className="text-[10px] text-slate-400 block font-normal">Camp Venue</span>
+                    <span className="text-slate-800 font-semibold">{camp?.venue || camp?.location}, {camp?.city}</span>
                   </div>
                 </div>
 
-                {/* MEDICAL NOTE */}
-                <p className="text-[10px] text-slate-500 italic bg-slate-100 p-2.5 rounded-xl border border-slate-200">
+                <p className="text-[10px] text-slate-500 italic bg-slate-100 p-2 rounded-lg border border-slate-200">
                   ℹ️ Final medical screening and donor eligibility will be evaluated on-site by authorized medical staff prior to blood collection.
                 </p>
               </div>
 
               {/* ACTION BUTTONS */}
-              <div className="flex flex-wrap items-center gap-3 pt-2">
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
                 <button
                   type="button"
                   onClick={handlePrintPass}
-                  className="flex-1 py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
                 >
-                  <Printer className="w-4 h-4" />
+                  <Printer className="w-3.5 h-3.5" />
                   <span>Print / Save Pass</span>
                 </button>
 
@@ -404,9 +426,9 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                   <button
                     type="button"
                     onClick={handleCancelRegistration}
-                    className="py-3 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer border border-red-200"
+                    className="py-2.5 px-4 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 text-xs font-bold transition-colors flex items-center justify-center gap-1 cursor-pointer border border-red-200"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                     <span>Cancel Registration</span>
                   </button>
                 )}
@@ -414,7 +436,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                 <button
                   type="button"
                   onClick={onClose}
-                  className="py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black transition-colors shadow-xs cursor-pointer"
+                  className="py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black transition-colors shadow-xs cursor-pointer"
                 >
                   Back to Home
                 </button>
@@ -426,20 +448,22 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
           {/* VIEW: REGISTRATION FORM                            */}
           {/* ================================================== */}
           {viewState === 'FORM' && (
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form id="camp-reg-form" onSubmit={handleSubmit} className="space-y-5">
 
               {/* -------------------------------------------------- */}
-              {/* SECTION 1: PERSONAL INFORMATION                    */}
+              {/* PERSONAL & LOCATION INFORMATION                    */}
               {/* -------------------------------------------------- */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 border-b border-sky-100 pb-2">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-1.5">
                   <User className="w-4 h-4 text-blue-600" />
-                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">
                     Personal Information
                   </h4>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* DESKTOP: 2 COLUMNS, MOBILE: 1 COLUMN */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  
                   {/* Full Name */}
                   <div className="sm:col-span-2 space-y-1">
                     <label className="block text-xs font-bold text-slate-700">
@@ -453,46 +477,32 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                         setFullName(e.target.value);
                         validateField('fullName', e.target.value);
                       }}
-                      className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all ${
+                      className={`w-full px-3.5 py-2 rounded-xl bg-slate-50 border text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border ${
                         errors.fullName ? 'border-red-300 bg-red-50/50' : 'border-slate-200'
                       }`}
                     />
                     {errors.fullName && <p className="text-[11px] text-red-500 font-medium">{errors.fullName}</p>}
                   </div>
 
-                  {/* Mobile Number */}
+                  {/* Phone Number */}
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-700">
-                      Mobile Number <span className="text-red-500">*</span>
+                      Phone Number <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="tel"
-                      placeholder="Enter 10-digit mobile number"
+                      placeholder="Enter 10-digit phone number"
                       maxLength={10}
                       value={phoneNumber}
                       onChange={e => {
                         setPhoneNumber(e.target.value);
                         validateField('phoneNumber', e.target.value);
                       }}
-                      className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all ${
+                      className={`w-full px-3.5 py-2 rounded-xl bg-slate-50 border text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border ${
                         errors.phoneNumber ? 'border-red-300 bg-red-50/50' : 'border-slate-200'
                       }`}
                     />
                     {errors.phoneNumber && <p className="text-[11px] text-red-500 font-medium">{errors.phoneNumber}</p>}
-                  </div>
-
-                  {/* Email Address */}
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-slate-700">
-                      Email Address <span className="text-slate-400 font-normal">(Optional)</span>
-                    </label>
-                    <input
-                      type="email"
-                      placeholder="Enter your email"
-                      value={email}
-                      onChange={e => setEmail(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
-                    />
                   </div>
 
                   {/* Age */}
@@ -510,7 +520,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                         setAge(e.target.value);
                         validateField('age', e.target.value);
                       }}
-                      className={`w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all ${
+                      className={`w-full px-3.5 py-2 rounded-xl bg-slate-50 border text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border ${
                         errors.age ? 'border-red-300 bg-red-50/50' : 'border-slate-200'
                       }`}
                     />
@@ -528,44 +538,48 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                         setGender(e.target.value);
                         validateField('gender', e.target.value);
                       }}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border"
                     >
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
                       <option value="Other">Other</option>
                       <option value="Prefer not to say">Prefer not to say</option>
                     </select>
+                    {errors.gender && <p className="text-[11px] text-red-500 font-medium">{errors.gender}</p>}
                   </div>
-                </div>
-              </div>
 
-              {/* -------------------------------------------------- */}
-              {/* SECTION 2: LOCATION INFORMATION                    */}
-              {/* -------------------------------------------------- */}
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center gap-2 border-b border-sky-100 pb-2">
-                  <MapPin className="w-4 h-4 text-blue-600" />
-                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-wide">
-                    Location Information
-                  </h4>
-                </div>
+                  {/* Email */}
+                  <div className="space-y-1">
+                    <label className="block text-xs font-bold text-slate-700">
+                      Email Address <span className="text-slate-400 font-normal">(Optional)</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="Enter email address"
+                      value={email}
+                      onChange={e => setEmail(e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border"
+                    />
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* City */}
+                  {/* Place / City */}
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-700">
                       Place / City <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="Enter city"
+                      placeholder="Enter your place / city"
                       value={city}
                       onChange={e => {
                         setCity(e.target.value);
                         validateField('city', e.target.value);
                       }}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
+                      className={`w-full px-3.5 py-2 rounded-xl bg-slate-50 border text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border ${
+                        errors.city ? 'border-red-300 bg-red-50/50' : 'border-slate-200'
+                      }`}
                     />
+                    {errors.city && <p className="text-[11px] text-red-500 font-medium">{errors.city}</p>}
                   </div>
 
                   {/* District */}
@@ -578,7 +592,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                       placeholder="Enter district"
                       value={district}
                       onChange={e => setDistrict(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border"
                     />
                   </div>
 
@@ -591,7 +605,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                       type="text"
                       value={state}
                       onChange={e => setState(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border"
                     />
                   </div>
 
@@ -606,24 +620,25 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                       maxLength={6}
                       value={pincode}
                       onChange={e => setPincode(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border"
                     />
                   </div>
+
                 </div>
               </div>
 
               {/* -------------------------------------------------- */}
-              {/* SECTION 3: DONATION INFORMATION                    */}
+              {/* DONATION INFORMATION                               */}
               {/* -------------------------------------------------- */}
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center gap-2 border-b border-sky-100 pb-2">
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-1.5">
                   <Heart className="w-4 h-4 text-red-500" />
-                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-wide">
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">
                     Donation Information
                   </h4>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                   {/* Blood Group */}
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-700">
@@ -635,7 +650,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                         setBloodGroup(e.target.value);
                         validateField('bloodGroup', e.target.value);
                       }}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-red-600 focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-bold text-red-600 focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border"
                     >
                       <option value="A+">A+</option>
                       <option value="A-">A-</option>
@@ -646,6 +661,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                       <option value="O+">O+</option>
                       <option value="O-">O-</option>
                     </select>
+                    {errors.bloodGroup && <p className="text-[11px] text-red-500 font-medium">{errors.bloodGroup}</p>}
                   </div>
 
                   {/* Previous Blood Donation */}
@@ -653,26 +669,26 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                     <label className="block text-xs font-bold text-slate-700">
                       Previous Blood Donation
                     </label>
-                    <div className="flex items-center gap-4 pt-1.5">
-                      <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                    <div className="flex items-center gap-4 pt-1">
+                      <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
                         <input
                           type="radio"
                           name="prevDonation"
                           value="Yes"
                           checked={previousDonation === 'Yes'}
                           onChange={() => setPreviousDonation('Yes')}
-                          className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          className="w-3.5 h-3.5 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                         <span>Yes</span>
                       </label>
-                      <label className="flex items-center gap-2 text-xs font-medium text-slate-700 cursor-pointer">
+                      <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 cursor-pointer">
                         <input
                           type="radio"
                           name="prevDonation"
                           value="No"
                           checked={previousDonation === 'No'}
                           onChange={() => setPreviousDonation('No')}
-                          className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                          className="w-3.5 h-3.5 text-blue-600 focus:ring-blue-500 cursor-pointer"
                         />
                         <span>No</span>
                       </label>
@@ -689,7 +705,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                         type="date"
                         value={lastDonationDate}
                         onChange={e => setLastDonationDate(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#F8FAFC] border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
+                        className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border"
                       />
                     </div>
                   )}
@@ -704,54 +720,54 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                       placeholder="e.g. 10:00 AM"
                       value={preferredTime}
                       onChange={e => setPreferredTime(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
+                      className="w-full px-3.5 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border"
                     />
                   </div>
                 </div>
               </div>
 
               {/* -------------------------------------------------- */}
-              {/* SECTION 4: MEDICAL ELIGIBILITY QUESTIONS           */}
+              {/* MEDICAL ELIGIBILITY QUESTIONS                      */}
               {/* -------------------------------------------------- */}
-              <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-200 space-y-3">
-                <div className="flex items-center gap-2 text-blue-900">
+              <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-200 space-y-2.5">
+                <div className="flex items-center gap-1.5 text-blue-900">
                   <ShieldCheck className="w-4 h-4 text-blue-600" />
                   <h4 className="text-xs font-black uppercase tracking-wide">
                     Medical Eligibility Questions
                   </h4>
                 </div>
 
-                <p className="text-xs font-medium text-slate-700">
+                <p className="text-[11px] font-medium text-slate-700">
                   Before registering, please confirm:
                 </p>
 
-                <div className="space-y-2.5 text-xs text-slate-700">
-                  <label className="flex items-start gap-2.5 cursor-pointer">
+                <div className="space-y-2 text-xs text-slate-700">
+                  <label className="flex items-start gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={eligibilityAge}
                       onChange={e => setEligibilityAge(e.target.checked)}
-                      className="w-4 h-4 mt-0.5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="w-3.5 h-3.5 mt-0.5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                     <span>I am within the eligible age range (18–65 years) for blood donation.</span>
                   </label>
 
-                  <label className="flex items-start gap-2.5 cursor-pointer">
+                  <label className="flex items-start gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={eligibilityHealth}
                       onChange={e => setEligibilityHealth(e.target.checked)}
-                      className="w-4 h-4 mt-0.5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="w-3.5 h-3.5 mt-0.5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                     <span>I am feeling well and have no current illness that would prevent donation.</span>
                   </label>
 
-                  <label className="flex items-start gap-2.5 cursor-pointer">
+                  <label className="flex items-start gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={eligibilityScreening}
                       onChange={e => setEligibilityScreening(e.target.checked)}
-                      className="w-4 h-4 mt-0.5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                      className="w-3.5 h-3.5 mt-0.5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                     />
                     <span>I understand that final eligibility will be determined by qualified medical staff at the camp.</span>
                   </label>
@@ -759,17 +775,17 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
               </div>
 
               {/* -------------------------------------------------- */}
-              {/* SECTION 5: EMERGENCY CONTACT (Optional)            */}
+              {/* EMERGENCY CONTACT (Optional)                       */}
               {/* -------------------------------------------------- */}
-              <div className="space-y-4 pt-2">
-                <div className="flex items-center gap-2 border-b border-sky-100 pb-2">
+              <div className="space-y-3 pt-1">
+                <div className="flex items-center gap-2 border-b border-slate-100 pb-1.5">
                   <Phone className="w-4 h-4 text-slate-500" />
-                  <h4 className="text-sm font-black text-slate-900 uppercase tracking-wide">
-                    Emergency Contact <span className="text-slate-400 font-normal text-xs">(Optional)</span>
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">
+                    Emergency Contact <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
                   </h4>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="space-y-1">
                     <label className="block text-xs font-bold text-slate-700">
                       Contact Name
@@ -779,7 +795,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                       placeholder="Contact person"
                       value={emergencyName}
                       onChange={e => setEmergencyName(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border"
                     />
                   </div>
 
@@ -793,7 +809,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                       maxLength={10}
                       value={emergencyPhone}
                       onChange={e => setEmergencyPhone(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border"
                     />
                   </div>
 
@@ -804,7 +820,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
                     <select
                       value={emergencyRelationship}
                       onChange={e => setEmergencyRelationship(e.target.value)}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all"
+                      className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:bg-white outline-none transition-all box-sizing-border"
                     >
                       <option value="Parent">Parent</option>
                       <option value="Spouse">Spouse</option>
@@ -817,56 +833,68 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
               </div>
 
               {/* -------------------------------------------------- */}
-              {/* SECTION 6: CONSENT & SUBMIT                        */}
+              {/* CONSENT                                            */}
               {/* -------------------------------------------------- */}
-              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                <label className="flex items-start gap-2.5 cursor-pointer">
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
+                <label className="flex items-start gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={consent}
                     onChange={e => setConsent(e.target.checked)}
-                    className="w-4 h-4 mt-0.5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                    className="w-3.5 h-3.5 mt-0.5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
                   />
                   <span className="text-xs font-semibold text-slate-800">
                     I agree to provide my information for registration and participation in this blood donation camp.
                   </span>
                 </label>
 
-                <p className="text-[11px] text-slate-500 font-medium border-t border-slate-200 pt-2">
+                <p className="text-[10px] text-slate-500 font-medium border-t border-slate-200 pt-1.5">
                   🔒 <strong>Privacy Assurance:</strong> Your information will be used for camp registration and coordination and will not be displayed publicly.
                 </p>
-              </div>
-
-              {/* SUBMIT BUTTON */}
-              <div className="pt-2">
-                <button
-                  type="submit"
-                  disabled={!isFormValid() || isSubmitting}
-                  className={`w-full py-3.5 px-6 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
-                    isFormValid() && !isSubmitting
-                      ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/20'
-                      : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
-                  }`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Registering Participant...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Award className="w-5 h-5" />
-                      <span>Register for Camp</span>
-                    </>
-                  )}
-                </button>
               </div>
 
             </form>
           )}
 
         </div>
+
+        {/* FIXED FORM FOOTER WITH BUTTONS (Requirement 10 & 11) */}
+        {viewState === 'FORM' && (
+          <div className="p-4 sm:px-6 bg-white border-t border-slate-200 flex items-center justify-end gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-5 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="camp-reg-form"
+              disabled={!isFormValid() || isSubmitting}
+              className={`px-6 py-2.5 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md ${
+                isFormValid() && !isSubmitting
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-500/20'
+                  : 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+              }`}
+            >
+              {isSubmitting ? (
+                <>
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span>Registering...</span>
+                </>
+              ) : (
+                <>
+                  <Award className="w-4 h-4" />
+                  <span>Participate</span>
+                </>
+              )}
+            </button>
+          </div>
+        )}
+
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

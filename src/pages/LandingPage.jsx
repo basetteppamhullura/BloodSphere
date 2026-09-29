@@ -1163,6 +1163,8 @@ export const LandingPage = () => {
             </div>
           </div>
         </div>
+      )}
+
       {participatingCampModal && (
         <CampRegistrationModal
           camp={participatingCampModal}
@@ -1173,3 +1175,4 @@ export const LandingPage = () => {
     </div>
   );
 };
+
