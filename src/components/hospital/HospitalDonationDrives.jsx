@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { Calendar, PlusCircle, Droplet } from 'lucide-react';
 export const HospitalDonationDrives = () => {
-    const { intakeBloodUnit, showToast } = useApp();
+    const { intakeBloodUnit, showToast, campRegistrations } = useApp();
     const [drives, setDrives] = useState([
         {
             id: 'drv_001',
@@ -113,13 +113,59 @@ export const HospitalDonationDrives = () => {
               </div>
               <div>
                 <span className="text-[10px] text-slate-500 font-sans block">Registered Donors</span>
-                <strong className="text-base text-sky-700">{drive.registeredCount}</strong>
+                <strong className="text-base text-sky-700">
+                  {campRegistrations?.length > 0 ? campRegistrations.length : drive.registeredCount}
+                </strong>
               </div>
               <div>
                 <span className="text-[10px] text-slate-500 font-sans block">Units Collected</span>
                 <strong className="text-base text-emerald-700">{drive.unitsCollected}u</strong>
               </div>
             </div>
+
+            {/* REAL-TIME PARTICIPANTS LIST */}
+            {campRegistrations && campRegistrations.length > 0 && (
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
+                <h4 className="font-extrabold text-xs text-slate-900 flex items-center justify-between">
+                  <span>📋 Live Registered Participants ({campRegistrations.length})</span>
+                  <span className="text-[10px] text-emerald-600 font-mono font-bold">🟢 Real-Time Sync</span>
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-[11px] font-mono">
+                    <thead className="bg-slate-200 text-slate-700 font-bold">
+                      <tr>
+                        <th className="p-2 rounded-l-lg">ID</th>
+                        <th className="p-2">Name</th>
+                        <th className="p-2">Blood Group</th>
+                        <th className="p-2">City</th>
+                        <th className="p-2">Phone</th>
+                        <th className="p-2 rounded-r-lg">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-200">
+                      {campRegistrations.map((reg) => (
+                        <tr key={reg.registrationId} className="hover:bg-white transition-colors">
+                          <td className="p-2 font-bold text-blue-700">{reg.registrationId}</td>
+                          <td className="p-2 font-sans font-bold text-slate-900">{reg.fullName}</td>
+                          <td className="p-2">
+                            <span className="px-2 py-0.5 rounded bg-red-100 text-red-700 font-extrabold">
+                              {reg.bloodGroup}
+                            </span>
+                          </td>
+                          <td className="p-2 text-slate-600">{reg.city}</td>
+                          <td className="p-2 text-slate-600">{reg.phoneNumber}</td>
+                          <td className="p-2">
+                            <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                              {reg.registrationStatus || 'REGISTERED'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
 
             <button onClick={() => handleRecordIntake(drive.id)} className="w-full py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs shadow-md shadow-emerald-600/20 flex items-center justify-center gap-1.5">
               <Droplet className="w-4 h-4"/> Record Drive Intake (+5 Units to Vault Stock)
