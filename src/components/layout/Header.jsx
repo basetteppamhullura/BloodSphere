@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { BloodNetLogo } from '../common/BloodNetLogo';
+import headerBg from '../../assets/bloodnet-header-bg.jpg';
 import {
   Home,
   Heart,
@@ -231,12 +232,20 @@ export const Header = () => {
     ];
 
     return (
-        <header className="sticky top-0 z-40 bg-white/98 backdrop-blur-md border-b border-sky-100/90 shadow-2xs w-full max-w-full relative overflow-visible">
-            {/* Subtle background healthcare graphics */}
-            <div className="absolute inset-0 pointer-events-none select-none overflow-hidden opacity-25 z-0">
-                <div className="absolute -top-10 left-1/4 w-80 h-32 bg-sky-100/50 rounded-full blur-2xl"/>
-                <div className="absolute -top-10 right-1/4 w-72 h-32 bg-red-100/30 rounded-full blur-2xl"/>
-                <svg className="absolute bottom-1 left-0 right-0 w-full h-3 text-sky-300/40" viewBox="0 0 1200 20" fill="none" preserveAspectRatio="none">
+        <header
+            className="sticky top-0 z-40 border-b border-sky-200/80 shadow-xs w-full max-w-full relative overflow-visible transition-all"
+            style={{
+                backgroundImage: `linear-gradient(to right, rgba(255, 255, 255, 0.88) 0%, rgba(240, 249, 255, 0.74) 28%, rgba(240, 249, 255, 0.74) 72%, rgba(255, 255, 255, 0.90) 100%), url(${headerBg})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center 35%',
+                backgroundRepeat: 'no-repeat',
+            }}
+        >
+            {/* Subtle background healthcare graphics & soft glow */}
+            <div className="absolute inset-0 pointer-events-none select-none overflow-hidden opacity-30 z-0">
+                <div className="absolute -top-10 left-1/4 w-80 h-32 bg-sky-100/60 rounded-full blur-2xl"/>
+                <div className="absolute -top-10 right-1/4 w-72 h-32 bg-red-100/40 rounded-full blur-2xl"/>
+                <svg className="absolute bottom-1 left-0 right-0 w-full h-3 text-sky-400/50" viewBox="0 0 1200 20" fill="none" preserveAspectRatio="none">
                     <path d="M0,10 L300,10 L310,2 L320,18 L330,5 L340,15 L350,10 L700,10 L710,2 L720,18 L730,5 L740,15 L750,10 L1200,10" stroke="currentColor" strokeWidth="1.5"/>
                 </svg>
             </div>
@@ -252,7 +261,7 @@ export const Header = () => {
                     <button
                         type="button"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                        className="lg:hidden p-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-slate-700 border border-sky-100 flex items-center justify-center transition-colors cursor-pointer"
+                        className="lg:hidden p-1.5 rounded-xl bg-white/90 backdrop-blur-sm hover:bg-sky-50 text-slate-700 border border-sky-100 flex items-center justify-center transition-colors cursor-pointer shadow-2xs"
                         title="Toggle Navigation Menu"
                         aria-label="Toggle navigation menu"
                     >
@@ -271,7 +280,7 @@ export const Header = () => {
                 <div className="header-navigation hidden lg:flex flex-1 min-w-0 justify-center items-center px-1 sm:px-2">
                     <nav
                         ref={navContainerRef}
-                        className="navigation-container inline-flex items-center bg-slate-100/90 border border-slate-200/80 p-1 rounded-full relative shrink-0 shadow-2xs gap-0.5 xl:gap-1 min-w-0"
+                        className="navigation-container inline-flex items-center bg-white/85 backdrop-blur-md border border-sky-100/90 p-1 rounded-full relative shrink-0 shadow-xs gap-0.5 xl:gap-1 min-w-0"
                     >
                         {/* Sliding Active Blue Pill Indicator */}
                         <div
@@ -290,7 +299,7 @@ export const Header = () => {
                             className={`px-2.5 xl:px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 relative ${
                                 activeNavIndex === 0
                                     ? 'text-white font-extrabold'
-                                    : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
+                                    : 'text-slate-700 hover:text-slate-950 font-bold hover:bg-sky-50/70'
                             }`}
                         >
                             <Home className={`w-3.5 h-3.5 shrink-0 transition-colors ${activeNavIndex === 0 ? 'text-white' : 'text-sky-600'}`} />
@@ -304,7 +313,7 @@ export const Header = () => {
                             className={`px-2.5 xl:px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 relative ${
                                 activeNavIndex === 1
                                     ? 'text-white font-extrabold'
-                                    : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
+                                    : 'text-slate-700 hover:text-slate-950 font-bold hover:bg-sky-50/70'
                             }`}
                         >
                             <Heart className={`w-3.5 h-3.5 shrink-0 transition-colors ${activeNavIndex === 1 ? 'text-white fill-white' : 'text-red-500'}`} />
@@ -318,7 +327,7 @@ export const Header = () => {
                             className={`px-2.5 xl:px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 relative ${
                                 activeNavIndex === 2
                                     ? 'text-white font-extrabold'
-                                    : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
+                                    : 'text-slate-700 hover:text-slate-950 font-bold hover:bg-sky-50/70'
                             }`}
                         >
                             <Users className={`w-3.5 h-3.5 shrink-0 transition-colors ${activeNavIndex === 2 ? 'text-white' : 'text-rose-500'}`} />
@@ -332,7 +341,7 @@ export const Header = () => {
                             className={`px-2.5 xl:px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 relative ${
                                 activeNavIndex === 3
                                     ? 'text-white font-extrabold'
-                                    : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
+                                    : 'text-slate-700 hover:text-slate-950 font-bold hover:bg-sky-50/70'
                             }`}
                         >
                             <Building2 className={`w-3.5 h-3.5 shrink-0 transition-colors ${activeNavIndex === 3 ? 'text-white' : 'text-sky-500'}`} />
@@ -346,7 +355,7 @@ export const Header = () => {
                             className={`px-2.5 xl:px-3.5 py-1.5 rounded-full inline-flex items-center gap-1.5 text-xs transition-colors cursor-pointer whitespace-nowrap shrink-0 z-10 relative ${
                                 activeNavIndex === 4
                                     ? 'text-white font-extrabold'
-                                    : 'text-slate-700 hover:text-slate-900 font-bold hover:bg-slate-200/50'
+                                    : 'text-slate-700 hover:text-slate-950 font-bold hover:bg-sky-50/70'
                             }`}
                         >
                             <Droplet className={`w-3.5 h-3.5 shrink-0 transition-colors ${activeNavIndex === 4 ? 'text-white' : 'text-emerald-500'}`} />
@@ -364,7 +373,7 @@ export const Header = () => {
                     <button
                         type="button"
                         onClick={handleEmergencyChatClick}
-                        className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-white hover:bg-red-50/80 text-red-600 border border-red-200 hover:border-red-300 font-bold text-xs transition-all cursor-pointer shadow-2xs shrink-0 whitespace-nowrap"
+                        className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm hover:bg-red-50/90 text-red-600 border border-red-200 hover:border-red-300 font-bold text-xs transition-all cursor-pointer shadow-xs shrink-0 whitespace-nowrap"
                         title="Open Private Emergency Chat"
                     >
                         <MessageSquare className="w-3.5 h-3.5 text-red-600 shrink-0" />
@@ -372,7 +381,7 @@ export const Header = () => {
                             <span className="hidden 2xl:inline">Emergency </span>Chat
                         </span>
                         {chatBadgeCount > 0 && (
-                            <span className="min-w-[20px] h-[20px] px-1 rounded-full bg-red-600 text-white text-[10px] font-black inline-flex items-center justify-center shadow-2xs animate-pulse shrink-0">
+                            <span className="min-w-[20px] h-[20px] px-1 rounded-full bg-red-600 text-white text-[10px] font-black inline-flex items-center justify-center shadow-xs animate-pulse shrink-0">
                                 {chatBadgeCount}
                             </span>
                         )}
@@ -382,7 +391,7 @@ export const Header = () => {
                     <button
                         type="button"
                         onClick={() => setActiveEmergencyPostModal(true)}
-                        className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-[#EF4444] hover:bg-[#DC2626] text-white font-bold text-xs shadow-sm shadow-red-500/20 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shrink-0 whitespace-nowrap"
+                        className="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-[#EF4444] hover:bg-[#DC2626] text-white font-bold text-xs shadow-sm shadow-red-500/25 transition-all cursor-pointer hover:scale-[1.02] active:scale-[0.98] shrink-0 whitespace-nowrap"
                         title="Create an emergency blood request"
                     >
                         <PlusCircle className="w-3.5 h-3.5 text-white shrink-0" />
@@ -397,7 +406,7 @@ export const Header = () => {
                         <button
                             type="button"
                             onClick={() => setIsPortalDropdownOpen(!isPortalDropdownOpen)}
-                            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-[#E8F4FF] hover:bg-[#DCEAF5] active:bg-blue-100 text-[#2563EB] border border-[#BFDBFE] font-bold text-xs transition-all cursor-pointer shadow-2xs whitespace-nowrap"
+                            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-full bg-[#E8F4FF]/95 backdrop-blur-sm hover:bg-[#DCEAF5] active:bg-blue-100 text-[#2563EB] border border-[#BFDBFE] font-bold text-xs transition-all cursor-pointer shadow-xs whitespace-nowrap"
                             aria-expanded={isPortalDropdownOpen}
                             aria-haspopup="true"
                             title="View accessible portals"

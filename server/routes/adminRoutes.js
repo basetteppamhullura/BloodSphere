@@ -5,6 +5,7 @@ import { BloodStock } from '../models/BloodStock.js';
 import { AuditLog } from '../models/AuditLog.js';
 import { SystemSettings } from '../models/SystemSettings.js';
 import { CampRegistration } from '../models/CampRegistration.js';
+import { SystemEvent } from '../models/SystemEvent.js';
 import { sendCampRegistrationConfirmation } from '../services/smsService.js';
 
 export function createAdminRouter(socketHandler) {
@@ -19,6 +20,7 @@ export function createAdminRouter(socketHandler) {
       let auditLogs = await AuditLog.find({}).sort({ createdAt: -1 }).limit(100).lean();
       let settings = await SystemSettings.findOne({ key: 'global_settings' }).lean();
       let campRegistrations = await CampRegistration.find({}).sort({ createdAt: -1 }).lean();
+      let systemEvents = await SystemEvent.find({}).sort({ createdAt: -1 }).lean();
 
       if (!settings) {
         settings = await SystemSettings.create({ key: 'global_settings' });
@@ -33,6 +35,7 @@ export function createAdminRouter(socketHandler) {
           auditLogs,
           settings,
           campRegistrations,
+          systemEvents,
           onlineUsersCount: socketHandler.getOnlineCount()
         }
       });
@@ -575,6 +578,141 @@ export function createAdminRouter(socketHandler) {
       });
 
       res.json({ success: true, registration: updated, message: 'Camp registration cancelled.' });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 12. GET All Published System Events & Announcements
+  router.get('/events', async (req, res) => {
+    try {
+      let events = await SystemEvent.find({ isPublished: true }).sort({ createdAt: -1 }).lean();
+      
+      // Seed initial events if database has none
+      if (!events || events.length === 0) {
+        const seedData = [
+          {
+            id: "EVT-2026-000101",
+            title: "Mega Independence Day Voluntary Blood Drive",
+            category: "Blood Donation Camp",
+            description: "Annual voluntary blood donation drive organized by Rotary Club & KIMS Blood Bank. Digital donor certificate and health checkup provided.",
+            date: "2026-08-15",
+            time: "09:00 AM - 04:00 PM",
+            location: "KLE Technological University Campus, Vidyanagar",
+            venue: "KLE Tech Auditorium",
+            city: "Hubballi",
+            organizer: "Rotary Club & KIMS Blood Bank",
+            status: "Upcoming",
+            isPublished: true,
+            publishedAt: new Date().toISOString()
+          },
+          {
+            id: "EVT-2026-000102",
+            title: "National Blood Donation Awareness Week",
+            category: "BloodNet Announcement",
+            description: "BloodNet is organizing district-wide awareness programs, college seminars, and community pledge drives across Karnataka.",
+            date: "2026-10-01",
+            time: "Full Day",
+            location: "Karnataka Regional Centers",
+            venue: "Regional Healthcare Centers",
+            city: "Bengaluru",
+            organizer: "BloodNet Central Directorate",
+            status: "Published",
+            isPublished: true,
+            publishedAt: new Date().toISOString()
+          },
+          {
+            id: "EVT-2026-000103",
+            title: "Rare Blood Group (O- / Bombay Phenotype) Registry Meet",
+            category: "Health Awareness",
+            description: "Specialized interactive session for registered universal donors and rare blood group volunteers.",
+            date: "2026-10-15",
+            time: "10:00 AM - 01:00 PM",
+            location: "KIMS Auditorium, Hubballi",
+            venue: "Main Conference Hall",
+            city: "Hubballi",
+            organizer: "KIMS Regional Blood Center",
+            status: "Upcoming",
+            isPublished: true,
+            publishedAt: new Date().toISOString()
+          }
+        ];
+        await SystemEvent.insertMany(seedData);
+        events = seedData;
+      }
+
+      res.json({ success: true, events });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 13. Create or Update System Event / Announcement (Admin Endpoint)
+  router.post('/events', async (req, res) => {
+    try {
+      const eventData = req.body;
+      const count = await SystemEvent.countDocuments({});
+      const dynamicId = eventData.id || `EVT-2026-${String(count + 101).padStart(6, '0')}`;
+
+      const savedEvent = await SystemEvent.findOneAndUpdate(
+        { id: dynamicId },
+        {
+          ...eventData,
+          id: dynamicId,
+          isPublished: eventData.isPublished !== undefined ? eventData.isPublished : true,
+          updatedAt: new Date()
+        },
+        { upsert: true, new: true }
+      );
+
+      const auditEntry = new AuditLog({
+        id: `AUD-${Date.now()}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        adminName: eventData.createdBy || 'Super Admin',
+        action: 'EVENT_PUBLISHED',
+        targetEntity: `${savedEvent.title} (${savedEvent.category})`,
+        details: `Published event/announcement "${savedEvent.title}" for ${savedEvent.city}.`,
+        status: 'SUCCESS'
+      });
+      await auditEntry.save();
+
+      // Emit Socket.IO event to update all clients in real time
+      socketHandler.broadcastAll('EVENT_UPDATED', {
+        event: savedEvent,
+        auditEntry
+      });
+
+      res.json({ success: true, event: savedEvent, auditEntry });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // 14. Change Event Status (Publish / Unpublish / Cancel / Archive)
+  router.post('/events/:id/status', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status, isPublished, adminName = 'Super Admin' } = req.body;
+
+      const updated = await SystemEvent.findOneAndUpdate(
+        { id },
+        { 
+          status: status || 'Published', 
+          isPublished: isPublished !== undefined ? isPublished : true,
+          updatedAt: new Date()
+        },
+        { new: true }
+      );
+
+      if (!updated) {
+        return res.status(404).json({ success: false, message: 'Event not found.' });
+      }
+
+      socketHandler.broadcastAll('EVENT_UPDATED', {
+        event: updated
+      });
+
+      res.json({ success: true, event: updated });
     } catch (err) {
       res.status(500).json({ success: false, error: err.message });
     }
