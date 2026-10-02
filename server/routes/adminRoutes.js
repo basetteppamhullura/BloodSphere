@@ -7,23 +7,37 @@ import { SystemSettings } from '../models/SystemSettings.js';
 import { CampRegistration } from '../models/CampRegistration.js';
 import { SystemEvent } from '../models/SystemEvent.js';
 import { sendCampRegistrationConfirmation } from '../services/smsService.js';
+import { campRepository } from '../services/campRepository.js';
+import { isDBConnected } from '../db.js';
 
 export function createAdminRouter(socketHandler) {
   const router = express.Router();
 
-  // 1. GET Full Admin Snapshot from MongoDB (Source of Truth)
+  // 1. GET Full Admin Snapshot from MongoDB & campRepository (Source of Truth)
   router.get('/snapshot', async (req, res) => {
     try {
-      let users = await User.find({}).lean();
-      let requests = await EmergencyRequest.find({}).lean();
-      let stocks = await BloodStock.find({}).lean();
-      let auditLogs = await AuditLog.find({}).sort({ createdAt: -1 }).limit(100).lean();
-      let settings = await SystemSettings.findOne({ key: 'global_settings' }).lean();
-      let campRegistrations = await CampRegistration.find({}).sort({ createdAt: -1 }).lean();
-      let systemEvents = await SystemEvent.find({}).sort({ createdAt: -1 }).lean();
+      let users = [];
+      let requests = [];
+      let stocks = [];
+      let auditLogs = [];
+      let settings = { key: 'global_settings' };
+      let campRegistrations = [];
+      let systemEvents = [];
+      let camps = await campRepository.getAllCamps();
 
-      if (!settings) {
-        settings = await SystemSettings.create({ key: 'global_settings' });
+      if (isDBConnected()) {
+        try {
+          users = await User.find({}).lean();
+          requests = await EmergencyRequest.find({}).lean();
+          stocks = await BloodStock.find({}).lean();
+          auditLogs = await AuditLog.find({}).sort({ createdAt: -1 }).limit(100).lean();
+          const s = await SystemSettings.findOne({ key: 'global_settings' }).lean();
+          if (s) settings = s;
+          campRegistrations = await CampRegistration.find({}).sort({ createdAt: -1 }).lean();
+          systemEvents = await SystemEvent.find({}).sort({ createdAt: -1 }).lean();
+        } catch (dbErr) {
+          console.warn('[API /snapshot DB warning]', dbErr.message);
+        }
       }
 
       res.json({
@@ -34,6 +48,7 @@ export function createAdminRouter(socketHandler) {
           stocks,
           auditLogs,
           settings,
+          camps,
           campRegistrations,
           systemEvents,
           onlineUsersCount: socketHandler.getOnlineCount()
@@ -523,11 +538,15 @@ export function createAdminRouter(socketHandler) {
       });
       await auditEntry.save();
 
+      const updatedRsvps = await campRepository.incrementRsvpsCount(campId, 1);
+      const updatedCamp = await campRepository.getCampById(campId);
+
       // Emit Socket.IO event to update participant counts in real time across all connected clients
       socketHandler.broadcastAll('CAMP_REGISTRATION_CREATED', {
         campId,
         registration: newRegistration,
-        rsvpsCount: activeCount + 1,
+        rsvpsCount: updatedRsvps,
+        camp: updatedCamp,
         auditEntry
       });
 
@@ -537,6 +556,7 @@ export function createAdminRouter(socketHandler) {
         smsStatus: smsResult.status,
         smsMessage: smsResult.message || smsResult.error,
         auditEntry,
+        rsvpsCount: updatedRsvps,
         message: 'Registration Successful! 🎉'
       });
     } catch (err) {
@@ -550,7 +570,14 @@ export function createAdminRouter(socketHandler) {
     try {
       const { campId } = req.query;
       const query = campId ? { campId } : {};
-      const registrations = await CampRegistration.find(query).sort({ createdAt: -1 }).lean();
+      let registrations = [];
+      if (isDBConnected()) {
+        try {
+          registrations = await CampRegistration.find(query).sort({ createdAt: -1 }).lean();
+        } catch (dbErr) {
+          console.warn('[camps/registrations DB error]', dbErr.message);
+        }
+      }
       res.json({ success: true, registrations });
     } catch (err) {
       res.status(500).json({ success: false, error: err.message });
@@ -561,25 +588,195 @@ export function createAdminRouter(socketHandler) {
   router.post('/camps/registrations/:id/cancel', async (req, res) => {
     try {
       const { id } = req.params;
-      const updated = await CampRegistration.findOneAndUpdate(
-        { $or: [{ registrationId: id }, { _id: id }] },
-        { registrationStatus: 'CANCELLED', updatedAt: new Date() },
-        { new: true }
-      );
-
-      if (!updated) {
-        return res.status(404).json({ success: false, message: 'Registration record not found.' });
+      let updated = null;
+      if (isDBConnected()) {
+        try {
+          updated = await CampRegistration.findOneAndUpdate(
+            { $or: [{ registrationId: id }, { _id: id }] },
+            { registrationStatus: 'CANCELLED', updatedAt: new Date() },
+            { new: true }
+          );
+        } catch (e) {}
       }
+
+      const campId = updated?.campId || req.body.campId;
+      const updatedRsvps = campId ? await campRepository.incrementRsvpsCount(campId, -1) : 0;
+      const updatedCamp = campId ? await campRepository.getCampById(campId) : null;
 
       socketHandler.broadcastAll('CAMP_REGISTRATION_CANCELLED', {
         registrationId: id,
-        campId: updated.campId,
+        campId,
+        rsvpsCount: updatedRsvps,
+        camp: updatedCamp,
         registration: updated
       });
 
-      res.json({ success: true, registration: updated, message: 'Camp registration cancelled.' });
+      res.json({ success: true, registration: updated, rsvpsCount: updatedRsvps, message: 'Camp registration cancelled.' });
     } catch (err) {
       res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // =========================================================================
+  // 11B. BLOOD DONATION CAMPS FULL CRUD API (HOSPITAL, BLOOD BANK & PUBLIC)
+  // =========================================================================
+
+  // GET /api/camps - Get all camps (public or filtered)
+  router.get('/camps', async (req, res) => {
+    try {
+      const { status, organizerType, organizerId, search } = req.query;
+      const filter = {};
+      if (status) {
+        if (status === 'PUBLIC') {
+          filter.status = { $in: ['PUBLISHED', 'UPCOMING'] };
+        } else {
+          filter.status = status;
+        }
+      }
+      if (organizerType && organizerType !== 'ALL') {
+        filter.organizerType = organizerType;
+      }
+      if (organizerId) {
+        filter.organizerId = organizerId;
+      }
+
+      let camps = await campRepository.getAllCamps(filter);
+
+      if (search && search.trim()) {
+        const q = search.trim().toLowerCase();
+        camps = camps.filter(c =>
+          c.title?.toLowerCase().includes(q) ||
+          c.venue?.toLowerCase().includes(q) ||
+          c.city?.toLowerCase().includes(q) ||
+          c.organizer?.toLowerCase().includes(q)
+        );
+      }
+
+      res.json({ success: true, count: camps.length, camps });
+    } catch (err) {
+      console.error('[GET /api/camps error]', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // GET /api/camps/:id - Get single camp details
+  router.get('/camps/:id', async (req, res) => {
+    try {
+      const camp = await campRepository.getCampById(req.params.id);
+      if (!camp) {
+        return res.status(404).json({ success: false, message: 'Camp not found.' });
+      }
+      res.json({ success: true, camp });
+    } catch (err) {
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // POST /api/camps - Create and publish a camp (Hospital or Blood Bank)
+  router.post('/camps', async (req, res) => {
+    try {
+      const campData = req.body;
+      const { title, date, venue, city, organizerId, organizer, organizerType } = campData;
+
+      if (!title || !date || !venue || !city) {
+        return res.status(400).json({
+          success: false,
+          message: 'Please complete all required fields: Camp Name, Date, Venue, and City.'
+        });
+      }
+      if (!organizerId || !organizer) {
+        return res.status(400).json({
+          success: false,
+          message: 'Organizer authentication details are missing. Please sign in.'
+        });
+      }
+
+      const createdCamp = await campRepository.createCamp({
+        ...campData,
+        organizerType: organizerType || 'Hospital',
+        status: campData.status || 'PUBLISHED'
+      });
+
+      // Audit Log
+      const auditEntry = new AuditLog({
+        id: `AUD-${Date.now()}`,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        adminName: organizer,
+        action: 'CAMP_CREATED',
+        targetEntity: `${createdCamp.title} (${createdCamp.campId})`,
+        details: `Organized by ${organizer} (${createdCamp.organizerType}) scheduled for ${createdCamp.date} at ${createdCamp.venue}, ${createdCamp.city}.`,
+        status: 'SUCCESS'
+      });
+      if (isDBConnected()) {
+        try { await auditEntry.save(); } catch (e) {}
+      }
+
+      // Broadcast real-time event to all connected clients (Home Page, Portals, Admin)
+      socketHandler.broadcastAll('CAMP_CREATED', {
+        camp: createdCamp,
+        auditEntry
+      });
+
+      res.status(201).json({
+        success: true,
+        camp: createdCamp,
+        message: `Camp "${createdCamp.title}" published successfully! Real-time sync complete.`
+      });
+    } catch (err) {
+      console.error('[POST /api/camps error]', err);
+      res.status(500).json({ success: false, error: err.message });
+    }
+  });
+
+  // PUT /api/camps/:id - Edit/Update an existing camp
+  router.put('/camps/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body;
+      const user = req.body.user || { id: updateData.organizerId, name: updateData.organizer, role: req.body.role };
+
+      const updatedCamp = await campRepository.updateCamp(id, updateData, user);
+
+      // Broadcast update
+      socketHandler.broadcastAll('CAMP_UPDATED', {
+        campId: id,
+        camp: updatedCamp
+      });
+
+      res.json({
+        success: true,
+        camp: updatedCamp,
+        message: `Camp "${updatedCamp.title}" updated successfully.`
+      });
+    } catch (err) {
+      console.error('[PUT /api/camps error]', err);
+      res.status(err.message?.includes('Unauthorized') ? 403 : 500).json({ success: false, error: err.message });
+    }
+  });
+
+  // POST /api/camps/:id/cancel - Cancel a camp
+  router.post('/camps/:id/cancel', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reason, user } = req.body;
+
+      const cancelledCamp = await campRepository.cancelCamp(id, reason, user);
+
+      // Broadcast cancellation
+      socketHandler.broadcastAll('CAMP_CANCELLED', {
+        campId: id,
+        camp: cancelledCamp,
+        reason: reason || 'Cancelled by Organizer'
+      });
+
+      res.json({
+        success: true,
+        camp: cancelledCamp,
+        message: `Camp "${cancelledCamp.title}" has been cancelled.`
+      });
+    } catch (err) {
+      console.error('[POST /api/camps/:id/cancel error]', err);
+      res.status(err.message?.includes('Unauthorized') ? 403 : 500).json({ success: false, error: err.message });
     }
   });
 

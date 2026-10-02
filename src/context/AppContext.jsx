@@ -268,9 +268,9 @@ export const AppProvider = ({ children }) => {
         return SEED_CHAT_SESSIONS;
     });
     const [activeChatSessionId, setActiveChatSessionId] = useState(null);
-    const [bankNotifications, setBankNotifications] = useState([]);
-    const [camps, setCamps] = useState(MOCK_CAMPS);
-    const [campRegistrations, setCampRegistrations] = useState(() => {
+    const [camps, setCamps] = useState([]);
+    const [isCampsLoading, setIsCampsLoading] = useState(true);
+    const [campsLoadError, setCampsLoadError] = useState(null);
         const saved = localStorage.getItem(CAMPS_REG_STORAGE_KEY);
         if (saved) {
             try { return JSON.parse(saved); } catch (e) {}
@@ -406,6 +406,25 @@ export const AppProvider = ({ children }) => {
     }, [campRegistrations]);
     // Fetch initial backend registrations & camps snapshot on load
     useEffect(() => {
+        setIsCampsLoading(true);
+        fetch('http://localhost:5000/api/camps')
+            .then(res => res.json())
+            .then(data => {
+                if (data.success && Array.isArray(data.camps)) {
+                    setCamps(data.camps);
+                    setCampsLoadError(null);
+                } else {
+                    setCampsLoadError(data.error || 'Failed to fetch camps');
+                }
+            })
+            .catch(err => {
+                console.warn('[AppContext] Failed fetching camps:', err.message);
+                setCampsLoadError(err.message);
+            })
+            .finally(() => {
+                setIsCampsLoading(false);
+            });
+
         fetch('http://localhost:5000/api/camps/registrations')
             .then(res => res.json())
             .then(data => {
@@ -415,6 +434,7 @@ export const AppProvider = ({ children }) => {
             })
             .catch(err => console.warn('[AppContext] Failed fetching initial camp registrations:', err.message));
     }, []);
+
     // Socket.IO Room & Message Event Listeners
     useEffect(() => {
         const handleSocketMessage = (data) => {
@@ -487,6 +507,33 @@ export const AppProvider = ({ children }) => {
                     }, ...prev]);
             }
         };
+
+        // Real-Time Camp Event Listeners
+        const handleCampCreated = (data) => {
+            if (data?.camp) {
+                setCamps(prev => {
+                    const exists = prev.some(c => (c.id === data.camp.id || c.campId === data.camp.campId));
+                    if (exists) return prev.map(c => (c.id === data.camp.id || c.campId === data.camp.campId) ? data.camp : c);
+                    return [data.camp, ...prev];
+                });
+                showToast(`🩸 New Camp Published: "${data.camp.title}" by ${data.camp.organizer}!`);
+            }
+        };
+
+        const handleCampUpdated = (data) => {
+            if (data?.camp) {
+                setCamps(prev => prev.map(c => (c.id === data.camp.id || c.campId === data.camp.campId) ? data.camp : c));
+                showToast(`ℹ️ Camp "${data.camp.title}" details updated.`);
+            }
+        };
+
+        const handleCampCancelled = (data) => {
+            if (data?.campId) {
+                setCamps(prev => prev.map(c => (c.id === data.campId || c.campId === data.campId) ? { ...c, status: 'CANCELLED', cancelReason: data.reason } : c));
+                showToast(`⚠️ Camp "${data?.camp?.title || data.campId}" has been cancelled.`);
+            }
+        };
+
         const handleCampRegistrationCreated = (data) => {
             if (data?.registration) {
                 setCampRegistrations(prev => {
@@ -494,26 +541,37 @@ export const AppProvider = ({ children }) => {
                     return [data.registration, ...prev];
                 });
             }
-            if (data?.camp) {
-                setCamps(prev => prev.map(c => c.id === data.camp.id ? { ...c, rsvpsCount: data.camp.rsvpsCount } : c));
+            if (data?.campId) {
+                setCamps(prev => prev.map(c => (c.id === data.campId || c.campId === data.campId) ? {
+                    ...c,
+                    rsvpsCount: data.rsvpsCount !== undefined ? data.rsvpsCount : ((c.rsvpsCount || 0) + 1)
+                } : c));
+            } else if (data?.camp) {
+                setCamps(prev => prev.map(c => (c.id === data.camp.id || c.campId === data.camp.campId) ? { ...c, rsvpsCount: data.camp.rsvpsCount } : c));
             }
         };
+
         const handleCampRegistrationCancelled = (data) => {
             if (data?.registrationId) {
                 setCampRegistrations(prev => prev.map(r => r.registrationId === data.registrationId ? { ...r, registrationStatus: 'CANCELLED' } : r));
             }
             if (data?.campId && data?.rsvpsCount !== undefined) {
-                setCamps(prev => prev.map(c => c.id === data.campId ? { ...c, rsvpsCount: data.rsvpsCount } : c));
+                setCamps(prev => prev.map(c => (c.id === data.campId || c.campId === data.campId) ? { ...c, rsvpsCount: data.rsvpsCount } : c));
             }
         };
+
         socketManager.on('receiveMessage', handleSocketMessage);
         socketManager.on('typing', handleSocketTyping);
         socketManager.on('userOnline', handleSocketOnline);
         socketManager.on('userOffline', handleSocketOnline);
         socketManager.on('newEmergencyRequest', handleNewEmergencyRequest);
         socketManager.on('adminNotification', handleAdminNotification);
+        socketManager.on('CAMP_CREATED', handleCampCreated);
+        socketManager.on('CAMP_UPDATED', handleCampUpdated);
+        socketManager.on('CAMP_CANCELLED', handleCampCancelled);
         socketManager.on('CAMP_REGISTRATION_CREATED', handleCampRegistrationCreated);
         socketManager.on('CAMP_REGISTRATION_CANCELLED', handleCampRegistrationCancelled);
+
         return () => {
             socketManager.off('receiveMessage', handleSocketMessage);
             socketManager.off('typing', handleSocketTyping);
@@ -521,6 +579,9 @@ export const AppProvider = ({ children }) => {
             socketManager.off('userOffline', handleSocketOnline);
             socketManager.off('newEmergencyRequest', handleNewEmergencyRequest);
             socketManager.off('adminNotification', handleAdminNotification);
+            socketManager.off('CAMP_CREATED', handleCampCreated);
+            socketManager.off('CAMP_UPDATED', handleCampUpdated);
+            socketManager.off('CAMP_CANCELLED', handleCampCancelled);
             socketManager.off('CAMP_REGISTRATION_CREATED', handleCampRegistrationCreated);
             socketManager.off('CAMP_REGISTRATION_CANCELLED', handleCampRegistrationCancelled);
         };
