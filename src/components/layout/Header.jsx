@@ -484,7 +484,7 @@ export const Header = () => {
                             <button
                                 type="button"
                                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                                className="inline-flex items-center gap-1.5 sm:gap-2 p-1 sm:px-2.5 sm:py-1 rounded-full hover:bg-slate-100/80 border border-slate-200/80 transition-all cursor-pointer shadow-2xs min-w-0 max-w-[150px] sm:max-w-[180px] xl:max-w-[210px] shrink-0"
+                                className="inline-flex items-center gap-1.5 sm:gap-2 p-1 sm:px-2.5 sm:py-1 rounded-full bg-white/90 backdrop-blur-sm hover:bg-slate-50/90 border border-slate-200/90 transition-all cursor-pointer shadow-xs min-w-0 max-w-[150px] sm:max-w-[180px] xl:max-w-[210px] shrink-0"
                                 aria-expanded={isProfileDropdownOpen}
                                 aria-haspopup="true"
                                 title={currentUser.name}
@@ -588,13 +588,13 @@ export const Header = () => {
             </div>
 
             {/* Subtle light-blue medical accent bar */}
-            <div className="h-[2px] w-full bg-gradient-to-r from-sky-400/20 via-sky-500/40 to-red-500/30"/>
+            <div className="h-[2.5px] w-full bg-gradient-to-r from-sky-400/40 via-sky-500/60 to-red-500/50"/>
 
             {/* ================================================== */}
             {/* 4. MOBILE / COMPACT MENU DRAWER OVERLAY            */}
             {/* ================================================== */}
             {isMobileMenuOpen && (
-                <div className="lg:hidden bg-white border-b border-sky-100 shadow-xl px-4 py-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="lg:hidden bg-white/95 backdrop-blur-md border-b border-sky-100 shadow-xl px-4 py-4 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
                     
                     {/* User Info Header on Mobile */}
                     {currentUser && (
