@@ -44,6 +44,9 @@ export const LandingPage = () => {
     requests = [],
     donors = [],
     camps = [],
+    isCampsLoading = false,
+    campsLoadError = null,
+    reloadCamps,
     bloodBanks = [],
     notifications = [],
     activityLogs = [],
@@ -64,7 +67,8 @@ export const LandingPage = () => {
   const [isFetchingAnalytics, setIsFetchingAnalytics] = useState(true);
 
   // Filters State
-  const [campFilter, setCampFilter] = useState('ALL'); // ALL, UPCOMING, TODAY, THIS_WEEK
+  const [campFilter, setCampFilter] = useState('ALL'); // ALL, UPCOMING, TODAY
+  const [campOrganizerTypeFilter, setCampOrganizerTypeFilter] = useState('ALL'); // ALL, Hospital, Blood Bank
   const [eventCategoryFilter, setEventCategoryFilter] = useState('ALL'); // ALL, AWARENESS, DRIVES, CAMPS, UPDATES
   const [selectedLocation, setSelectedLocation] = useState('');
   const [selectedCampModal, setSelectedCampModal] = useState(null);
@@ -182,67 +186,39 @@ export const LandingPage = () => {
     });
   }, [bloodBanks, inventoryStockMap, donors]);
 
-  // Sample Published Blood Donation Camps (Requirement 7)
+  // Published/Upcoming Blood Donation Camps directly from Real Database API (Requirements 6, 7 & 15)
   const publishedCamps = useMemo(() => {
-    const list = camps.length > 0 ? camps : [
-      {
-        id: 'camp_01',
-        title: 'Mega Voluntary Blood Donation Drive',
-        organizer: 'Rotary Regional & KIMS Hospital',
-        date: '2026-10-05',
-        time: '09:00 AM - 04:00 PM',
-        venue: 'KLE Technological University Campus',
-        city: 'Hubballi',
-        district: 'Dharwad',
-        expectedDonors: 300,
-        rsvpsCount: 194,
-        status: 'PUBLISHED',
-        category: 'College Drive',
-        amenities: ['Free Health Checkup', 'Refreshments', 'Digital Certificate', 'Donor Badge']
-      },
-      {
-        id: 'camp_02',
-        title: 'Corporate Lifesavers Blood Camp',
-        organizer: 'Infosys Foundation & Red Cross',
-        date: '2026-10-12',
-        time: '10:00 AM - 05:00 PM',
-        venue: 'Infosys IT Park Main Auditorium',
-        city: 'Hubballi',
-        district: 'Dharwad',
-        expectedDonors: 200,
-        rsvpsCount: 142,
-        status: 'PUBLISHED',
-        category: 'Corporate Drive',
-        amenities: ['Hb Testing', 'Snacks & Juice', 'Participation Pass']
-      },
-      {
-        id: 'camp_03',
-        title: 'Civil Hospital Public Awareness Drive',
-        organizer: 'Karnataka State Transfusion Council',
-        date: '2026-10-18',
-        time: '08:30 AM - 02:30 PM',
-        venue: 'District Hospital Grounds',
-        city: 'Dharwad',
-        district: 'Dharwad',
-        expectedDonors: 150,
-        rsvpsCount: 88,
-        status: 'PUBLISHED',
-        category: 'Public Health',
-        amenities: ['Free Blood Group Testing', 'Donor Certificate']
-      }
-    ];
-
-    return list.filter(c => {
-      if (selectedLocation && !c.city?.toLowerCase().includes(selectedLocation.toLowerCase()) && !c.venue?.toLowerCase().includes(selectedLocation.toLowerCase())) {
-        return false;
-      }
-      if (campFilter === 'TODAY') {
-        const todayStr = new Date().toISOString().split('T')[0];
-        return c.date === todayStr;
-      }
-      return true;
+    // Only display camps with PUBLISHED or UPCOMING status
+    let list = (camps || []).filter(c => {
+      const st = (c.status || '').toUpperCase();
+      return st === 'PUBLISHED' || st === 'UPCOMING' || !c.status;
     });
-  }, [camps, selectedLocation, campFilter]);
+
+    // Filter by organizer type (All, Hospital, Blood Bank)
+    if (campOrganizerTypeFilter && campOrganizerTypeFilter !== 'ALL') {
+      list = list.filter(c => (c.organizerType || 'Hospital').toLowerCase() === campOrganizerTypeFilter.toLowerCase());
+    }
+
+    // Filter by location (City / Venue / District / Organizer)
+    if (selectedLocation && selectedLocation.trim()) {
+      const locQ = selectedLocation.trim().toLowerCase();
+      list = list.filter(c =>
+        c.city?.toLowerCase().includes(locQ) ||
+        c.venue?.toLowerCase().includes(locQ) ||
+        c.district?.toLowerCase().includes(locQ) ||
+        c.organizer?.toLowerCase().includes(locQ)
+      );
+    }
+
+    // Filter by date (Today)
+    if (campFilter === 'TODAY') {
+      const todayStr = new Date().toISOString().split('T')[0];
+      list = list.filter(c => c.date === todayStr);
+    }
+
+    // Sort by real database camp date/time: Nearest upcoming date first (Requirement 15)
+    return list.sort((a, b) => new Date(a.date) - new Date(b.date));
+  }, [camps, selectedLocation, campFilter, campOrganizerTypeFilter]);
 
   // Sample Approved Events & Announcements (Requirement 8)
   const publicEvents = useMemo(() => {
@@ -652,74 +628,133 @@ export const LandingPage = () => {
               <Calendar className="w-6 h-6 text-[#2563EB]" />
               <span>Upcoming Blood Donation Camps</span>
             </h2>
-            <p className="text-xs text-slate-500 font-medium mt-0.5">Participate in published voluntary donation drives in your district</p>
+            <p className="text-xs text-slate-500 font-medium mt-0.5">Participate in verified voluntary donation drives organized by regional hospitals and blood banks</p>
           </div>
 
-          {/* Location & Time Filters */}
+          {/* Location, Organizer Type & Time Filters */}
           <div className="flex flex-wrap items-center gap-2">
             <input
               type="text"
-              placeholder="Search city / venue..."
+              placeholder="Search city / venue / district..."
               value={selectedLocation}
               onChange={e => setSelectedLocation(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-[#F5FAFF] border border-[#DCEAF5] text-xs font-medium focus:ring-2 focus:ring-[#2563EB] outline-none"
+              className="px-3 py-1.5 rounded-xl bg-[#F5FAFF] border border-[#DCEAF5] text-xs font-medium focus:ring-2 focus:ring-[#2563EB] outline-none min-w-[180px]"
             />
+
+            <select
+              value={campOrganizerTypeFilter}
+              onChange={e => setCampOrganizerTypeFilter(e.target.value)}
+              className="px-3 py-1.5 rounded-xl bg-[#F5FAFF] border border-[#DCEAF5] text-xs font-semibold focus:ring-2 focus:ring-[#2563EB] outline-none cursor-pointer"
+            >
+              <option value="ALL">All Organizers</option>
+              <option value="Hospital">🏥 Hospital Camps</option>
+              <option value="Blood Bank">🩸 Blood Bank Camps</option>
+            </select>
 
             <select
               value={campFilter}
               onChange={e => setCampFilter(e.target.value)}
-              className="px-3 py-1.5 rounded-xl bg-[#F5FAFF] border border-[#DCEAF5] text-xs font-medium focus:ring-2 focus:ring-[#2563EB] outline-none"
+              className="px-3 py-1.5 rounded-xl bg-[#F5FAFF] border border-[#DCEAF5] text-xs font-semibold focus:ring-2 focus:ring-[#2563EB] outline-none cursor-pointer"
             >
-              <option value="ALL">All Published Drives</option>
+              <option value="ALL">All Upcoming Drives</option>
               <option value="TODAY">Camps Today</option>
-              <option value="UPCOMING">Upcoming Camps</option>
             </select>
           </div>
         </div>
 
-        {publishedCamps.length === 0 ? (
+        {/* Loading State */}
+        {isCampsLoading ? (
+          <div className="p-12 text-center rounded-2xl bg-[#F5FAFF] border border-[#DCEAF5] space-y-3">
+            <div className="w-8 h-8 border-3 border-[#2563EB] border-t-transparent rounded-full animate-spin mx-auto"/>
+            <strong className="block text-[#16324F] font-bold text-sm">Loading upcoming blood donation camps...</strong>
+            <p className="text-xs text-slate-500 font-medium">Fetching real-time camp schedules from hospital & blood bank network...</p>
+          </div>
+        ) : campsLoadError ? (
+          <div className="p-8 text-center rounded-2xl bg-red-50 border border-red-200 text-red-700 space-y-3">
+            <strong className="block font-bold text-sm">Unable to load upcoming blood donation camps.</strong>
+            <p className="text-xs text-red-600">{campsLoadError}</p>
+            <button
+              onClick={() => reloadCamps?.()}
+              className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl text-xs cursor-pointer shadow-xs"
+            >
+              Retry
+            </button>
+          </div>
+        ) : publishedCamps.length === 0 ? (
           <div className="p-8 text-center rounded-2xl bg-[#F5FAFF] border border-dashed border-[#DCEAF5] text-slate-500 space-y-2">
             <Calendar className="w-8 h-8 text-slate-400 mx-auto" />
-            <strong className="block text-[#16324F] font-bold">No upcoming blood donation camps are currently published.</strong>
-            <p className="text-xs text-slate-500">Check back later or register as an individual donor to receive direct alerts.</p>
+            <strong className="block text-[#16324F] font-bold">No upcoming blood donation camps at the moment.</strong>
+            <p className="text-xs text-slate-500">Please check again soon or filter by a different city or organizer type.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {publishedCamps.map(camp => (
-              <div key={camp.id} className="p-5 rounded-2xl bg-white border border-[#DCEAF5] shadow-xs hover:border-[#2563EB] hover:shadow-md transition-all flex flex-col justify-between space-y-4 group">
-                <div className="space-y-2.5">
+              <div key={camp.id || camp.campId} className="p-5 rounded-2xl bg-white border border-[#DCEAF5] shadow-xs hover:border-[#2563EB] hover:shadow-md transition-all flex flex-col justify-between space-y-4 group">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-[#E8F4FF] text-[#2563EB] text-[10px] font-black border border-[#BFDBFE]">
-                      {camp.category || 'Voluntary Camp'}
-                    </span>
-                    <span className="text-[10px] font-mono text-emerald-600 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      ✓ Published
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-base">🩸</span>
+                      <span className="font-extrabold text-[#2563EB] text-[11px] uppercase tracking-wider">
+                        Blood Donation Camp
+                      </span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase ${
+                      (camp.organizerType || '').toLowerCase() === 'blood bank'
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                        : 'bg-sky-50 text-sky-700 border-sky-200'
+                    }`}>
+                      {camp.organizerType || 'Hospital'}
                     </span>
                   </div>
 
-                  <h3 className="font-black text-[#16324F] text-base group-hover:text-[#2563EB] transition-colors leading-tight">
-                    {camp.title}
-                  </h3>
+                  <div>
+                    <h3 className="font-black text-[#16324F] text-base group-hover:text-[#2563EB] transition-colors leading-tight">
+                      {camp.title}
+                    </h3>
+                    <p className="text-xs text-slate-600 font-medium mt-1">
+                      Organized by: <strong className="text-slate-900">{camp.organizer}</strong>
+                    </p>
+                    <p className="text-[11px] text-slate-500 font-medium">
+                      Organizer Type: <strong className="text-slate-700 font-bold">{camp.organizerType || 'Hospital'}</strong>
+                    </p>
+                  </div>
 
-                  <p className="text-xs text-slate-600 font-medium">
-                    Organizer: <strong>{camp.organizer}</strong>
-                  </p>
-
-                  <div className="space-y-1 text-xs text-slate-500 pt-1">
+                  <div className="space-y-1.5 text-xs text-slate-600 pt-2 border-t border-slate-100">
                     <div className="flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5 text-[#2563EB]" />
-                      <span>{camp.date} ({camp.time})</span>
+                      <Calendar className="w-3.5 h-3.5 text-[#2563EB] shrink-0" />
+                      <span className="font-bold text-slate-800">{camp.date}</span>
+                      <span className="text-slate-400">|</span>
+                      <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <span>{camp.time || `${camp.startTime || '09:00 AM'} - ${camp.endTime || '04:00 PM'}`}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-[#EF4444]" />
-                      <span className="truncate">{camp.venue}, {camp.city}</span>
+                      <MapPin className="w-3.5 h-3.5 text-[#EF4444] shrink-0" />
+                      <span className="truncate">{camp.venue}{camp.city ? `, ${camp.city}` : ''}{camp.state ? `, ${camp.state}` : ''}</span>
+                    </div>
+                  </div>
+
+                  {/* Real-time Registered vs Expected Donors */}
+                  <div className="pt-2 border-t border-slate-100 space-y-1 text-xs">
+                    <div className="flex items-center justify-between font-mono">
+                      <span className="text-slate-600 font-bold">
+                        Registered Donors: <strong className="text-sky-700 font-extrabold">{camp.rsvpsCount || 0}</strong>
+                      </span>
+                      <span className="text-slate-500">
+                        Expected: <strong className="text-slate-800 font-bold">{camp.expectedDonors || 100}</strong>
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.min(100, Math.round(((camp.rsvpsCount || 0) / (camp.expectedDonors || 100)) * 100))}%` }}
+                      />
                     </div>
                   </div>
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-2">
                   <button
-                    onClick={() => setParticipatingCampModal(camp)}
+                    onClick={() => setSelectedCampModal(camp)}
                     className="flex-1 py-2 rounded-xl bg-[#F5FAFF] hover:bg-[#E8F4FF] text-[#2563EB] font-extrabold text-xs border border-[#BFDBFE] transition-colors cursor-pointer"
                   >
                     View Details
@@ -1114,15 +1149,57 @@ export const LandingPage = () => {
               <button onClick={() => setSelectedCampModal(null)} className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 font-bold">✕</button>
             </div>
 
-            <div className="space-y-2 text-slate-700">
-              <p>Organizer: <strong>{selectedCampModal.organizer}</strong></p>
-              <p>Date & Time: <strong>{selectedCampModal.date} ({selectedCampModal.time})</strong></p>
-              <p>Venue: <strong>{selectedCampModal.venue}, {selectedCampModal.city}</strong></p>
-              <p>Expected Donors: <strong>{selectedCampModal.expectedDonors}</strong> | RSVPs: <strong>{selectedCampModal.rsvpsCount}</strong></p>
-              
+            <div className="space-y-3 text-slate-700">
+              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                <span className="text-slate-500">Organizer: <strong className="text-slate-900">{selectedCampModal.organizer}</strong></span>
+                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-bold text-[10px] border border-blue-200">
+                  {selectedCampModal.organizerType || 'Hospital'}
+                </span>
+              </div>
+
+              {selectedCampModal.description && (
+                <p className="text-slate-600 leading-relaxed">{selectedCampModal.description}</p>
+              )}
+
+              <div className="grid grid-cols-2 gap-2 p-3 rounded-xl bg-slate-50 border border-slate-100 font-mono text-[11px]">
+                <div>
+                  <span className="text-slate-400 block font-sans text-[10px]">Date & Time</span>
+                  <strong>{selectedCampModal.date}</strong>
+                  <div className="text-slate-500 text-[10px]">{selectedCampModal.time}</div>
+                </div>
+                <div>
+                  <span className="text-slate-400 block font-sans text-[10px]">Location</span>
+                  <strong className="truncate block">{selectedCampModal.venue}</strong>
+                  <div className="text-slate-500 text-[10px]">{selectedCampModal.city}, {selectedCampModal.state || 'Karnataka'}</div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between p-2.5 rounded-xl bg-sky-50 border border-sky-100 text-sky-900 font-bold">
+                <span>Registered Donors: <strong>{selectedCampModal.rsvpsCount || 0}</strong></span>
+                <span>Expected: <strong>{selectedCampModal.expectedDonors || 100}</strong></span>
+              </div>
+
+              {selectedCampModal.targetGroups && selectedCampModal.targetGroups.length > 0 && (
+                <div>
+                  <span className="font-bold text-[#16324F] block mb-1">Target Blood Groups:</span>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedCampModal.targetGroups.map(grp => (
+                      <span key={grp} className="px-2 py-0.5 rounded-md bg-red-50 text-red-700 font-black text-[10px] border border-red-200">{grp}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {selectedCampModal.eligibilityInfo && (
+                <div className="text-[11px] text-slate-600 bg-amber-50/70 p-2.5 rounded-xl border border-amber-200/60">
+                  <span className="font-bold text-amber-900 block mb-0.5">Eligibility Information:</span>
+                  {selectedCampModal.eligibilityInfo}
+                </div>
+              )}
+
               {selectedCampModal.amenities && (
-                <div className="pt-2">
-                  <span className="font-bold text-[#16324F] block mb-1">Camp Amenities:</span>
+                <div className="pt-1">
+                  <span className="font-bold text-[#16324F] block mb-1">Amenities & Support:</span>
                   <div className="flex flex-wrap gap-1.5">
                     {selectedCampModal.amenities.map(a => (
                       <span key={a} className="px-2 py-0.5 rounded-md bg-[#E8F4FF] text-[#2563EB] font-bold text-[10px] border border-[#BFDBFE]">{a}</span>
@@ -1132,9 +1209,19 @@ export const LandingPage = () => {
               )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-2">
-              <button onClick={() => setSelectedCampModal(null)} className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 font-bold">Close</button>
-              <Link to={getDonateBloodPath()} className="px-5 py-2 rounded-xl bg-[#2563EB] text-white font-extrabold shadow-md">Register / Participate →</Link>
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+              <button onClick={() => setSelectedCampModal(null)} className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold cursor-pointer">
+                Close
+              </button>
+              <button
+                onClick={() => {
+                  setParticipatingCampModal(selectedCampModal);
+                  setSelectedCampModal(null);
+                }}
+                className="px-5 py-2 rounded-xl bg-[#2563EB] hover:bg-blue-700 text-white font-extrabold shadow-md cursor-pointer"
+              >
+                Participate in Camp →
+              </button>
             </div>
           </div>
         </div>

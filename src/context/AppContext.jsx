@@ -1767,10 +1767,96 @@ export const AppProvider = ({ children }) => {
             if (campId) {
                 setCamps(prev => prev.map(c => c.id === campId ? { ...c, rsvpsCount: Math.max(0, (c.rsvpsCount || 1) - 1) } : c));
             }
-            showToast(`Registration ${registrationId} cancelled.`);
-            return { success: true };
+    const reloadCamps = async () => {
+        setIsCampsLoading(true);
+        try {
+            const res = await fetch('http://localhost:5000/api/camps');
+            const data = await res.json();
+            if (data.success && Array.isArray(data.camps)) {
+                setCamps(data.camps);
+                setCampsLoadError(null);
+                return data.camps;
+            } else {
+                setCampsLoadError(data.error || 'Failed to reload camps');
+            }
+        } catch (err) {
+            console.warn('[AppContext] reloadCamps error:', err);
+            setCampsLoadError(err.message);
+        } finally {
+            setIsCampsLoading(false);
+        }
+        return camps;
+    };
+
+    const createCamp = async (campData) => {
+        try {
+            const res = await fetch('http://localhost:5000/api/camps', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(campData)
+            });
+            const data = await res.json();
+            if (data.success && data.camp) {
+                setCamps(prev => {
+                    const exists = prev.some(c => (c.id === data.camp.id || c.campId === data.camp.campId));
+                    if (exists) return prev.map(c => (c.id === data.camp.id || c.campId === data.camp.campId) ? data.camp : c);
+                    return [data.camp, ...prev];
+                });
+                showToast(`🎉 Published: "${data.camp.title}"!`);
+                return { success: true, camp: data.camp, message: data.message };
+            } else {
+                showToast(data.message || 'Failed to publish camp.');
+                return { success: false, message: data.message };
+            }
+        } catch (err) {
+            console.error('[AppContext] createCamp error:', err);
+            showToast('Network error while publishing camp.');
+            return { success: false, message: 'Server connection error while publishing camp.' };
         }
     };
+
+    const updateCamp = async (campId, updateData, user) => {
+        try {
+            const res = await fetch(`http://localhost:5000/api/camps/${campId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...updateData, user })
+            });
+            const data = await res.json();
+            if (data.success && data.camp) {
+                setCamps(prev => prev.map(c => (c.id === campId || c.campId === campId) ? data.camp : c));
+                showToast(`Camp details updated successfully.`);
+                return { success: true, camp: data.camp };
+            } else {
+                showToast(data.error || data.message || 'Failed to update camp.');
+                return { success: false, message: data.error || data.message };
+            }
+        } catch (err) {
+            return { success: false, message: err.message };
+        }
+    };
+
+    const cancelCamp = async (campId, reason, user) => {
+        try {
+            const res = await fetch(`http://localhost:5000/api/camps/${campId}/cancel`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ reason, user })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setCamps(prev => prev.map(c => (c.id === campId || c.campId === campId) ? { ...c, status: 'CANCELLED', cancelReason: reason } : c));
+                showToast(`Camp cancelled.`);
+                return { success: true, camp: data.camp };
+            } else {
+                showToast(data.error || data.message || 'Failed to cancel camp.');
+                return { success: false, message: data.error || data.message };
+            }
+        } catch (err) {
+            return { success: false, message: err.message };
+        }
+    };
+
     const toggleCircleJoin = (circleId) => {
         setGroupCircles(prev => prev.map(c => {
             if (c.id === circleId) {
@@ -1832,6 +1918,13 @@ export const AppProvider = ({ children }) => {
             bloodBanks,
             updateInventoryStock,
             camps,
+            setCamps,
+            isCampsLoading,
+            campsLoadError,
+            createCamp,
+            updateCamp,
+            cancelCamp,
+            reloadCamps,
             campRegistrations,
             registerForCamp,
             cancelCampRegistration,
