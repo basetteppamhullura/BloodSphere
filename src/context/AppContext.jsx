@@ -271,6 +271,7 @@ export const AppProvider = ({ children }) => {
     const [camps, setCamps] = useState([]);
     const [isCampsLoading, setIsCampsLoading] = useState(true);
     const [campsLoadError, setCampsLoadError] = useState(null);
+    const [campRegistrations, setCampRegistrations] = useState(() => {
         const saved = localStorage.getItem(CAMPS_REG_STORAGE_KEY);
         if (saved) {
             try { return JSON.parse(saved); } catch (e) {}
