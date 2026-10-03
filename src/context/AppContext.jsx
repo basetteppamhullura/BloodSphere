@@ -1768,6 +1768,10 @@ export const AppProvider = ({ children }) => {
             if (campId) {
                 setCamps(prev => prev.map(c => c.id === campId ? { ...c, rsvpsCount: Math.max(0, (c.rsvpsCount || 1) - 1) } : c));
             }
+            showToast(`Registration ${registrationId} cancelled.`);
+            return { success: true };
+        }
+    };
     const reloadCamps = async () => {
         setIsCampsLoading(true);
         try {
@@ -1888,7 +1892,7 @@ export const AppProvider = ({ children }) => {
             inventoryStockMap,
             bloodUnitsList,
             activityLogs,
-            bankNotifications,
+            bankNotifications: notifications,
             reserveBloodBankUnits,
             issueBloodBankUnits,
             rejectBloodBankRequest,
