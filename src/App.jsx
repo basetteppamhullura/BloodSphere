@@ -40,6 +40,7 @@ import { HospitalInterCitySupply } from './components/hospital/HospitalInterCity
 import { HospitalBloodUnitDetails } from './components/hospital/HospitalBloodUnitDetails';
 import { BloodBankPortalDesk } from './components/bloodbank/BloodBankPortalDesk';
 import { AdminControlCenterDesk } from './components/admin/AdminControlCenterDesk';
+import { BloodCampPortalPage } from './pages/BloodCampPortalPage';
 export default function App() {
     return (<ThemeProvider>
       <AuthProvider>
@@ -105,6 +106,8 @@ export default function App() {
                   </RoleProtectedRoute>}>
                 <Route index element={<Navigate to="/hospital/home" replace/>}/>
                 <Route path="home" element={<HospitalHomePage />}/>
+                <Route path="camps" element={<BloodCampPortalPage portalType="Hospital" />}/>
+                <Route path="blood-camp" element={<Navigate to="/hospital/camps" replace />}/>
                 <Route path="dashboard" element={<HospitalMonitorDesk initialTab="monitor"/>}/>
                 <Route path="requests" element={<HospitalEmergencyBoard />}/>
                 <Route path="blood-availability" element={<HospitalBloodStockFinder />}/>
@@ -123,6 +126,8 @@ export default function App() {
                   </RoleProtectedRoute>}>
                 <Route index element={<Navigate to="/bloodbank/home" replace/>}/>
                 <Route path="home" element={<BloodBankHomePage />}/>
+                <Route path="camps" element={<BloodCampPortalPage portalType="Blood Bank" />}/>
+                <Route path="blood-camp" element={<Navigate to="/bloodbank/camps" replace />}/>
                 <Route path="dashboard" element={<BloodBankPortalDesk />}/>
                 <Route path="requests" element={<BloodBankPortalDesk />}/>
                 <Route path="requests/:requestId" element={<BloodBankPortalDesk />}/>
