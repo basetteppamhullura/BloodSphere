@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Droplet, Package, Boxes, FileText, AlertTriangle, History, BarChart3, Sun, Moon, ChevronRight, Send, FlaskConical, Thermometer, Settings } from 'lucide-react';
+import { Droplet, Package, Boxes, FileText, AlertTriangle, History, BarChart3, Sun, Moon, ChevronRight, Send, FlaskConical, Thermometer, Settings, Calendar } from 'lucide-react';
 export const BloodBankSidebar = () => {
     const { requests, bloodUnitsList, inventoryStockMap, notifications } = useApp();
     const { isDarkMode, toggleTheme } = useTheme();
@@ -24,6 +24,7 @@ export const BloodBankSidebar = () => {
     }, 0);
     const navItems = [
         { to: '/bloodbank/home', label: 'Home / Operations', icon: Droplet },
+        { to: '/bloodbank/camps', label: '🩸 Blood Camp', icon: Calendar },
         { to: '/bloodbank/requests', label: 'Requester Queue', icon: Package, badge: directReqCount },
         { to: '/bloodbank/hospital-requests', label: 'Hospital Requests', icon: FileText, badge: hospitalReqCount },
         { to: '/bloodbank/bloodbank-requests', label: 'Blood Bank Requests', icon: Boxes, badge: bloodBankReqCount },

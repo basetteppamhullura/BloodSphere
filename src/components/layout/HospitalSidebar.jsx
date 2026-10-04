@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Building2, Home, LayoutDashboard, AlertTriangle, Search, Heart, FileText, Sun, Moon, ChevronRight, Boxes, Activity, Landmark } from 'lucide-react';
+import { Building2, Home, LayoutDashboard, AlertTriangle, Search, Heart, FileText, Sun, Moon, ChevronRight, Boxes, Activity, Landmark, Calendar } from 'lucide-react';
 export const HospitalSidebar = () => {
     const { requests, notifications, isMobileSidebarOpen, setIsMobileSidebarOpen } = useApp();
     const { isDarkMode, toggleTheme } = useTheme();
@@ -14,6 +14,7 @@ export const HospitalSidebar = () => {
             title: 'HOSPITAL OPERATIONS',
             items: [
                 { to: '/hospital/home', label: 'Home / Operations', icon: Home },
+                { to: '/hospital/camps', label: '🩸 Blood Camp', icon: Calendar },
                 { to: '/hospital/requests', label: 'Incoming Blood Requests', icon: AlertTriangle, badge: pendingRequestsCount || criticalCount },
                 { to: '/hospital/dashboard', label: 'Blood Stock Monitor', icon: LayoutDashboard },
                 { to: '/hospital/unit-details', label: 'Blood Unit Tracking', icon: Boxes }
