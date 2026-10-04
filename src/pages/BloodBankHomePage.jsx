@@ -69,6 +69,10 @@ export const BloodBankHomePage = () => {
               <span>Live Inventory Matrix</span>
             </button>
 
+            <button onClick={() => navigate('/bloodbank/camps')} className="px-4 py-3 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs border border-white/30 flex items-center gap-1.5 transition-all cursor-pointer">
+              <span>🩸 Blood Camp</span>
+            </button>
+
             <button onClick={handleLogout} className="px-3.5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all cursor-pointer" title="Logout">
               <LogOut className="w-4 h-4"/>
             </button>

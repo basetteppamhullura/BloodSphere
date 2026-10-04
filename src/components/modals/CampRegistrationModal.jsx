@@ -43,7 +43,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
 
   // Check if current user or saved session is already registered
   const existingUserReg = initialViewRegistration || campRegistrations?.find(r => 
-    r.campId === camp?.id && (
+    (r.campId === camp?.id || r.campId === camp?.campId) && (
       (currentUser?.id && r.participantUserId === currentUser.id) ||
       (currentUser?.phone && r.phoneNumber === currentUser.phone)
     ) && r.registrationStatus !== 'CANCELLED'
@@ -150,7 +150,7 @@ export const CampRegistrationModal = ({ camp, onClose, initialViewRegistration =
     setIsSubmitting(true);
 
     const payload = {
-      campId: camp?.id,
+      campId: camp?.id || camp?.campId,
       campTitle: camp?.title || camp?.name || 'Blood Donation Camp',
       campDate: camp?.date || '15 Oct 2026',
       campTime: camp?.time || '9:00 AM - 4:00 PM',

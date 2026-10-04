@@ -216,6 +216,15 @@ export const LandingPage = () => {
       list = list.filter(c => c.date === todayStr);
     }
 
+    // Deduplicate by ID to prevent duplicate camp cards when real-time events arrive
+    const seen = new Set();
+    list = list.filter(c => {
+      const id = c.id || c.campId;
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+
     // Sort by real database camp date/time: Nearest upcoming date first (Requirement 15)
     return list.sort((a, b) => new Date(a.date) - new Date(b.date));
   }, [camps, selectedLocation, campFilter, campOrganizerTypeFilter]);
@@ -698,13 +707,18 @@ export const LandingPage = () => {
                         Blood Donation Camp
                       </span>
                     </div>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase ${
-                      (camp.organizerType || '').toLowerCase() === 'blood bank'
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                        : 'bg-sky-50 text-sky-700 border-sky-200'
-                    }`}>
-                      {camp.organizerType || 'Hospital'}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black border uppercase ${
+                        (camp.organizerType || '').toLowerCase() === 'blood bank'
+                          ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                          : 'bg-sky-50 text-sky-700 border-sky-200'
+                      }`}>
+                        {camp.organizerType || 'Hospital'}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-full text-[10px] font-black border uppercase bg-emerald-50 text-emerald-700 border-emerald-200">
+                        {camp.status || 'PUBLISHED'}
+                      </span>
+                    </div>
                   </div>
 
                   <div>
@@ -717,6 +731,11 @@ export const LandingPage = () => {
                     <p className="text-[11px] text-slate-500 font-medium">
                       Organizer Type: <strong className="text-slate-700 font-bold">{camp.organizerType || 'Hospital'}</strong>
                     </p>
+                    {camp.description && (
+                      <p className="text-xs text-slate-600 line-clamp-2 mt-1.5 leading-relaxed">
+                        {camp.description}
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-1.5 text-xs text-slate-600 pt-2 border-t border-slate-100">

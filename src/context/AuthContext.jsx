@@ -64,7 +64,7 @@ const ROLE_PERMISSIONS = {
     donor: [...PUBLIC_LOGIN_PAGES, 'dashboard', 'emergency-requests', 'rare-registry', 'group-circles', 'donor-search', 'leaderboard', 'profile'],
     requester: [...PUBLIC_LOGIN_PAGES, 'dashboard', 'emergency-requests', 'rare-registry', 'donor-search', 'blood-banks'],
     hospital: [...PUBLIC_LOGIN_PAGES, 'dashboard', 'emergency-requests', 'blood-bridge', 'blood-banks', 'camps'],
-    bloodbank: [...PUBLIC_LOGIN_PAGES, 'dashboard', 'blood-banks', 'blood-bridge'],
+    bloodbank: [...PUBLIC_LOGIN_PAGES, 'dashboard', 'blood-banks', 'blood-bridge', 'camps'],
     admin: [...PUBLIC_LOGIN_PAGES, 'dashboard', 'emergency-requests', 'rare-registry', 'group-circles', 'blood-bridge', 'donor-search', 'blood-banks', 'camps', 'leaderboard', 'profile']
 };
 const AuthContext = createContext(undefined);
