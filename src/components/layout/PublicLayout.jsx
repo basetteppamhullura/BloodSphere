@@ -7,9 +7,16 @@ import { MobileNav } from './MobileNav';
 import { EmergencyPostModal } from '../modals/EmergencyPostModal';
 import { EmergencyChatModal } from '../chat/EmergencyChatModal';
 import { WaterBubbleBackground } from '../common/WaterBubbleBackground';
+import publicBg from '../../assets/bloodnet-header-bg.jpg';
 export const PublicLayout = () => {
     const { toastMessage } = useApp();
-    return (<div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-red-500 selection:text-white relative water-bubble-bg">
+    return (<div className="min-h-screen text-slate-900 flex flex-col font-sans selection:bg-red-500 selection:text-white relative water-bubble-bg">
+      {/* Public Home Page Background Photo */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <img src={publicBg} alt="" className="w-full h-full object-cover object-center" aria-hidden="true"/>
+        {/* Light overlay for home page readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-slate-50/85 to-white/95"/>
+      </div>
       <WaterBubbleBackground />
       {toastMessage && (<div className="fixed bottom-20 sm:bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-white text-xs font-extrabold shadow-2xl animate-in slide-in-from-bottom-5 flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"/>
