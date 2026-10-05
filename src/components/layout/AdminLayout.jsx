@@ -8,9 +8,16 @@ import { MobileNav } from './MobileNav';
 import { EmergencyPostModal } from '../modals/EmergencyPostModal';
 import { EmergencyChatModal } from '../chat/EmergencyChatModal';
 import { WaterBubbleBackground } from '../common/WaterBubbleBackground';
+import adminBg from '../../assets/admin_portal_bg.jpg';
 export const AdminLayout = () => {
     const { toastMessage } = useApp();
-    return (<div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-amber-500 selection:text-white relative water-bubble-bg">
+    return (<div className="min-h-screen text-slate-900 flex flex-col font-sans selection:bg-amber-500 selection:text-white relative water-bubble-bg">
+      {/* Admin Portal Background Photo */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <img src={adminBg} alt="" className="w-full h-full object-cover object-center" aria-hidden="true"/>
+        {/* Light overlay for readability while preserving the dark tech look */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-100/92 via-slate-50/90 to-white/95"/>
+      </div>
       <WaterBubbleBackground />
       {/* Toast Notification Container */}
       {toastMessage && (<div className="fixed bottom-20 sm:bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-white text-xs font-extrabold shadow-2xl animate-in slide-in-from-bottom-5 flex items-center gap-2">
