@@ -8,15 +8,22 @@ import { MobileNav } from './MobileNav';
 import { EmergencyPostModal } from '../modals/EmergencyPostModal';
 import { EmergencyChatModal } from '../chat/EmergencyChatModal';
 import { WaterBubbleBackground } from '../common/WaterBubbleBackground';
+import hospitalBg from '../../assets/hospital_portal_bg.jpg';
 export const HospitalLayout = () => {
     const { toastMessage } = useApp();
-    return (<div className="min-h-screen bg-gradient-to-b from-[#E0F2FE] via-[#F0F9FF] to-white text-[#0D2B45] flex flex-col font-sans selection:bg-[#0EA5E9] selection:text-white relative overflow-x-hidden">
+    return (<div className="min-h-screen text-[#0D2B45] flex flex-col font-sans selection:bg-[#0EA5E9] selection:text-white relative overflow-x-hidden">
+      {/* Hospital Portal Background Photo */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <img src={hospitalBg} alt="" className="w-full h-full object-cover object-center" aria-hidden="true"/>
+        {/* Soft blue-white overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-[#EBF8FF]/92 via-[#F0F9FF]/88 to-white/95"/>
+      </div>
       <WaterBubbleBackground />
 
       {/* Sky Blue Theme Background Decorative Orbs */}
-      <div className="pointer-events-none absolute -top-24 left-1/4 w-[500px] h-[500px] bg-[#0EA5E9]/15 rounded-full blur-3xl opacity-70 z-0"/>
-      <div className="pointer-events-none absolute top-1/3 -right-20 w-[450px] h-[450px] bg-[#0284C7]/15 rounded-full blur-3xl opacity-60 z-0"/>
-      <div className="pointer-events-none absolute bottom-1/4 -left-20 w-[400px] h-[400px] bg-[#38BDF8]/15 rounded-full blur-3xl opacity-50 z-0"/>
+      <div className="pointer-events-none absolute -top-24 left-1/4 w-[500px] h-[500px] bg-[#0EA5E9]/10 rounded-full blur-3xl opacity-60 z-0"/>
+      <div className="pointer-events-none absolute top-1/3 -right-20 w-[450px] h-[450px] bg-[#0284C7]/10 rounded-full blur-3xl opacity-50 z-0"/>
+      <div className="pointer-events-none absolute bottom-1/4 -left-20 w-[400px] h-[400px] bg-[#38BDF8]/10 rounded-full blur-3xl opacity-40 z-0"/>
 
       {/* Toast Notification Container */}
       {toastMessage && (<div className="fixed bottom-20 sm:bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-white text-xs font-extrabold shadow-2xl animate-in slide-in-from-bottom-5 flex items-center gap-2">

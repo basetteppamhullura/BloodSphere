@@ -8,9 +8,16 @@ import { MobileNav } from './MobileNav';
 import { EmergencyPostModal } from '../modals/EmergencyPostModal';
 import { EmergencyChatModal } from '../chat/EmergencyChatModal';
 import { WaterBubbleBackground } from '../common/WaterBubbleBackground';
+import bloodBankBg from '../../assets/bloodbank_portal_bg.jpg';
 export const BloodBankLayout = () => {
     const { toastMessage } = useApp();
-    return (<div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white relative water-bubble-bg">
+    return (<div className="min-h-screen text-slate-900 flex flex-col font-sans selection:bg-emerald-500 selection:text-white relative water-bubble-bg">
+      {/* Blood Bank Portal Background Photo */}
+      <div className="fixed inset-0 z-0 pointer-events-none">
+        <img src={bloodBankBg} alt="" className="w-full h-full object-cover object-center" aria-hidden="true"/>
+        {/* Emerald-teal overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-50/93 via-emerald-50/88 to-white/96"/>
+      </div>
       <WaterBubbleBackground />
       {/* Toast Notification Container */}
       {toastMessage && (<div className="fixed bottom-20 sm:bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-white text-xs font-extrabold shadow-2xl animate-in slide-in-from-bottom-5 flex items-center gap-2">
