@@ -6,32 +6,33 @@ import { Footer } from './Footer';
 import { MobileNav } from './MobileNav';
 import { EmergencyPostModal } from '../modals/EmergencyPostModal';
 import { EmergencyChatModal } from '../chat/EmergencyChatModal';
-import { WaterBubbleBackground } from '../common/WaterBubbleBackground';
-import publicBg from '../../assets/bloodnet-header-bg.jpg';
+import { SkyWaterBackground } from '../common/SkyWaterBackground';
+
 export const PublicLayout = () => {
     const { toastMessage } = useApp();
-    return (<div className="min-h-screen text-slate-900 flex flex-col font-sans selection:bg-red-500 selection:text-white relative water-bubble-bg">
-      {/* Public Home Page Background Photo */}
-      <div className="fixed inset-0 z-0 pointer-events-none">
-        <img src={publicBg} alt="" className="w-full h-full object-cover object-center" aria-hidden="true"/>
-        {/* Light overlay for home page readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-white/90 via-slate-50/85 to-white/95"/>
-      </div>
-      <WaterBubbleBackground />
-      {toastMessage && (<div className="fixed bottom-20 sm:bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-white text-xs font-extrabold shadow-2xl animate-in slide-in-from-bottom-5 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"/>
-          <span>{toastMessage}</span>
-        </div>)}
+    return (
+        <div className="min-h-screen text-slate-900 flex flex-col font-sans selection:bg-red-500 selection:text-white relative overflow-x-hidden water-bubble-bg">
+          {/* Sky + Water unified theme background */}
+          <SkyWaterBackground variant="default" />
 
-      <Header />
+          {/* Toast Notification */}
+          {toastMessage && (
+            <div className="fixed bottom-20 sm:bottom-6 right-6 z-50 px-4 py-3 rounded-2xl bg-slate-900 border border-slate-700 text-white text-xs font-extrabold shadow-2xl animate-in slide-in-from-bottom-5 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-400 animate-ping"/>
+              <span>{toastMessage}</span>
+            </div>
+          )}
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
-        <Outlet />
-      </main>
+          <Header />
 
-      <EmergencyPostModal />
-      <EmergencyChatModal />
-      <Footer />
-      <MobileNav />
-    </div>);
+          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+            <Outlet />
+          </main>
+
+          <EmergencyPostModal />
+          <EmergencyChatModal />
+          <Footer />
+          <MobileNav />
+        </div>
+    );
 };
