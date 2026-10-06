@@ -89,15 +89,71 @@
 /* Water Bubble Gradient Backdrop Utility */
 .water-bubble-bg {
   position: relative;
-  background: radial-gradient(circle at 10% 20%, #eaf7ff 0%, #f4f9fd 90%);
+  background: linear-gradient(160deg, #EAF7FF 0%, #DDF4FF 25%, #CFF3FA 55%, #F5FCFF 80%, #FFFFFF 100%);
 }
 
 .water-bubble-card {
-  background: #ffffff;
-  border: 1px solid #e0f2fe;
-  box-shadow: 0 4px 20px rgba(2, 132, 199, 0.05);
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #ddf4ff;
+  box-shadow: 0 4px 20px rgba(2, 132, 199, 0.06);
   border-radius: 1.5rem;
 }
+
+/* =========================================================
+   SKY + WATER THEME — Keyframe Animations
+   ========================================================= */
+
+/* Wave gentle drift */
+@keyframes waveDrift {
+  0%   { transform: translateX(0) scaleY(1); }
+  50%  { transform: translateX(-3%) scaleY(1.04); }
+  100% { transform: translateX(0) scaleY(1); }
+}
+@keyframes waveDrift2 {
+  0%   { transform: translateX(0) scaleY(1); }
+  50%  { transform: translateX(3%) scaleY(0.97); }
+  100% { transform: translateX(0) scaleY(1); }
+}
+
+/* Cloud float */
+@keyframes cloudFloat {
+  0%   { transform: translateX(0); opacity: 0.55; }
+  50%  { transform: translateX(18px); opacity: 0.7; }
+  100% { transform: translateX(0); opacity: 0.55; }
+}
+@keyframes cloudFloat2 {
+  0%   { transform: translateX(0); opacity: 0.4; }
+  50%  { transform: translateX(-14px); opacity: 0.58; }
+  100% { transform: translateX(0); opacity: 0.4; }
+}
+
+/* Shimmer ripple */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Drop pulse */
+@keyframes dropPulse {
+  0%, 100% { transform: scale(1) translateY(0); opacity: 0.18; }
+  50%       { transform: scale(1.12) translateY(-5px); opacity: 0.32; }
+}
+
+/* Sky orb drift */
+@keyframes orbDrift {
+  0%   { transform: translate(0, 0) scale(1); opacity: 0.55; }
+  33%  { transform: translate(12px, -8px) scale(1.05); opacity: 0.65; }
+  66%  { transform: translate(-8px, 6px) scale(0.97); opacity: 0.5; }
+  100% { transform: translate(0, 0) scale(1); opacity: 0.55; }
+}
+
+/* Utility animation classes */
+.animate-wave-drift  { animation: waveDrift 9s ease-in-out infinite; }
+.animate-wave-drift2 { animation: waveDrift2 12s ease-in-out infinite; }
+.animate-cloud-float  { animation: cloudFloat 16s ease-in-out infinite; }
+.animate-cloud-float2 { animation: cloudFloat2 22s ease-in-out infinite; }
+.animate-drop-pulse   { animation: dropPulse 6s ease-in-out infinite; }
+.animate-orb-drift    { animation: orbDrift 14s ease-in-out infinite; }
 
 /* Heartbeat pulse animation */
 @keyframes heartbeat {
