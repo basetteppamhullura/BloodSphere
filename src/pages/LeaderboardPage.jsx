@@ -47,12 +47,7 @@ export const LeaderboardPage = () => {
       <table className="w-full text-left text-xs text-slate-700">
         <thead className="bg-sky-50/70 uppercase text-[10px] text-slate-500 font-extrabold tracking-wider border-b border-sky-100">
           <tr>
-            <th className="py-4 px-5">Rank</th>
-            <th className="py-4 px-5">Donor Name</th>
-            <th className="py-4 px-5">Blood Group & City</th>
-            <th className="py-4 px-5">Verified Donations</th>
-            <th className="py-4 px-5">Backend Points</th>
-            <th className="py-4 px-5">Achievement Badge</th>
+
           </tr>
         </thead>
         <tbody className="divide-y divide-sky-100 font-mono">
