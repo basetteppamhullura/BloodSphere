@@ -13,8 +13,11 @@ export const RegisterPage = ({ forcedPortal }) => {
   // Determine fixed portal mode if coming from a portal-specific sign up link
   const detectedPortal = forcedPortal ||
     params.portal ||
-       
-    const [role, setRole] = useState(detectedPortal || 'donor');
+    (location.pathname.includes('/register/donor') ? 'donor' : undefined) ||
+    (location.pathname.includes('/register/requester') ? 'requester' : undefined) ||
+    (location.pathname.includes('/register/hospital') ? 'hospital' : undefined) ||
+    (location.pathname.includes('/register/bloodbank') ? 'bloodbank' : undefined);
+  const [role, setRole] = useState(detectedPortal || 'donor');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
