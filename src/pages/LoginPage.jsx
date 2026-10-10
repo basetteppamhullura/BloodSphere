@@ -51,7 +51,14 @@ export const LoginPage = ({ initialPortal }) => {
   const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
   const [isResendingOtp, setIsResendingOtp] = useState(false);
   // Sign Up Form States
-
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regBloodGroup, setRegBloodGroup] = useState('O+');
+  const [regCity, setRegCity] = useState('Hubballi');
+  const [regLicense, setRegLicense] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
   // Sync credentials when selectedPortal changes
   useEffect(() => {
     const portal = getSelectedPortal();
