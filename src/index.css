@@ -3,7 +3,24 @@
 @tailwind utilities;
 
 @layer base {
-
+  :root {
+    --bg-main: #f5faff;
+    --bg-card: #ffffff;
+    --bg-card-hover: #e8f4ff;
+    --border-card: #dceaf5;
+    --text-primary: #16324f;
+    --text-secondary: #64748b;
+    --accent-red: #ef4444;
+    --accent-red-glow: rgba(239, 68, 68, 0.15);
+    --accent-rose: #f43f5e;
+    --accent-blue: #2563eb;
+    --accent-blue-soft: #e8f4ff;
+    --accent-cyan: #06b6d4;
+    --accent-cyan-soft: #ecfeff;
+    --accent-gold: #f59e0b;
+    --accent-green: #22c55e;
+    --accent-green-soft: #ecfdf5;
+  }
 
   body {
     background-color: var(--bg-main);
