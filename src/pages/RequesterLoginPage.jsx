@@ -128,7 +128,12 @@ export const RequesterLoginPage = () => {
         </form>
 
         {/* REGISTRATION LINK */}
-
+        <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <span className="text-slate-500 font-medium">Need a new requester account?</span>
+          <button type="button" onClick={() => navigate('/register/requester')} className="text-rose-600 hover:text-rose-700 font-extrabold hover:underline flex items-center gap-1 cursor-pointer">
+            Register Requester Account →
+          </button>
+        </div>
 
       </div>
 
