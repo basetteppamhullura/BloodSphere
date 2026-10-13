@@ -22,7 +22,7 @@ export const DonorHomePage = () => {
       badgePulseColor="bg-emerald-300"
       title={`Welcome back, ${currentUser?.name || 'Valued Donor'}! ❤️`}
       description="Manage your donation activity, availability, appointments and blood donation history."
-      bgImage="C:\Users\BASETTEPPA M HULLURA\OneDrive\Desktop\Blood donor network\src\assets\donor_portal_bg.jpg"
+      bgImage="/bloodnet-hero-bg.jpg"
       bgPosition="center right"
       gradientOverlay="linear-gradient(95deg, rgba(16, 37, 66, 0.90) 0%, rgba(37, 99, 235, 0.78) 50%, rgba(14, 165, 233, 0.50) 100%)"
       decorativeIcon={Heart}
