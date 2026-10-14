@@ -73,7 +73,11 @@ export const RequesterHomePage = () => {
 
     {/* 3. Action Hub */}
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
+      <div onClick={() => setActiveEmergencyPostModal(true)} className="p-6 rounded-2xl bg-[#FFF1F2] border border-red-200 text-[#16324F] shadow-xs cursor-pointer hover:scale-[1.02] transition-all space-y-2">
+        <PlusCircle className="w-8 h-8 text-[#EF4444]" />
+        <h3 className="font-extrabold text-base text-[#16324F]">Create Emergency Request</h3>
+        <p className="text-xs text-slate-600 font-medium">Broadcast urgent blood needs to all nearby donors immediately.</p>
+      </div>
 
       <div onClick={() => navigate('/requester/find-blood')} className="p-6 rounded-2xl bg-white border border-sky-100 shadow-xs hover:border-sky-300 cursor-pointer hover:scale-[1.02] transition-all space-y-2">
         <Search className="w-8 h-8 text-sky-600" />
