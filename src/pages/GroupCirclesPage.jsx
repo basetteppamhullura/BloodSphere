@@ -119,7 +119,14 @@ export const GroupCirclesPage = () => {
           </div>
 
           <div>
-
+            <label className="text-slate-700 font-bold block mb-1">Circle Category *</label>
+            <select value={category} onChange={e => setCategory(e.target.value)} className="w-full p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 font-bold">
+              <option value="Family">Family Circle</option>
+              <option value="Friends">Friends Circle</option>
+              <option value="Campus">College / Campus Circle</option>
+              <option value="Corporate">Company / Corporate Circle</option>
+              <option value="Community">Community Group</option>
+            </select>
           </div>
 
           <div className="p-3 rounded-2xl bg-sky-50 border border-sky-200 text-sky-900 text-[11px] space-y-1">
