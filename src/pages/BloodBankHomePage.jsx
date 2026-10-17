@@ -46,40 +46,15 @@ export const BloodBankHomePage = () => {
   return (<div className="max-w-6xl mx-auto space-y-6 pb-16 animate-in fade-in">
 
     {/* 1. Hero Welcome Header */}
+    <div className="p-4 sm:p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-1">
+      <span className="text-xs text-slate-600 font-bold block">Available Units</span>
+      <strong className="text-2xl sm:text-3xl font-black text-emerald-600 block">{availableCount}</strong>
+      <span className="text-[11px] text-emerald-700 font-bold flex items-center gap-1">
+        <CheckCircle2 className="w-3.5 h-3.5" /> Ready for immediate issue
+      </span>
+    </div>
 
-    <PortalHero
-      portalLabel="Verified Regional Blood Center & Supply Vault"
-      badgeIcon={ShieldCheck}
-      badgePulseColor="bg-emerald-400"
-      title={`Welcome, ${currentUser?.name || 'Rotary Blood Center'} 🩸`}
-      description="Manage blood inventory, requests, blood units, hospital coordination and emergency supply."
-      bgImage="/bloodnet-hero-bg.png"
-      bgPosition="center"
-      gradientOverlay="linear-gradient(95deg, rgba(16, 37, 66, 0.90) 0%, rgba(16, 185, 129, 0.75) 50%, rgba(37, 99, 235, 0.55) 100%)"
-      decorativeIcon={Droplet}
-      actions={
-        <>
-          <button onClick={() => navigate('/bloodbank/requests')} className="px-5 py-3 rounded-2xl bg-white text-[#2563EB] hover:bg-emerald-50 font-black text-xs shadow-md flex items-center gap-2 transition-all hover:scale-105 cursor-pointer">
-            <Package className="w-4 h-4 text-emerald-600" />
-            <span>Process Request Queue</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
 
-          <button onClick={() => navigate('/bloodbank/inventory')} className="px-4 py-3 rounded-2xl bg-emerald-600/60 hover:bg-emerald-600 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all cursor-pointer">
-            <Boxes className="w-4 h-4" />
-            <span>Live Inventory Matrix</span>
-          </button>
-
-          <button onClick={() => navigate('/bloodbank/camps')} className="px-4 py-3 rounded-2xl bg-white/20 hover:bg-white/30 text-white font-extrabold text-xs border border-white/30 flex items-center gap-1.5 transition-all cursor-pointer">
-            <span>🩸 Blood Camp</span>
-          </button>
-
-          <button onClick={handleLogout} className="px-3.5 py-3 rounded-2xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs border border-white/20 flex items-center gap-1.5 transition-all cursor-pointer" title="Logout">
-            <LogOut className="w-4 h-4" />
-          </button>
-        </>
-      }
-    />
     {/* 2. Real-Time Operational Cards (11 Cards) */}
     <div className="space-y-3">
       <div className="flex items-center justify-between">
