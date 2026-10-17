@@ -83,11 +83,7 @@ export const BloodBankHomePage = () => {
         </div>
 
         {/* Card 3: Reserved Units */}
-        <div className="p-4 sm:p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-1">
-          <span className="text-xs text-slate-600 font-bold block">Reserved Units</span>
-          <strong className="text-2xl sm:text-3xl font-black text-amber-600 block">{reservedCount}</strong>
-          <span className="text-[11px] text-amber-700 font-medium">Locked for pending orders</span>
-        </div>
+
 
         {/* Card 4: Issued Units */}
         <div className="p-4 sm:p-5 rounded-2xl bg-white border border-sky-100 shadow-xs space-y-1">
